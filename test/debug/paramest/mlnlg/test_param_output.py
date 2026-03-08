@@ -205,7 +205,7 @@ if __name__ == "__main__":
             Q_it = numpy.zeros((max_iter + 1))
             it = 0
 
-            def callback(params, Q):
+            def callback(params, Q, cur_iter=None):
                 global it
                 params_it[it] = params[0]
                 Q_it[it] = Q

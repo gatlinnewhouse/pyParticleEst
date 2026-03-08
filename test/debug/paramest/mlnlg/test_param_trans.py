@@ -64,8 +64,8 @@ class ParticleParamTrans(
             ]
         )
         self.params = numpy.copy(params)
-        Axi = params[0] * numpy.eye(1.0)
-        Az = numpy.eye(1.0)
+        Axi = params[0] * numpy.eye(1)
+        Az = numpy.eye(1)
         self.A_grad = numpy.array(
             [
                 [
@@ -106,8 +106,8 @@ class ParticleParamTrans(
         # Axi = numpy.array([[params[0],]])
         # self.set_dynamics(Axi=Axi)
         self.params = numpy.copy(params)
-        Axi = params[0] * numpy.eye(1.0)
-        Az = numpy.eye(1.0)
+        Axi = params[0] * numpy.eye(1)
+        Az = numpy.eye(1)
         self.set_dynamics(Az=Az, Axi=Axi)
 
     def get_pred_dynamics_grad(self, particles, u, t):
