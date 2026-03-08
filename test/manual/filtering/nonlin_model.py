@@ -25,16 +25,18 @@ def wmean(logw, val):
 
 
 class Model(pyparticleest.models.nlg.NonlinearGaussianInitialGaussian):
-    """ x_{k+1} = sin(x_k) + v_k, v_k ~ N(0,Q)
-        y_k = x_k + e_k, e_k ~ N(0,R),
-        x(0) ~ N(0,P0) """
+    """x_{k+1} = sin(x_k) + v_k, v_k ~ N(0,Q)
+    y_k = x_k + e_k, e_k ~ N(0,R),
+    x(0) ~ N(0,P0)"""
 
     def __init__(self, P0, Q, R):
         x0 = numpy.zeros((1, 1))
-        super(Model, self).__init__(x0=x0,
-                                    Px0=numpy.asarray(P0).reshape((1, 1)),
-                                    Q=numpy.asarray(Q).reshape((1, 1)),
-                                    R=numpy.asarray(R).reshape((1, 1)))
+        super(Model, self).__init__(
+            x0=x0,
+            Px0=numpy.asarray(P0).reshape((1, 1)),
+            Q=numpy.asarray(Q).reshape((1, 1)),
+            R=numpy.asarray(R).reshape((1, 1)),
+        )
 
     def calc_f(self, particles, u, t):
         return numpy.sin(particles)
@@ -43,7 +45,7 @@ class Model(pyparticleest.models.nlg.NonlinearGaussianInitialGaussian):
         return particles
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     steps = 100
     num = 100
     P0 = 1.0
@@ -54,14 +56,14 @@ if __name__ == '__main__':
     model = Model(P0, Q, R)
     sim = simulator.Simulator(model, u=None, y=y)
     sim.simulate(num, 0)
-    plt.plot(range(steps + 1), x, 'r-')
-    plt.plot(range(1, steps + 1), y, 'bx')
+    plt.plot(range(steps + 1), x, "r-")
+    plt.plot(range(1, steps + 1), y, "bx")
 
     vals = numpy.empty((num, steps + 1))
     (parts, _) = sim.get_filtered_estimates()
     mvals = sim.get_filtered_mean()
     for k in range(len(parts)):
-        plt.plot((k,) * num, parts[k, :, 0], 'k.', markersize=1.0)
+        plt.plot((k,) * num, parts[k, :, 0], "k.", markersize=1.0)
 
-    plt.plot(range(steps + 1), mvals, 'k-')
+    plt.plot(range(steps + 1), mvals, "k-")
     plt.show()

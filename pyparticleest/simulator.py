@@ -12,7 +12,7 @@ from builtins import range
 from .filter import ParticleTrajectory
 
 
-class Simulator():
+class Simulator:
     """
     Class interfacing filters/smoothers to assisst in solving estimation problem
 
@@ -25,7 +25,7 @@ class Simulator():
     """
 
     def __init__(self, model, u, y):
-        if (u is not None):
+        if u is not None:
             self.u = u
         else:
             self.u = [None] * len(y)
@@ -45,10 +45,17 @@ class Simulator():
         self.params = numpy.copy(params)
         self.model.set_params(self.params)
 
-    def simulate(self, num_part, num_traj,
-                 filter='PF', filter_options=None,
-                 smoother='full', smoother_options=None,
-                 res=0.67, meas_first=False):
+    def simulate(
+        self,
+        num_part,
+        num_traj,
+        filter="PF",
+        filter_options=None,
+        smoother="full",
+        smoother_options=None,
+        res=0.67,
+        meas_first=False,
+    ):
         """
         Solve the estimation problem
 
@@ -96,23 +103,25 @@ class Simulator():
 
         # Initialise a particle filter with our particle approximation of the initial state,
         # set the resampling threshold to 0.67 (effective particles / total particles )
-        self.pt = ParticleTrajectory(self.model, num_part, res, filter=filter,
-                                     filter_options=filter_options)
+        self.pt = ParticleTrajectory(
+            self.model, num_part, res, filter=filter, filter_options=filter_options
+        )
 
         offset = 0
         # Run particle filter
-        if (meas_first):
+        if meas_first:
             self.pt.measure(self.y[0])
             offset = 1
         for i in range(offset, len(self.y)):
             # Run PF using noise corrupted input signal
-            if (self.pt.forward(self.u[i - offset], self.y[i])):
+            if self.pt.forward(self.u[i - offset], self.y[i]):
                 resamplings = resamplings + 1
 
         # Use the filtered estimates above to created smoothed estimates
-        if (smoother is not None and num_traj > 0):
-            self.straj = self.pt.perform_smoothing(num_traj, method=smoother,
-                                                   smoother_options=smoother_options)
+        if smoother is not None and num_traj > 0:
+            self.straj = self.pt.perform_smoothing(
+                num_traj, method=smoother, smoother_options=smoother_options
+            )
         return resamplings
 
     def get_filtered_estimates(self):

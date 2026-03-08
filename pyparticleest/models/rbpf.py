@@ -1,4 +1,4 @@
-""" Model definition for base class for Rao-Blackwellized models
+"""Model definition for base class for Rao-Blackwellized models
 
 
 @author: Jerker Nordh
@@ -31,14 +31,14 @@ class RBPFBase(interfaces.ParticleFiltering):
      - C (array-like): Measurement dynamic for linear states (if constant)
      - hz (array-like): Affine measurement term for linear states (if constant)
     """
+
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, lz, Az=None, fz=None, Qz=None,
-                 C=None, hz=None, R=None, **kwargs):
+    def __init__(
+        self, lz, Az=None, fz=None, Qz=None, C=None, hz=None, R=None, **kwargs
+    ):
 
-        self.kf = kalman.KalmanSmoother(lz, A=Az, C=C,
-                                        Q=Qz, R=R,
-                                        f_k=fz, h_k=hz)
+        self.kf = kalman.KalmanSmoother(lz, A=Az, C=C, Q=Qz, R=R, f_k=fz, h_k=hz)
         super(RBPFBase, self).__init__(**kwargs)
 
     def set_dynamics(self, Az=None, C=None, Qz=None, R=None, fz=None, hz=None):
@@ -102,13 +102,13 @@ class RBPFBase(interfaces.ParticleFiltering):
         Qxi_identical = False
         # This is probably not so nice performance-wise, but will
         # work initially to profile where the bottlenecks are.
-        if (Axi is None):
+        if Axi is None:
             Axi = N * (self.Axi,)
             Axi_identical = True
-        if (fxi is None):
+        if fxi is None:
             fxi = N * (self.fxi,)
             fxi_identical = True
-        if (Qxi is None):
+        if Qxi is None:
             Qxi = N * (self.Qxi,)
             Qxi_identical = True
         return (Axi, fxi, Qxi, Axi_identical, fxi_identical, Qxi_identical)
@@ -157,15 +157,15 @@ class RBPFBase(interfaces.ParticleFiltering):
         Az_identical = False
         fz_identical = False
         Qz_identical = False
-        if (Az is None):
+        if Az is None:
             # Az=numpy.repeat(self.kf.A[numpy.newaxis,:,:], N, axis=0)
             Az = N * (self.kf.A,)
             Az_identical = True
-        if (fz is None):
+        if fz is None:
             # fz=numpy.repeat(self.kf.f_k[numpy.newaxis,:,:], N, axis=0)
             fz = N * (self.kf.f_k,)
             fz_identical = True
-        if (Qz is None):
+        if Qz is None:
             # Qz=numpy.repeat(self.kf.Q[numpy.newaxis,:,:], N, axis=0)
             Qz = N * (self.kf.Q,)
             Qz_identical = True
@@ -217,27 +217,27 @@ class RBPFBase(interfaces.ParticleFiltering):
         Cz_identical = False
         hz_identical = False
         Rz_identical = False
-        if (Cz is None):
-            if (self.kf.C is None and hz is not None):
+        if Cz is None:
+            if self.kf.C is None and hz is not None:
                 Cz = N * (numpy.zeros((len(hz[0]), self.kf.lz)),)
             else:
                 Cz = N * (self.kf.C,)
             # Cz=N*(self.kf.C,)
             Cz_identical = True
-        if (hz is None):
+        if hz is None:
             hz = N * (self.kf.h_k,)
             hz_identical = True
-        if (Rz is None):
+        if Rz is None:
             Rz = N * (self.kf.R,)
             Rz_identical = True
         return (y, Cz, hz, Rz, Cz_identical, hz_identical, Rz_identical)
 
-# This is not implemented
-#    def get_condlin_meas_dynamics(self, y, xi_next, particles):
-#        return (y, None, None, None)
+    # This is not implemented
+    #    def get_condlin_meas_dynamics(self, y, xi_next, particles):
+    #        return (y, None, None, None)
 
     def update(self, particles, u, t, noise):
-        """ Propagate estimate forward in time
+        """Propagate estimate forward in time
 
         Args:
 
@@ -258,7 +258,9 @@ class RBPFBase(interfaces.ParticleFiltering):
         self.cond_predict(particles=particles, xi_next=xin, u=u, t=t)
         return particles
 
-    def cond_predict_single_step(self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind):
+    def cond_predict_single_step(
+        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
+    ):
         """
         Calculate estimates of the next time step using particle 'part', conditioned
         on the non-linear parts of the first step of the future trajectory.
@@ -280,9 +282,11 @@ class RBPFBase(interfaces.ParticleFiltering):
         Returns:
          (array-like) with first dimension = N
         """
-        xin = future_parts[find, :self.lxi]
+        xin = future_parts[find, : self.lxi]
         particles = numpy.copy(part)
-        self.cond_predict(particles=particles, xi_next=xin, u=ut[cur_ind], t=tt[cur_ind])
+        self.cond_predict(
+            particles=particles, xi_next=xin, u=ut[cur_ind], t=tt[cur_ind]
+        )
         return particles
 
     def cond_predict(self, particles, xi_next, u, t):
@@ -299,12 +303,16 @@ class RBPFBase(interfaces.ParticleFiltering):
         # Calc (z_t | xi_{t+1}, y_t)
         self.meas_xi_next(particles=particles, xi_next=xi_next, u=u, t=t)
         # Compensate for noise correlation
-        (Az, fz, Qz) = self.calc_cond_dynamics(particles=particles, xi_next=xi_next, u=u, t=t)
+        (Az, fz, Qz) = self.calc_cond_dynamics(
+            particles=particles, xi_next=xi_next, u=u, t=t
+        )
         (_, zl, Pl) = self.get_states(particles)
         # Predict next states conditioned on xi_next
         for i in range(len(zl)):
             # Predict z_{t+1}
-            (zl[i], Pl[i]) = self.kf.predict_full(z=zl[i], P=Pl[i], A=Az[i], f_k=fz[i], Q=Qz[i])
+            (zl[i], Pl[i]) = self.kf.predict_full(
+                z=zl[i], P=Pl[i], A=Az[i], f_k=fz[i], Q=Qz[i]
+            )
 
         self.set_states(particles, xi_next, zl, Pl)
 
@@ -342,9 +350,9 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         T = len(st.traj)
         M = len(st.traj[0].pa.part)
 
-        lx_filt = self.lxi + self.kf.lz + self.kf.lz ** 2
+        lx_filt = self.lxi + self.kf.lz + self.kf.lz**2
         # Allocate extra space for Mz
-        lx = lx_filt + self.kf.lz ** 2
+        lx = lx_filt + self.kf.lz**2
 
         straj = numpy.empty((T,), dtype=object)
 
@@ -354,29 +362,35 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         particles = numpy.zeros((M, lx))
         particles[:, :lx_filt] = ftraj[-1].pa.part
 
-        straj[-1] = TrajectoryStep(ParticleApproximation(particles),
-                                   ftraj[-1].ancestors)
+        straj[-1] = TrajectoryStep(
+            ParticleApproximation(particles), ftraj[-1].ancestors
+        )
 
         # Backward smoothing
         for i in reversed(range(T - 1)):
             (xin, zn, Pn) = self.get_states(straj[i + 1].pa.part)
             particles = numpy.zeros((M, lx))
             particles[:, :lx_filt] = ftraj[i].pa.part
-            straj[i] = TrajectoryStep(ParticleApproximation(particles),
-                                      ftraj[i].ancestors)
+            straj[i] = TrajectoryStep(
+                ParticleApproximation(particles), ftraj[i].ancestors
+            )
 
             # Condition on future nonlinear state
             self.meas_xi_next(particles, xin, u=st.u[i], t=st.t[i])
             (xi, z, P) = self.get_states(particles)
-            (Al, fl, Ql) = self.calc_cond_dynamics(
-                particles, xin, u=st.u[i], t=st.t[i])
+            (Al, fl, Ql) = self.calc_cond_dynamics(particles, xin, u=st.u[i], t=st.t[i])
             # Update distribution for linear states
             for j in range(M):
-                (zs, Ps, Ms) = self.kf.smooth(z[j], P[j], zn[j], Pn[j],
-                                              Al[j], fl[j], Ql[j])
-                self.set_states(straj[i].pa.part[j:j + 1, :],
-                                xi[j], zs[numpy.newaxis], Ps[numpy.newaxis])
-                self.set_Mz(straj[i].pa.part[j:j + 1, :], Ms[numpy.newaxis])
+                (zs, Ps, Ms) = self.kf.smooth(
+                    z[j], P[j], zn[j], Pn[j], Al[j], fl[j], Ql[j]
+                )
+                self.set_states(
+                    straj[i].pa.part[j : j + 1, :],
+                    xi[j],
+                    zs[numpy.newaxis],
+                    Ps[numpy.newaxis],
+                )
+                self.set_Mz(straj[i].pa.part[j : j + 1, :], Ms[numpy.newaxis])
 
         return straj
 
@@ -396,33 +410,35 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         T = len(st.traj)
         M = len(st.traj[0].pa.part)
 
-        lx = self.lxi + self.kf.lz + self.kf.lz ** 2
+        lx = self.lxi + self.kf.lz + self.kf.lz**2
 
         straj = numpy.empty((T,), dtype=object)
 
         particles = numpy.empty((M, lx))
-        #(xil, _zl, _Pl) = self.get_states(particles)
-        xil = st.traj[0].pa.part[:, :self.lxi].reshape((M, self.lxi, 1))
+        # (xil, _zl, _Pl) = self.get_states(particles)
+        xil = st.traj[0].pa.part[:, : self.lxi].reshape((M, self.lxi, 1))
 
         (z0, P0) = self.get_rb_initial(xil)
         self.set_states(particles, xil, z0, P0)
 
         for i in range(T - 1):
-            if (st.y[i] is not None):
+            if st.y[i] is not None:
                 self.measure(particles, y=st.y[i], t=st.t[i])
 
-            straj[i] = TrajectoryStep(ParticleApproximation(particles),
-                                      st.traj[i].ancestors)
+            straj[i] = TrajectoryStep(
+                ParticleApproximation(particles), st.traj[i].ancestors
+            )
 
-            #(xin, _zn, _Pn) = self.get_states(st.traj[i + 1])
-            xin = st.traj[i + 1].pa.part[:, :self.lxi].reshape((M, self.lxi, 1))
+            # (xin, _zn, _Pn) = self.get_states(st.traj[i + 1])
+            xin = st.traj[i + 1].pa.part[:, : self.lxi].reshape((M, self.lxi, 1))
             self.cond_predict(particles, xin, u=st.u[i], t=st.t[i])
 
-        if (st.y[-1] is not None):
+        if st.y[-1] is not None:
             self.measure(particles, y=st.y[-1], t=st.t[-1])
 
-        straj[-1] = TrajectoryStep(ParticleApproximation(particles),
-                                   st.traj[-1].ancestors)
+        straj[-1] = TrajectoryStep(
+            ParticleApproximation(particles), st.traj[-1].ancestors
+        )
         return straj
 
     def set_states(self, particles, xi_list, z_list, P_list):
@@ -438,11 +454,11 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         """
         N = len(particles)
         zend = self.lxi + self.kf.lz
-        Pend = zend + self.kf.lz ** 2
+        Pend = zend + self.kf.lz**2
 
-        particles[:, :self.lxi] = xi_list.reshape((N, self.lxi))
-        particles[:, self.lxi:zend] = z_list.reshape((N, self.kf.lz))
-        particles[:, zend:Pend] = P_list.reshape((N, self.kf.lz ** 2))
+        particles[:, : self.lxi] = xi_list.reshape((N, self.lxi))
+        particles[:, self.lxi : zend] = z_list.reshape((N, self.kf.lz))
+        particles[:, zend:Pend] = P_list.reshape((N, self.kf.lz**2))
 
     def get_states(self, particles):
         """
@@ -460,10 +476,10 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         """
         N = len(particles)
         zend = self.lxi + self.kf.lz
-        Pend = zend + self.kf.lz ** 2
+        Pend = zend + self.kf.lz**2
 
-        xil = particles[:, :self.lxi, numpy.newaxis]
-        zl = particles[:, self.lxi:zend, numpy.newaxis]
+        xil = particles[:, : self.lxi, numpy.newaxis]
+        zl = particles[:, self.lxi : zend, numpy.newaxis]
         Pl = particles[:, zend:Pend].reshape((N, self.kf.lz, self.kf.lz))
 
         return (xil, zl, Pl)
@@ -481,8 +497,8 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         """
         N = len(smooth_particles)
         zend = self.lxi + self.kf.lz
-        Pend = zend + self.kf.lz ** 2
-        Mend = Pend + self.kf.lz ** 2
+        Pend = zend + self.kf.lz**2
+        Mend = Pend + self.kf.lz**2
 
         Mz = smooth_particles[:, Pend:Mend].reshape((N, self.kf.lz, self.kf.lz))
         return Mz
@@ -498,7 +514,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         """
         N = len(smooth_particles)
         zend = self.lxi + self.kf.lz
-        Pend = zend + self.kf.lz ** 2
-        Mend = Pend + self.kf.lz ** 2
+        Pend = zend + self.kf.lz**2
+        Mend = Pend + self.kf.lz**2
 
-        smooth_particles[:, Pend:Mend] = Mz.reshape((N, self.kf.lz ** 2))
+        smooth_particles[:, Pend:Mend] = Mz.reshape((N, self.kf.lz**2))

@@ -1,7 +1,8 @@
-""" Model definition for base class for hierarchical systems
+"""Model definition for base class for hierarchical systems
 
 @author: Jerker Nordh
 """
+
 import abc
 
 try:
@@ -27,6 +28,7 @@ class HierarchicalBase(RBPSBase):
      - len_xi (int): number of nonlinear states
      - len_z (int): number of linear states
     """
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, len_xi, len_z, **kwargs):
@@ -53,17 +55,18 @@ class HierarchicalBase(RBPSBase):
         (xil, zl, Pl) = self.get_states(particles)
         N = len(particles)
         (y, Cz, hz, Rz) = self.get_lin_meas_dynamics(particles, y, t)
-        if (Cz is None):
+        if Cz is None:
             Cz = numpy.repeat(self.kf.C[numpy.newaxis, :, :], N, axis=0)
-        if (hz is None):
+        if hz is None:
             hz = numpy.repeat(self.kf.h_k[numpy.newaxis, :, :], N, axis=0)
-        if (Rz is None):
+        if Rz is None:
             Rz = numpy.repeat(self.kf.R[numpy.newaxis, :, :], N, axis=0)
 
         lyz = numpy.empty_like(lyxi)
         for i in range(len(zl)):
-            lyz[i] = self.kf.measure_full(numpy.asarray(y).reshape((-1, 1)),
-                                          zl[i], Pl[i], Cz[i], hz[i], Rz[i])
+            lyz[i] = self.kf.measure_full(
+                numpy.asarray(y).reshape((-1, 1)), zl[i], Pl[i], Cz[i], hz[i], Rz[i]
+            )
 
         self.set_states(particles, xil, zl, Pl)
         return lyxi + lyz
@@ -117,7 +120,7 @@ class HierarchicalBase(RBPSBase):
         """
         N = len(particles)
         Nn = len(next_part)
-        if (N > 1 and Nn == 1):
+        if N > 1 and Nn == 1:
             next_part = numpy.repeat(next_part, N, 0)
 
         lpz = numpy.empty(N)
@@ -127,16 +130,17 @@ class HierarchicalBase(RBPSBase):
         zln = numpy.empty_like(zl)
         Pln = numpy.empty_like(Pl)
 
-        lpxi = self.logp_xnext_xi(
-            particles, next_part[:, :self.lxi], u, t).ravel()
+        lpxi = self.logp_xnext_xi(particles, next_part[:, : self.lxi], u, t).ravel()
 
         for i in range(N):
-
             # Predict z_{t+1}
             (zln[i], Pln[i]) = self.kf.predict_full(zl[i], Pl[i], Az[i], fz[i], Qz[i])
 
-            lpz[i] = kalman.lognormpdf(next_part[i][self.lxi:(
-                self.lxi + self.kf.lz)].reshape((-1, 1)) - zln[i], Pln[i])
+            lpz[i] = kalman.lognormpdf(
+                next_part[i][self.lxi : (self.lxi + self.kf.lz)].reshape((-1, 1))
+                - zln[i],
+                Pln[i],
+            )
 
         return lpxi + lpz
 
@@ -162,23 +166,33 @@ class HierarchicalBase(RBPSBase):
          (array-like) with first dimension = N
         """
         M = len(part)
-        res = numpy.zeros((M, self.lxi + self.kf.lz + 2 * self.kf.lz ** 2))
+        res = numpy.zeros((M, self.lxi + self.kf.lz + 2 * self.kf.lz**2))
         for j in range(M):
-            partj = numpy.copy(part[j:j + 1])
-            (xil, zl, Pl) = self.get_states(part,)
-            if (future_trajs is not None):
-                (A, f, Q, _, _, _) = self.get_lin_pred_dynamics_int(partj,
-                                                                    ut[cur_ind],
-                                                                    tt[cur_ind])
+            partj = numpy.copy(part[j : j + 1])
+            (xil, zl, Pl) = self.get_states(
+                part,
+            )
+            if future_trajs is not None:
+                (A, f, Q, _, _, _) = self.get_lin_pred_dynamics_int(
+                    partj, ut[cur_ind], tt[cur_ind]
+                )
                 # Measure the sampled next state,
-                self.kf.measure_full(future_trajs[0].pa.part[find[j], self.lxi:(self.lxi + self.kf.lz)].reshape((-1, 1)),
-                                     zl[0], Pl[0], C=A[0], h_k=f[0], R=Q[0])
+                self.kf.measure_full(
+                    future_trajs[0]
+                    .pa.part[find[j], self.lxi : (self.lxi + self.kf.lz)]
+                    .reshape((-1, 1)),
+                    zl[0],
+                    Pl[0],
+                    C=A[0],
+                    h_k=f[0],
+                    R=Q[0],
+                )
 
             xi = copy.copy(xil[0]).ravel()
             # Sample the linear variables, the full conditional density
             # is recovred later in the post_smoothing step
             z = numpy.random.multivariate_normal(zl[0].ravel(), Pl[0]).ravel()
-            res[j, :(self.lxi + self.kf.lz)] = numpy.hstack((xi, z))
+            res[j, : (self.lxi + self.kf.lz)] = numpy.hstack((xi, z))
         return res
 
     @abc.abstractmethod

@@ -1,12 +1,14 @@
-""" Model definition for base class for Nonlinear Gaussian systems
+"""Model definition for base class for Nonlinear Gaussian systems
 
 @author: Jerker Nordh
 """
+
 import pyparticleest.interfaces as interfaces
 import scipy.linalg
 import numpy.random
 import math
 import abc
+
 try:
     import pyparticleest.utils.ckalman as kalman
 except ImportError:
@@ -38,7 +40,7 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
      - g (array-like): g (if constaint)
      - Q (array-like): Q (if constaint)
      - R (array-like): R (if constaint)
-     """
+    """
 
     __metaclass__ = abc.ABCMeta
 
@@ -101,20 +103,20 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         return None
 
     def __init__(self, lxi, f=None, g=None, Q=None, R=None):
-        if (f is not None):
+        if f is not None:
             self.f = numpy.copy(f)
         else:
             self.f = None
-        if (g is not None):
+        if g is not None:
             self.g = numpy.copy(g)
         else:
             self.g = None
-        if (Q is not None):
+        if Q is not None:
             self.Qchol = scipy.linalg.cho_factor(Q)
             self.Qcholtri = numpy.triu(self.Qchol[0])
             ld = numpy.sum(numpy.log(numpy.diag(self.Qchol[0]))) * 2
             self.logpdfmax = -0.5 * (lxi * math.log(2 * math.pi) + ld)
-        if (R is not None):
+        if R is not None:
             self.Rchol = scipy.linalg.cho_factor(R)
             self.Rcholtri = numpy.triu(self.Rchol[0])
 
@@ -146,7 +148,7 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         N = len(particles)
         Q = self.calc_Q(particles=particles, u=u, t=t)
         noise = numpy.random.normal(size=(self.lxi, N))
-        if (Q is None):
+        if Q is None:
             noise = self.Qcholtri.T.dot(noise)
         else:
             for i in range(N):
@@ -156,7 +158,7 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         return noise.T
 
     def update(self, particles, u, t, noise):
-        """ Propagate estimate forward in time
+        """Propagate estimate forward in time
 
         Args:
 
@@ -171,7 +173,7 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
          (array-like) with first dimension = N, particle estimate at time t+1
         """
         f = self.calc_f(particles=particles, u=u, t=t)
-        if (f is None):
+        if f is None:
             f = self.f
         particles[:] = f + noise
         return particles
@@ -195,14 +197,14 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         g = self.calc_g(particles=particles, t=t)
         R = self.calc_R(particles=particles, t=t)
 
-        if (g is None):
+        if g is None:
             g = numpy.repeat(self.g.reshape((1, -1, 1)), N, 0)
         else:
             g = g.reshape((N, -1, 1))
         yrep = numpy.repeat(numpy.asarray(y).reshape((1, -1, 1)), N, 0)
         diff = yrep - g
-        if (R is None):
-            if (self.Rcholtri.shape[0] == 1):
+        if R is None:
+            if self.Rcholtri.shape[0] == 1:
                 lpy = kalman.lognormpdf_scalar(diff, self.Rcholtri)
             else:
                 lpy = kalman.lognormpdf_cho_vec(diff, self.Rchol)
@@ -255,7 +257,7 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         Q = self.calc_Q(particles, u, t)
         dim = self.lxi
         l2pi = math.log(2 * math.pi)
-        if (Q is None):
+        if Q is None:
             return self.logpdfmax
         else:
             N = len(particles)
@@ -284,12 +286,12 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         """
 
         f = self.calc_f(particles, u, t)
-        if (f is None):
+        if f is None:
             f = self.f
         diff = next_part - f
         Q = self.calc_Q(particles, u, t)
-        if (Q is None):
-            if (self.Qcholtri.shape[0] == 1):
+        if Q is None:
+            if self.Qcholtri.shape[0] == 1:
                 lpx = kalman.lognormpdf_scalar(diff, self.Qcholtri)
             else:
                 lpx = kalman.lognormpdf_cho_vec(diff, self.Qchol)
@@ -323,15 +325,19 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
          future_trajs (one of which may be 'None' at the start/end of the dataset)
         """
         # Trivial choice of q, discard y_T and x_{t+1}
-        if (ptraj is not None):
+        if ptraj is not None:
             prop_part = numpy.copy(ptraj[-1].pa.part[anc])
-            noise = self.sample_process_noise(prop_part, ut[cur_ind - 1], tt[cur_ind - 1])
+            noise = self.sample_process_noise(
+                prop_part, ut[cur_ind - 1], tt[cur_ind - 1]
+            )
             prop_part = self.update(prop_part, ut[cur_ind - 1], tt[cur_ind - 1], noise)
         else:
             prop_part = self.create_initial_estimate(len(find))
         return prop_part
 
-    def logp_proposal(self, prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind):
+    def logp_proposal(
+        self, prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind
+    ):
         """
         Eval the log-propability of the proposal distribution
 
@@ -353,8 +359,10 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
          (array-like) with first dimension = N,
          log q(x_t | x_{t-1}, x_{t+1:T}, y_t:T)
         """
-        if (ptraj is not None):
-            return self.logp_xnext(ptraj[-1].pa.part[anc], prop_part, ut[cur_ind - 1], tt[cur_ind - 1])
+        if ptraj is not None:
+            return self.logp_xnext(
+                ptraj[-1].pa.part[anc], prop_part, ut[cur_ind - 1], tt[cur_ind - 1]
+            )
         else:
             return self.eval_logp_x0(prop_part, t=tt[0])
 
@@ -388,22 +396,23 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
 
     def __init__(self, x0=None, Px0=None, lxi=None, **kwargs):
 
-        if (x0 is not None):
+        if x0 is not None:
             self.x0 = numpy.copy(x0).reshape((-1, 1))
-        elif (lxi is not None):
+        elif lxi is not None:
             self.x0 = numpy.zeros((lxi, 1))
-        elif (Px0 is not None):
+        elif Px0 is not None:
             self.x0 = numpy.zeros((Px0.shape[0], 1))
         else:
             raise ValueError()
 
-        if (Px0 is None):
+        if Px0 is None:
             self.Px0 = numpy.zeros((len(self.x0), len(self.x0)))
         else:
             self.Px0 = numpy.copy((Px0))
 
-        super(NonlinearGaussianInitialGaussian, self).__init__(lxi=len(self.x0),
-                                                               **kwargs)
+        super(NonlinearGaussianInitialGaussian, self).__init__(
+            lxi=len(self.x0), **kwargs
+        )
 
     def create_initial_estimate(self, N):
         """Sample particles from initial distribution
@@ -413,9 +422,9 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles """
+         of all particles"""
         particles = numpy.repeat(self.x0, N, 1).T
-        if (numpy.any(self.Px0)):
+        if numpy.any(self.Px0):
             Pchol = scipy.linalg.cho_factor(self.Px0)[0]
             noise = numpy.random.normal(size=(self.lxi, N))
             particles += (Pchol.dot(noise)).T
@@ -434,16 +443,18 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         N = len(particles)
         res = numpy.empty(N)
         # Assumes Px0 is either full rang or zero
-        if ((self.Px0 == 0.0).all()):
+        if (self.Px0 == 0.0).all():
             x0 = self.x0.ravel()
             for i in range(N):
-                if (numpy.array_equiv(particles[i], x0)):
+                if numpy.array_equiv(particles[i], x0):
                     res[i] = 0.0
                 else:
                     res[i] = -numpy.Inf
         else:
             Pchol = scipy.linalg.cho_factor(self.Px0, check_finite=False)
             for i in range(N):
-                res[i] = kalman.lognormpdf_cho(particles[i].ravel() - self.x0.ravel(), Pchol)
+                res[i] = kalman.lognormpdf_cho(
+                    particles[i].ravel() - self.x0.ravel(), Pchol
+                )
 
         return res

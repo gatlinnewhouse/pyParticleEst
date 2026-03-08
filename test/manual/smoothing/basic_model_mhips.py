@@ -4,6 +4,7 @@ import pyparticleest.simulator as simulator
 import matplotlib.pyplot as plt
 import time
 
+
 def generate_dataset(steps, P0, Q, R):
     x = numpy.zeros((steps + 1,))
     y = numpy.zeros((steps,))
@@ -14,18 +15,20 @@ def generate_dataset(steps, P0, Q, R):
 
     return (x, y)
 
+
 class Model(nlg.NonlinearGaussianInitialGaussian):
-    """ x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
-        y_k = x_k + e_k, e_k ~ N(0,R),
-        x(0) ~ N(0,P0) """
+    """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
+    y_k = x_k + e_k, e_k ~ N(0,R),
+    x(0) ~ N(0,P0)"""
 
     def __init__(self, P0, Q, R):
         x0 = numpy.zeros((1, 1))
-        super(Model, self).__init__(x0=x0,
-                                    Px0=numpy.asarray(P0).reshape((1, 1)),
-                                    Q=numpy.asarray(Q).reshape((1, 1)),
-                                    R=numpy.asarray(R).reshape((1, 1)))
-
+        super(Model, self).__init__(
+            x0=x0,
+            Px0=numpy.asarray(P0).reshape((1, 1)),
+            Q=numpy.asarray(Q).reshape((1, 1)),
+            R=numpy.asarray(R).reshape((1, 1)),
+        )
 
     def calc_f(self, particles, u, t):
         return particles
@@ -33,7 +36,8 @@ class Model(nlg.NonlinearGaussianInitialGaussian):
     def calc_g(self, particles, t):
         return particles
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     steps = 80
     num = 10
     M = 20
@@ -45,19 +49,25 @@ if __name__ == '__main__':
 
     model = Model(P0, Q, R)
     sim = simulator.Simulator(model, None, y)
-    sim.simulate(num, M, filter='PF', smoother='ancestor', smoother_options={'R': 50}, meas_first=False)
-    plt.plot(range(steps + 1), x, 'r-')
-    plt.plot(range(1, steps + 1), y, 'bx')
-    plt.plot(range(steps + 1), sim.get_smoothed_estimates()[:, :, 0], 'g.')
+    sim.simulate(
+        num,
+        M,
+        filter="PF",
+        smoother="ancestor",
+        smoother_options={"R": 50},
+        meas_first=False,
+    )
+    plt.plot(range(steps + 1), x, "r-")
+    plt.plot(range(1, steps + 1), y, "bx")
+    plt.plot(range(steps + 1), sim.get_smoothed_estimates()[:, :, 0], "g.")
     plt.ion()
     plt.show()
     time.sleep(5)
     for _ in range(30):
-
         plt.clf()
-        plt.plot(range(steps + 1), x, 'r-')
-        plt.plot(range(1, steps + 1), y, 'bx')
-        plt.plot(range(steps + 1), sim.get_smoothed_estimates()[:, :, 0], 'g.')
+        plt.plot(range(steps + 1), x, "r-")
+        plt.plot(range(1, steps + 1), y, "bx")
+        plt.plot(range(steps + 1), sim.get_smoothed_estimates()[:, :, 0], "g.")
         plt.draw()
         plt.pause(0.0001)
         sim.straj.traj = sim.straj.perform_mhips_pass(None, reduced=False)
@@ -65,13 +75,13 @@ if __name__ == '__main__':
 
     plt.ioff()
     plt.clf()
-    plt.plot(range(steps + 1), x, 'r-')
-    plt.plot(range(1, steps + 1), y, 'bx')
-    plt.plot(range(steps + 1), sim.get_smoothed_estimates()[:, :, 0], 'g.')
-#    for k in xrange(num):
-#        ind = k
-#        for j in reversed(xrange(len(traj.traj)-1)):
-#            ind = traj.traj[j+1].ancestors[ind]
-#            vals[k,j] = numpy.copy(traj.traj[j].pa.part[ind])
+    plt.plot(range(steps + 1), x, "r-")
+    plt.plot(range(1, steps + 1), y, "bx")
+    plt.plot(range(steps + 1), sim.get_smoothed_estimates()[:, :, 0], "g.")
+    #    for k in xrange(num):
+    #        ind = k
+    #        for j in reversed(xrange(len(traj.traj)-1)):
+    #            ind = traj.traj[j+1].ancestors[ind]
+    #            vals[k,j] = numpy.copy(traj.traj[j].pa.part[ind])
 
     plt.show()

@@ -1,6 +1,7 @@
 """Model definition for base class for Linear Time-varying systems
 @author: Jerker Nordh
 """
+
 from pyparticleest.interfaces import FFBSi, ParticleFiltering
 
 try:
@@ -39,16 +40,26 @@ class LTV(FFBSi, ParticleFiltering):
      - params (array-like): model parameters (if any)
     """
 
-    def __init__(self, z0, P0, A=None, C=None, Q=None,
-                 R=None, f=None, h=None, params=None, **kwargs):
+    def __init__(
+        self,
+        z0,
+        P0,
+        A=None,
+        C=None,
+        Q=None,
+        R=None,
+        f=None,
+        h=None,
+        params=None,
+        **kwargs,
+    ):
         self.z0 = numpy.copy(z0).reshape((-1, 1))
         self.P0 = numpy.copy(P0)
-        if (f is None):
+        if f is None:
             f = numpy.zeros_like(self.z0)
-        self.kf = kalman.KalmanSmoother(lz=len(self.z0),
-                                        A=A, C=C,
-                                        Q=Q, R=R,
-                                        f_k=f, h_k=h)
+        self.kf = kalman.KalmanSmoother(
+            lz=len(self.z0), A=A, C=C, Q=Q, R=R, f_k=f, h_k=h
+        )
         super(LTV, self).__init__(**kwargs)
 
     def create_initial_estimate(self, N):
@@ -60,10 +71,12 @@ class LTV(FFBSi, ParticleFiltering):
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles """
+         of all particles"""
 
-        if (N > 1):
-            print("N > 1 redundamt for LTV system (N={0})".format(N),)
+        if N > 1:
+            print(
+                "N > 1 redundamt for LTV system (N={0})".format(N),
+            )
         lz = len(self.z0)
         dim = lz + lz * lz
         particles = numpy.empty((N, dim))
@@ -136,7 +149,7 @@ class LTV(FFBSi, ParticleFiltering):
         return (None, None, None)
 
     def update(self, particles, u, t, noise):
-        """ Propagate estimate forward in time
+        """Propagate estimate forward in time
 
         Args:
 
@@ -275,14 +288,16 @@ class LTV(FFBSi, ParticleFiltering):
         M = len(part)
         lz = len(self.z0)
         lzP = lz + lz * lz
-        res = numpy.empty((M, lz + 2 * lz ** 2))
+        res = numpy.empty((M, lz + 2 * lz**2))
         for j in range(M):
-            if (future_trajs is not None):
+            if future_trajs is not None:
                 zn = future_trajs[0].pa.part[j, :lz].reshape((lz, 1))
                 Pn = future_trajs[0].pa.part[j, lz:lzP].reshape((lz, lz))
                 (A, f, Q) = self.get_pred_dynamics(u=ut[0], t=tt[0])
                 self.kf.set_dynamics(A=A, Q=Q, f_k=f)
-                (zs, Ps, Ms) = self.kf.smooth(zl[0], Pl[0], zn, Pn, self.kf.A, self.kf.f_k, self.kf.Q)
+                (zs, Ps, Ms) = self.kf.smooth(
+                    zl[0], Pl[0], zn, Pn, self.kf.A, self.kf.f_k, self.kf.Q
+                )
             else:
                 zs = zl[j]
                 Ps = Pl[j]
@@ -340,18 +355,22 @@ class LTV(FFBSi, ParticleFiltering):
         lpz0_grad = numpy.zeros(lparam)
         (zl, Pl) = self.get_states(particles)
         (z0_grad, P0_grad) = self.get_initial_grad()
-        if (z0_grad is None and P0_grad is None):
+        if z0_grad is None and P0_grad is None:
             lpz0 = self.eval_logp_x0(particles, t)
         else:
             lpz0 = 0.0
             P0cho = scipy.linalg.cho_factor(self.P0)
             ld = numpy.sum(numpy.log(numpy.diagonal(P0cho[0]))) * 2
             for i in range(N):
-                (l1, l1_grad) = self.calc_l1_grad(zl[i], Pl[i], self.z0, self.P0, z0_grad)
+                (l1, l1_grad) = self.calc_l1_grad(
+                    zl[i], Pl[i], self.z0, self.P0, z0_grad
+                )
                 tmp = scipy.linalg.cho_solve(P0cho, l1)
                 lpz0 += -0.5 * (ld + numpy.trace(tmp))
                 for j in range(len(self.params)):
-                    lpz0_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(P0cho, P0_grad[j], l1, l1_grad[j])
+                    lpz0_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
+                        P0cho, P0_grad[j], l1, l1_grad[j]
+                    )
         return (lpz0, lpz0_grad)
 
     def eval_logp_xnext(self, particles, x_next, u, t):
@@ -379,7 +398,9 @@ class LTV(FFBSi, ParticleFiltering):
             lz = len(self.z0)
             lzP = lz + lz * lz
             Mz = particles[k][lzP:].reshape((lz, lz))
-            (l2, _A, _M_ext, _predict_err) = self.calc_l2(zn[k], Pn[k], zl[k], Pl[k], self.kf.A, self.kf.f_k, Mz)
+            (l2, _A, _M_ext, _predict_err) = self.calc_l2(
+                zn[k], Pn[k], zl[k], Pl[k], self.kf.A, self.kf.f_k, Mz
+            )
             (_tmp, ld) = numpy.linalg.slogdet(self.kf.Q)
             tmp = numpy.linalg.solve(self.kf.Q, l2)
             lpxn[k] = -0.5 * (ld + numpy.trace(tmp))
@@ -406,7 +427,7 @@ class LTV(FFBSi, ParticleFiltering):
         (A, f, Q) = self.get_pred_dynamics(u=u, t=t)
         (A_grad, f_grad, Q_grad) = self.get_pred_dynamics_grad(u=u, t=t)
         lpxn_grad = numpy.zeros(lparam)
-        if (A_grad is None and f_grad is None and Q_grad is None):
+        if A_grad is None and f_grad is None and Q_grad is None:
             lpxn = self.eval_logp_xnext(particles, x_next, u, t)
         else:
             self.kf.set_dynamics(A=A, Q=Q, f_k=f)
@@ -414,20 +435,31 @@ class LTV(FFBSi, ParticleFiltering):
             Qcho = scipy.linalg.cho_factor(self.kf.Q, check_finite=False)
             ld = numpy.sum(numpy.log(numpy.diagonal(Qcho[0]))) * 2
 
-            if (Q_grad is None):
-                Q_grad = numpy.zeros(
-                    (len(self.params), self.kf.lz, self.kf.lz))
+            if Q_grad is None:
+                Q_grad = numpy.zeros((len(self.params), self.kf.lz, self.kf.lz))
 
             for k in range(N):
                 lz = len(self.z0)
                 lzP = lz + lz * lz
                 Mz = particles[k][lzP:].reshape((lz, lz))
-                (l2, l2_grad) = self.calc_l2_grad(zn[k], Pn[k], zl[k], Pl[k], self.kf.A, self.kf.f_k, Mz, A_grad, f_grad)
+                (l2, l2_grad) = self.calc_l2_grad(
+                    zn[k],
+                    Pn[k],
+                    zl[k],
+                    Pl[k],
+                    self.kf.A,
+                    self.kf.f_k,
+                    Mz,
+                    A_grad,
+                    f_grad,
+                )
                 tmp = scipy.linalg.cho_solve(Qcho, l2)
                 lpxn += -0.5 * (ld + numpy.trace(tmp))
 
                 for j in range(len(self.params)):
-                    lpxn_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(Qcho, Q_grad[j], l2, l2_grad[j])
+                    lpxn_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
+                        Qcho, Q_grad[j], l2, l2_grad[j]
+                    )
 
         return (lpxn, lpxn_grad)
 
@@ -475,17 +507,16 @@ class LTV(FFBSi, ParticleFiltering):
         (y, C, h, R) = self.get_meas_dynamics(y=y, t=t)
         (C_grad, h_grad, R_grad) = self.get_meas_dynamics_grad(y=y, t=t)
         logpy_grad = numpy.zeros(lparam)
-        if (C_grad is None and h_grad is None and R_grad is None):
+        if C_grad is None and h_grad is None and R_grad is None:
             logpy = self.eval_logp_y(particles, y, t)
         else:
-
             self.kf.set_dynamics(C=C, R=R, h_k=h)
             Rcho = scipy.linalg.cho_factor(self.kf.R, check_finite=False)
             ld = numpy.sum(numpy.log(numpy.diagonal(Rcho[0]))) * 2
             (zl, Pl) = self.get_states(particles)
             logpy = 0.0
 
-            if (R_grad is None):
+            if R_grad is None:
                 R_grad = numpy.zeros((len(self.params), len(y), len(y)))
 
             for i in range(N):
@@ -496,7 +527,8 @@ class LTV(FFBSi, ParticleFiltering):
 
                 for j in range(len(self.params)):
                     logpy_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        Rcho, R_grad[j], l3, l3_grad[j])
+                        Rcho, R_grad[j], l3, l3_grad[j]
+                    )
 
         return (logpy, logpy_grad)
 
@@ -547,29 +579,31 @@ class LTV(FFBSi, ParticleFiltering):
          P is a list of element-wise gradients for the covariance matrices
         """
         lparam = len(self.params)
-        return (numpy.zeros((lparam, self.kf.lz, 1)),
-                numpy.zeros((lparam, self.kf.lz, self.kf.lz)))
+        return (
+            numpy.zeros((lparam, self.kf.lz, 1)),
+            numpy.zeros((lparam, self.kf.lz, self.kf.lz)),
+        )
 
     def calc_l1(self, z, P, z0, P0):
-        """ internal helper function """
+        """internal helper function"""
         z0_diff = z - z0
         l1 = z0_diff.dot(z0_diff.T) + P
         return l1
 
     def calc_l1_grad(self, z, P, z0, P0, z0_grad):
-        """ internal helper function """
+        """internal helper function"""
         lparams = len(self.params)
         z0_diff = z - z0
         l1 = z0_diff.dot(z0_diff.T) + P
         l1_diff = numpy.zeros((lparams, self.kf.lz, self.kf.lz))
-        if (z0_grad is not None):
+        if z0_grad is not None:
             for j in range(lparams):
                 tmp = -z0_grad[j].dot(z0_diff.T)
                 l1_diff[j] += tmp + tmp.T
         return (l1, l1_diff)
 
     def calc_l2(self, zn, Pn, z, P, A, f, M):
-        """ internal helper function """
+        """internal helper function"""
         predict_err = zn - f - A.dot(z)
         AM = A.dot(M)
         l2 = predict_err.dot(predict_err.T)
@@ -577,18 +611,18 @@ class LTV(FFBSi, ParticleFiltering):
         return (l2, A, M, predict_err)
 
     def calc_l2_grad(self, zn, Pn, z, P, A, f, M, A_grad, f_grad):
-        """ internal helper function """
+        """internal helper function"""
         lparam = len(self.params)
         predict_err = zn - f - A.dot(z)
         AM = A.dot(M)
         l2 = predict_err.dot(predict_err.T)
         l2 += Pn + A.dot(P).dot(A.T) - AM.T - AM
         l2_grad = numpy.zeros((lparam, self.kf.lz, self.kf.lz))
-        if (f_grad is not None):
+        if f_grad is not None:
             for j in range(lparam):
                 tmp = -f_grad[j].dot(predict_err.T)
                 l2_grad[j] += tmp + tmp.T
-        if (A_grad is not None):
+        if A_grad is not None:
             for j in range(lparam):
                 tmp = -A_grad[j].dot(z).dot(predict_err.T)
                 l2_grad[j] += tmp + tmp.T
@@ -599,30 +633,28 @@ class LTV(FFBSi, ParticleFiltering):
         return (l2, l2_grad)
 
     def calc_l3(self, y, z, P):
-        """ internal helper function """
-        meas_diff = self.kf.measurement_diff(y.reshape((-1, 1)),
-                                             z,
-                                             C=self.kf.C,
-                                             h_k=self.kf.h_k)
+        """internal helper function"""
+        meas_diff = self.kf.measurement_diff(
+            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k
+        )
         l3 = meas_diff.dot(meas_diff.T)
         l3 += self.kf.C.dot(P).dot(self.kf.C.T)
         return l3
 
     def calc_l3_grad(self, y, z, P, C_grad, h_grad):
-        """ internal helper function """
+        """internal helper function"""
         lparam = len(self.params)
-        meas_diff = self.kf.measurement_diff(y.reshape((-1, 1)),
-                                             z,
-                                             C=self.kf.C,
-                                             h_k=self.kf.h_k)
+        meas_diff = self.kf.measurement_diff(
+            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k
+        )
         l3 = meas_diff.dot(meas_diff.T)
         l3 += self.kf.C.dot(P).dot(self.kf.C.T)
         l3_grad = numpy.zeros((lparam, len(y), len(y)))
-        if (h_grad is not None):
+        if h_grad is not None:
             for j in range(lparam):
                 tmp = -h_grad[j].dot(meas_diff)
                 l3_grad[j] += tmp + tmp.T
-        if (C_grad is not None):
+        if C_grad is not None:
             for j in range(lparam):
                 tmp = -C_grad[j].dot(z).dot(meas_diff)
                 l3_grad[j] += tmp + tmp.T

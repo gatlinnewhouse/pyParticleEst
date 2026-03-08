@@ -13,19 +13,24 @@ def generate_dataset(steps, z0, P0, Q, R):
     A = numpy.asarray(((1.0, 1.0), (0.0, 1.0)))
     C = numpy.asarray(((1.0, 0.0), (0.0, 0.0)))
     x[0] = numpy.random.multivariate_normal(z0, P0).reshape((-1, 1))
-    y[0] = C.dot(x[0]) + numpy.random.multivariate_normal((0.0,
-                                                           0.0), R).reshape((-1, 1))
+    y[0] = C.dot(x[0]) + numpy.random.multivariate_normal((0.0, 0.0), R).reshape(
+        (-1, 1)
+    )
 
     for k in range(0, steps):
-        C = numpy.asarray(((math.cos(k + 1), 0.0),
-                           (math.sin(k + 1), 0.0))).reshape((2, -1))
+        C = numpy.asarray(((math.cos(k + 1), 0.0), (math.sin(k + 1), 0.0))).reshape(
+            (2, -1)
+        )
 
-        x[k + 1] = A.dot(x[k]) + \
-            numpy.random.multivariate_normal((0.0, 0.0), Q).reshape((-1, 1))
-        y[k + 1] = C.dot(x[k + 1]) + \
-            numpy.random.multivariate_normal((0.0, 0.0), R).reshape((-1, 1))
+        x[k + 1] = A.dot(x[k]) + numpy.random.multivariate_normal(
+            (0.0, 0.0), Q
+        ).reshape((-1, 1))
+        y[k + 1] = C.dot(x[k + 1]) + numpy.random.multivariate_normal(
+            (0.0, 0.0), R
+        ).reshape((-1, 1))
 
     return (x, y)
+
 
 # def calc_stuff(out, y, particles, N, R):
 #    for k in range(N):
@@ -34,17 +39,13 @@ def generate_dataset(steps, z0, P0, Q, R):
 
 
 class Model(LTV):
-
     def __init__(self, z0, P0, Q, R):
         A = numpy.asarray(((1.0, 1.0), (0.0, 1.0)))
         C = numpy.asarray(((0.0, 0.0), (0.0, 0.0)))
-        super(Model, self).__init__(A=A, C=C,
-                                    z0=z0, P0=P0,
-                                    Q=Q, R=R)
+        super(Model, self).__init__(A=A, C=C, z0=z0, P0=P0, Q=Q, R=R)
 
     def get_meas_dynamics(self, y, t):
-        C = numpy.asarray(((math.cos(t), 0.0),
-                           (math.sin(t), 0.0))).reshape((2, 2))
+        C = numpy.asarray(((math.cos(t), 0.0), (math.sin(t), 0.0))).reshape((2, 2))
         return (y, C, None, None)
 
 
@@ -57,24 +58,24 @@ def callback_sim(estimator):
 
     plt.figure(1)
     plt.clf()
-#    mvals = numpy.empty((steps+1))
-#    for k in range(steps+1):
-#        #vals[:,k] = numpy.copy(estimator.pt.traj[k].pa.part)
-#        mvals[k] = wmean(estimator.pt.traj[k].pa.w,
-#                          estimator.pt.traj[k].pa.part)
-#        #plt.plot((k,)*num, vals[:,k], 'k.', markersize=0.5)
-#    plt.plot(range(steps+1), mvals, 'k-')
+    #    mvals = numpy.empty((steps+1))
+    #    for k in range(steps+1):
+    #        #vals[:,k] = numpy.copy(estimator.pt.traj[k].pa.part)
+    #        mvals[k] = wmean(estimator.pt.traj[k].pa.w,
+    #                          estimator.pt.traj[k].pa.part)
+    #        #plt.plot((k,)*num, vals[:,k], 'k.', markersize=0.5)
+    #    plt.plot(range(steps+1), mvals, 'k-')
 
     for k in range(estimator.straj.traj.shape[1]):
-        plt.plot(range(steps + 1), estimator.straj.traj[:, k], 'g-')
+        plt.plot(range(steps + 1), estimator.straj.traj[:, k], "g-")
 
-    plt.plot(range(steps + 1), x, 'r-')
+    plt.plot(range(steps + 1), x, "r-")
     # plt.plot(range(steps+1), y, 'bx')
     plt.draw()
     plt.show()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     steps = 50
     num = 1
     M = 1
@@ -85,12 +86,12 @@ if __name__ == '__main__':
     (x, y) = generate_dataset(steps, z0, P0, Q, R)
     model = Model(z0, P0, Q, R)
     sim = simulator.Simulator(model, u=None, y=y)
-    sim.simulate(num, M, filter='PF', smoother='full', meas_first=True)
+    sim.simulate(num, M, filter="PF", smoother="full", meas_first=True)
     sest = sim.get_smoothed_estimates()
-    plt.plot(range(steps + 1), x[:, 0, 0], 'r-')
-    plt.plot(range(steps + 1), x[:, 1, 0], 'g-')
-    plt.plot(range(steps + 1), y[:, 0, 0], 'bx')
-    plt.plot(range(steps + 1), y[:, 1, 0], 'bo')
-    plt.plot(range(steps + 1), sest[:, 0, 0], 'r--')
-    plt.plot(range(steps + 1), sest[:, 0, 1], 'g--')
+    plt.plot(range(steps + 1), x[:, 0, 0], "r-")
+    plt.plot(range(steps + 1), x[:, 1, 0], "g-")
+    plt.plot(range(steps + 1), y[:, 0, 0], "bx")
+    plt.plot(range(steps + 1), y[:, 1, 0], "bo")
+    plt.plot(range(steps + 1), sest[:, 0, 0], "r--")
+    plt.plot(range(steps + 1), sest[:, 0, 1], "g--")
     plt.show()

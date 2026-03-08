@@ -2,6 +2,7 @@
 """
 A module with operations useful for Kalman filtering.
 """
+
 import numpy as np
 import math
 import scipy.linalg
@@ -16,7 +17,9 @@ def lognormpdf(err, S):
     Calculate gaussian probability density of err, when err ~ N(0,sigma)
     """
     tmp = err.reshape(-1, 1)
-    return -0.5 * (S.shape[0] * l2pi + np.linalg.slogdet(S)[1] + np.linalg.solve(S, tmp).T.dot(tmp))
+    return -0.5 * (
+        S.shape[0] * l2pi + np.linalg.slogdet(S)[1] + np.linalg.solve(S, tmp).T.dot(tmp)
+    )
 
 
 def lognormpdf_cho(err, Schol):
@@ -25,7 +28,11 @@ def lognormpdf_cho(err, Schol):
     """
     dim = len(err)
     ld = np.sum(np.log(np.diag(Schol[0]))) * 2
-    return -0.5 * (dim * l2pi + ld + scipy.linalg.cho_solve(Schol, err, check_finite=False).T.dot(err))
+    return -0.5 * (
+        dim * l2pi
+        + ld
+        + scipy.linalg.cho_solve(Schol, err, check_finite=False).T.dot(err)
+    )
 
 
 def lognormpdf_cho_vec(err, Schol):
@@ -38,7 +45,9 @@ def lognormpdf_cho_vec(err, Schol):
     ld = np.sum(np.log(np.diag(Schol[0]))) * 2
     res = np.ones((N,)) * (-0.5 * (dim * l2pi + ld))
     for i in range(N):
-        res[i] += -0.5 * scipy.linalg.cho_solve(Schol, err[i], check_finite=False).T.dot(err[i])
+        res[i] += -0.5 * scipy.linalg.cho_solve(
+            Schol, err[i], check_finite=False
+        ).T.dot(err[i])
     return res
 
 
@@ -52,8 +61,11 @@ def lognormpdf_vec(err, Sl):
 
     for i in range(N):
         S = Sl[i]
-        res[i] = -0.5 * (S.shape[0] * l2pi + np.linalg.slogdet(S)
-                         [1] + np.linalg.solve(S, err[i]).T.dot(err[i]))
+        res[i] = -0.5 * (
+            S.shape[0] * l2pi
+            + np.linalg.slogdet(S)[1]
+            + np.linalg.solve(S, err[i]).T.dot(err[i])
+        )
     return res
 
 
@@ -82,24 +94,24 @@ class KalmanFilter(object):
         self.C = None
         self.R = None  # Measurement noise covariance
         self.Q = None  # Process noise covariance
-        if (f_k is None):
+        if f_k is None:
             self.f_k = np.zeros((lz, 1))
         self.h_k = None
         self.lz = lz
         self.set_dynamics(A, C, Q, R, f_k, h_k)
 
     def set_dynamics(self, A=None, C=None, Q=None, R=None, f_k=None, h_k=None):
-        if (A is not None):
+        if A is not None:
             self.A = A
-        if (C is not None):
+        if C is not None:
             self.C = C
-        if (Q is not None):
+        if Q is not None:
             self.Q = Q
-        if (R is not None):
+        if R is not None:
             self.R = R
-        if (f_k is not None):
+        if f_k is not None:
             self.f_k = f_k
-        if (h_k is not None):
+        if h_k is not None:
             self.h_k = h_k
 
     def time_update(self):
@@ -139,11 +151,11 @@ class KalmanFilter(object):
         Calculate different between measurement and predicted measurement
         """
         yhat = np.zeros_like(y)
-        if (C is not None):
+        if C is not None:
             yhat += C.dot(z)
-        if (h_k is not None):
+        if h_k is not None:
             yhat += h_k
-        return (y - yhat)
+        return y - yhat
 
     def measure(self, y, z, P):
         """
@@ -158,17 +170,19 @@ class KalmanFilter(object):
         Do a measurement update, i.e correct the current estimate
         with information from a new measurement
         """
-        if (C is not None):
+        if C is not None:
             S = C.dot(P).dot(C.T) + R
             Schol = scipy.linalg.cho_factor(S, check_finite=False)
             err = y - C.dot(z)
-            if (h_k is not None):
+            if h_k is not None:
                 err -= h_k
             Sinv_err = scipy.linalg.cho_solve(Schol, err, check_finite=False)
             z[:] = z + P.dot(C.T).dot(Sinv_err)
-            P[:, :] = P - P.dot(C.T).dot(scipy.linalg.cho_solve(Schol, C.dot(P), check_finite=False))
+            P[:, :] = P - P.dot(C.T).dot(
+                scipy.linalg.cho_solve(Schol, C.dot(P), check_finite=False)
+            )
         else:
-            if (h_k is not None):
+            if h_k is not None:
                 err = y - h_k
             else:
                 err = y
@@ -187,17 +201,17 @@ class KalmanFilter(object):
 
         Must be scalar measurement equation
         """
-        if (C is not None):
+        if C is not None:
             S = C.dot(P).dot(C.T) + R
             err = y - C.dot(z)
-            if (h_k is not None):
+            if h_k is not None:
                 err -= h_k
             z[:] = z + P.dot(C.T).dot(err) / S[0, 0]
             tmp = C.dot(P)
             P[:, :] = P - tmp.T.dot(tmp) / S[0, 0]
         else:
             S = R
-            if (h_k is not None):
+            if h_k is not None:
                 err = y - h_k
             else:
                 err = y

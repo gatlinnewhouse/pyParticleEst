@@ -1,12 +1,14 @@
-""" Interface specification defining the methods needed for using the different
+"""Interface specification defining the methods needed for using the different
 classes of algorithms present in the framework
 
 @author: Jerker Nordh
 """
+
 import abc
 import numpy
 
-class SIR():
+
+class SIR:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -34,7 +36,7 @@ class SIR():
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles """
+         of all particles"""
         pass
 
     def copy_ind(self, particles, new_ind=None):
@@ -51,7 +53,7 @@ class SIR():
         Returns:
          (array-like) with first dimension = len(new_ind)
         """
-        if (new_ind is not None):
+        if new_ind is not None:
             return numpy.copy(particles[new_ind])
         else:
             return numpy.copy(particles)
@@ -60,7 +62,7 @@ class SIR():
         return numpy.copy(part)
 
 
-class ParticleFilteringNonMarkov():
+class ParticleFilteringNonMarkov:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -131,7 +133,7 @@ class ParticleFilteringNonMarkov():
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles """
+         of all particles"""
         pass
 
     def copy_ind(self, particles, new_ind=None):
@@ -148,11 +150,10 @@ class ParticleFilteringNonMarkov():
         Returns:
          (array-like) with first dimension = len(new_ind)
         """
-        if (new_ind is not None):
+        if new_ind is not None:
             return numpy.copy(particles[new_ind])
         else:
             return numpy.copy(particles)
-
 
     def sample_smooth(self, part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind):
         """
@@ -187,7 +188,9 @@ class ParticleFilteringNonMarkov():
         # also when calculating "ancestor trajectories"
         return numpy.copy(part)
 
-    def cond_predict_single_step(self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind):
+    def cond_predict_single_step(
+        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
+    ):
         """
         Propagate states in 'part' conditioned on that the future state is
         'future_parts'. This is used for e.g. Rao-Blackwellized MHIPS, where
@@ -237,11 +240,13 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
     particles are a model specific array where the first dimension
     indexes the different particles.
     """
+
     __metaclass__ = abc.ABCMeta
 
     def sample_process_noise_full(self, ptraj, ancestors, ut, tt):
-        return self.sample_process_noise(particles=ptraj[-1].pa.part[ancestors],
-                                         u=ut[-1], t=tt[-1])
+        return self.sample_process_noise(
+            particles=ptraj[-1].pa.part[ancestors], u=ut[-1], t=tt[-1]
+        )
 
     def update_full(self, particles, traj, uvec, yvec, tvec, ancestors, noise):
         return self.update(particles=particles, u=uvec[-1], t=tvec[-1], noise=noise)
@@ -255,7 +260,7 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
 
     @abc.abstractmethod
     def update(self, particles, u, t, noise):
-        """ Propagate estimate forward in time
+        """Propagate estimate forward in time
 
         Args:
 
@@ -289,11 +294,11 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
         pass
 
 
-
 class AuxiliaryParticleFiltering(object):
     """
     Base class for particles to be used with auxiliary particle filtering
     """
+
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -316,16 +321,22 @@ class AuxiliaryParticleFiltering(object):
         """
         pass
 
+
 class FFBSiNonMarkov(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def logp_xnext_full(self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind):
+    def logp_xnext_full(
+        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
+    ):
         pass
 
     @abc.abstractmethod
-    def logp_xnext_singlestep(self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind):
+    def logp_xnext_singlestep(
+        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
+    ):
         pass
+
 
 class FFProposeFromMeasure(FFBSiNonMarkov):
     __metaclass__ = abc.ABCMeta
@@ -343,10 +354,12 @@ class FFBSi(FFBSiNonMarkov):
     Base class for particles to be used with particle smoothing
     (Backward Simulation)
     """
+
     __metaclass__ = abc.ABCMeta
 
-    def logp_xnext_full(self, part, past_trajs, pind,
-                        future_trajs, find, ut, yt, tt, cur_ind):
+    def logp_xnext_full(
+        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
+    ):
         """
         Return the log-pdf value for the entire future trajectory.
         Useful for non-markovian modeles, that result from e.g
@@ -374,11 +387,16 @@ class FFBSi(FFBSiNonMarkov):
         """
 
         # Default implemenation for markovian models, just look at the next state
-        return self.logp_xnext(particles=part, next_part=future_trajs[0].pa.part[find],
-                               u=ut[cur_ind], t=tt[cur_ind])
+        return self.logp_xnext(
+            particles=part,
+            next_part=future_trajs[0].pa.part[find],
+            u=ut[cur_ind],
+            t=tt[cur_ind],
+        )
 
-    def logp_xnext_singlestep(self, part, past_trajs, pind,
-                              future_parts, find, ut, yt, tt, cur_ind):
+    def logp_xnext_singlestep(
+        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
+    ):
         """
         Return the log-pdf value for the first step of the future trajectory.
         Needed in e.g MHIPS
@@ -403,8 +421,9 @@ class FFBSi(FFBSiNonMarkov):
         """
 
         # Default implemenation for markovian models, just look at the next state
-        return self.logp_xnext(particles=part, next_part=future_parts[find],
-                               u=ut[cur_ind], t=tt[cur_ind])
+        return self.logp_xnext(
+            particles=part, next_part=future_parts[find], u=ut[cur_ind], t=tt[cur_ind]
+        )
 
     @abc.abstractmethod
     def logp_xnext(self, particles, next_part, u, t):
@@ -425,11 +444,14 @@ class FFBSi(FFBSiNonMarkov):
         """
         pass
 
+
 class FFBSiRSNonMarkov(FFBSiNonMarkov):
     """
     Base class for models to be used with rejection sampling methods
     """
+
     __metaclass__ = abc.ABCMeta
+
     @abc.abstractmethod
     def logp_xnext_max_full(self, part, past_trajs, pind, uvec, yvec, tvec, cur_ind):
         """
@@ -457,7 +479,9 @@ class FFBSiRS(FFBSi):
     """
     Base class for models to be used with rejection sampling methods
     """
+
     __metaclass__ = abc.ABCMeta
+
     @abc.abstractmethod
     def logp_xnext_max(self, particles, u, t):
         """
@@ -477,16 +501,18 @@ class FFBSiRS(FFBSi):
         """
         pass
 
-
     def logp_xnext_max_full(self, part, past_trajs, pind, uvec, yvec, tvec, cur_ind):
         return self.logp_xnext_max(part, u=uvec[cur_ind], t=tvec[cur_ind])
+
 
 class SampleProposer(object):
     """
     Base class for models to be used with methods that require drawing of new
     samples. Here 'q' is the name we give to the proposal distribtion.
     """
+
     __metaclass__ = abc.ABCMeta
+
     @abc.abstractmethod
     def propose_smooth(self, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind):
         """
@@ -511,7 +537,9 @@ class SampleProposer(object):
         pass
 
     @abc.abstractmethod
-    def logp_proposal(self, prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind):
+    def logp_proposal(
+        self, prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind
+    ):
         """
         Eval the log-propability of the proposal distribution
 

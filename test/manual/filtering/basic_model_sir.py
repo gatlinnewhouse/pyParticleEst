@@ -1,5 +1,5 @@
-""" Particle filtering for a trivial model
-    Also illustrates that the """
+"""Particle filtering for a trivial model
+Also illustrates that the"""
 
 import numpy
 import pyparticleest.utils.kalman as kalman
@@ -23,9 +23,9 @@ def generate_dataset(steps, P0, Q, R):
 
 
 class Model(interfaces.SIR):
-    """ x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
-        y_k = x_k + e_k, e_k ~ N(0,R),
-        x(0) ~ N(0,P0) """
+    """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
+    y_k = x_k + e_k, e_k ~ N(0,R),
+    x(0) ~ N(0,P0)"""
 
     def __init__(self, P0, Q, R):
         self.P0 = numpy.copy(P0)
@@ -43,8 +43,10 @@ class Model(interfaces.SIR):
         S = C.dot(P).dot(C.T) + self.R
         Pn = P - P.dot(C.T).dot(scipy.linalg.solve(S, C.dot(P)))
         for i in range(len(pnext)):
-            m = particles[i] + P.dot(C.T).dot(scipy.linalg.solve(S,
-                                                                 err[i].reshape((-1, 1)))).ravel()
+            m = (
+                particles[i]
+                + P.dot(C.T).dot(scipy.linalg.solve(S, err[i].reshape((-1, 1)))).ravel()
+            )
             pnext[i] = numpy.random.multivariate_normal(m, Pn).ravel()
 
         return pnext
@@ -57,10 +59,13 @@ class Model(interfaces.SIR):
         S = C.dot(P).dot(C.T) + self.R
         Pn = P - P.dot(C.T).dot(scipy.linalg.solve(S, C.dot(P)))
         for i in range(len(logpq)):
-            m = particles[i] + P.dot(C.T).dot(scipy.linalg.solve(S,
-                                                                 err[i].reshape((-1, 1)))).ravel()
+            m = (
+                particles[i]
+                + P.dot(C.T).dot(scipy.linalg.solve(S, err[i].reshape((-1, 1)))).ravel()
+            )
             logpq[i] = kalman.lognormpdf(
-                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)), Pn).ravel()
+                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)), Pn
+            ).ravel()
 
         return logpq
 
@@ -68,19 +73,19 @@ class Model(interfaces.SIR):
         logpxn = numpy.empty(len(particles), dtype=float)
         for k in range(len(particles)):
             logpxn[k] = kalman.lognormpdf(
-                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1), self.Q)
+                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1), self.Q
+            )
         return logpxn
 
     def measure(self, particles, y, t):
-        """ Return the log-pdf value of the measurement """
+        """Return the log-pdf value of the measurement"""
         logyprob = numpy.empty(len(particles), dtype=float)
         for k in range(len(particles)):
-            logyprob[k] = kalman.lognormpdf(
-                particles[k].reshape(-1, 1) - y, self.R)
+            logyprob[k] = kalman.lognormpdf(particles[k].reshape(-1, 1) - y, self.R)
         return logyprob
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     steps = 50
     num = 50
     P0 = 1.0
@@ -93,22 +98,22 @@ if __name__ == '__main__':
 
     model = Model(P0, Q, R)
     sim = simulator.Simulator(model, u=None, y=y)
-    sim.simulate(num, num, filter='sir', smoother='ancestor')
+    sim.simulate(num, num, filter="sir", smoother="ancestor")
 
-    plt.plot(range(steps + 1), x, 'r-')
-    plt.plot(range(1, steps + 1), y, 'bx')
+    plt.plot(range(steps + 1), x, "r-")
+    plt.plot(range(1, steps + 1), y, "bx")
 
     (vals, _) = sim.get_filtered_estimates()
 
-    plt.plot(range(steps + 1), vals[:, :, 0], 'k.', markersize=0.8)
+    plt.plot(range(steps + 1), vals[:, :, 0], "k.", markersize=0.8)
 
     svals = sim.get_smoothed_estimates()
 
     # Plot "smoothed" trajectories to illustrate that the particle filter
     # suffers from degeneracy when considering the full trajectories
-    plt.plot(range(steps + 1), svals[:, :, 0], 'b--')
-    plt.plot(range(steps + 1), x, 'r-')
-    plt.xlabel('t')
-    plt.ylabel('x')
+    plt.plot(range(steps + 1), svals[:, :, 0], "b--")
+    plt.plot(range(steps + 1), x, "r-")
+    plt.xlabel("t")
+    plt.ylabel("x")
 
     plt.show()
