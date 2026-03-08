@@ -9,4 +9,4 @@ dist/
 docs/_build/
 *.profile
 *.so
-
+*.egg-info

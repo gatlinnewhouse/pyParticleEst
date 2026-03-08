@@ -1,0 +1,14 @@
+[project]
+name = "pyParticleEst"
+version = "0.0.1"
+dependencies = ["numpy==1.17.3", "scipy", "matplotlib"]
+requires-python = ">=3.8"
+dynamic = ["description", "license", "authors"]
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "numpy>=1.17.3", "cython"]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+cython = ["cython"]
+docs = ["numpydoc"]
