@@ -4,9 +4,11 @@ import os
 
 on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 
-if "USE_CYTHON" in os.environ:
-    USE_CYTHON = int(os.environ["USE_CYTHON"])
-else:
+try:
+    from Cython.Build import cythonize
+
+    USE_CYTHON = True
+except ImportError:
     USE_CYTHON = False
 
 ext = ".pyx" if USE_CYTHON else ".c"
@@ -44,8 +46,6 @@ description = "Framework for particle based estimation methods, such as particle
 lic = "LGPL"
 
 if USE_CYTHON:
-    from Cython.Build import cythonize
-
     extensions = cythonize(extensions)
 
 
