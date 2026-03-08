@@ -172,7 +172,7 @@ if __name__ == "__main__":
         plt.plot(range(steps + 1), x[:, 1], "b-")
 
         sest = gt.straj.get_smoothed_estimates()
-        for j in xrange(nums):
+        for j in range(nums):
             plt.plot(range(steps + 1), sest[:, j, 0], "g--")
             plt.plot(range(steps + 1), sest[:, j, 1], "k--")
             plt.plot(range(steps + 1), sest[:, j, 1] - numpy.sqrt(sest[:, j, 2]), "k-.")
@@ -254,7 +254,7 @@ if __name__ == "__main__":
             plt.plot(range(steps + 1), x[:, 1], "b-")
 
             sest = pe.straj.get_smoothed_estimates()
-            for j in xrange(sest.shape[1]):
+            for j in range(sest.shape[1]):
                 plt.plot(range(steps + 1), sest[:, j, 0], "g--")
                 plt.plot(range(steps + 1), sest[:, j, 1], "k--")
                 plt.plot(
