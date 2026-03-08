@@ -146,9 +146,9 @@ if __name__ == "__main__":
     steps = 40
     uvec = -10.0 * numpy.hstack(
         (
-            -1.0 * numpy.ones(steps / 4),
-            1.0 * numpy.ones(steps / 2),
-            -1.0 * numpy.ones(steps / 4),
+            -1.0 * numpy.ones(steps // 4),
+            1.0 * numpy.ones(steps // 2),
+            -1.0 * numpy.ones(steps // 4),
         )
     )
 
@@ -271,7 +271,7 @@ if __name__ == "__main__":
             plt.hist(
                 estimate[0, : (k + 1)].T,
                 bins=numpy.linspace(-5.0, 5.0, 100),
-                normed=True,
+                density=True,
             )
             fig2.show()
             plt.show()
@@ -284,7 +284,7 @@ if __name__ == "__main__":
 
         plt.clf()
         plt.hist(
-            estimate[0, : (k + 1)].T, bins=numpy.linspace(-5.0, 5.0, 100), normed=True
+            estimate[0, : (k + 1)].T, bins=numpy.linspace(-5.0, 5.0, 100), density=True
         )
         plt.ioff()
         plt.show()

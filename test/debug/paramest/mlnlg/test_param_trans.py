@@ -242,7 +242,7 @@ if __name__ == "__main__":
             plt.clf()
             bins = numpy.linspace(-0.5, 1.0, 30)
 
-            plt.hist(estimate[0, : (k + 1)].T, bins=bins, normed=True)
+            plt.hist(estimate[0, : (k + 1)].T, bins=bins, density=True)
             fig2.show()
             plt.show()
             plt.draw()
@@ -252,7 +252,7 @@ if __name__ == "__main__":
 
         plt.ioff()
         plt.clf()
-        plt.hist(estimate.T, normed=True)
+        plt.hist(estimate.T, density=True)
         plt.show()
         plt.draw()
     print("exit")
