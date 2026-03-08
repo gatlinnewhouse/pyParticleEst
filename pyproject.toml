@@ -1,7 +1,13 @@
 [project]
 name = "pyParticleEst"
 version = "0.0.1"
-dependencies = ["numpy==1.17.3", "scipy", "matplotlib"]
+dependencies = [
+  "numpy==1.17.3",
+  "scipy",
+  "matplotlib",
+  "tikzplotlib",
+  "webcolors<24.6.0",
+]
 requires-python = ">=3.8"
 dynamic = ["description", "license", "authors"]
 

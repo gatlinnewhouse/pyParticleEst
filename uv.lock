@@ -1436,6 +1436,8 @@ dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "scipy" },
+    { name = "tikzplotlib" },
+    { name = "webcolors" },
 ]
 
 [package.optional-dependencies]
@@ -1455,6 +1457,8 @@ requires-dist = [
     { name = "numpy", specifier = "==1.17.3" },
     { name = "numpydoc", marker = "extra == 'docs'" },
     { name = "scipy" },
+    { name = "tikzplotlib" },
+    { name = "webcolors", specifier = "<24.6.0" },
 ]
 provides-extras = ["cython", "docs"]
 
@@ -1888,6 +1892,23 @@ wheels = [
 ]
 
 [[package]]
+name = "tikzplotlib"
+version = "0.10.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pillow", version = "10.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pillow", version = "11.3.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.9.*'" },
+    { name = "pillow", version = "12.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "webcolors" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/22/3ed358885b75c222f39221d0cc2793f4059c02788b669363a0e7df03241f/tikzplotlib-0.10.1.tar.gz", hash = "sha256:93d141342d143804fc1dfabe03e6d4e38e547cf72803bdf124615affdd56f59d", size = 104475, upload-time = "2022-01-31T13:43:33.402Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/67/3e/24d1c41cbe520d17cfb887e1d527937ad3b6a1c3dc42c12cd48fa60d2dc7/tikzplotlib-0.10.1-py3-none-any.whl", hash = "sha256:bf0451b86fe4db40aa742f7e5a180dfaaadf57c746ddb2ab7e58a5163d8be75f", size = 54151, upload-time = "2022-01-31T13:43:31.014Z" },
+]
+
+[[package]]
 name = "tomli"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1966,6 +1987,15 @@ resolution-markers = [
 sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+]
+
+[[package]]
+name = "webcolors"
+version = "1.13"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/fb/f95560c6a5d4469d9c49e24cf1b5d4d21ffab5608251c6020a965fb7791c/webcolors-1.13.tar.gz", hash = "sha256:c225b674c83fa923be93d235330ce0300373d02885cef23238813b0d5668304a", size = 41152, upload-time = "2023-03-27T05:52:57.527Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d5/e1/3e9013159b4cbb71df9bd7611cbf90dc2c621c8aeeb677fc41dad72f2261/webcolors-1.13-py3-none-any.whl", hash = "sha256:29bc7e8752c0a1bd4a1f03c14d6e6a72e93d82193738fa860cbff59d0fcc11bf", size = 14360, upload-time = "2023-03-27T05:52:55.468Z" },
 ]
 
 [[package]]
