@@ -13,7 +13,6 @@
 # serve to show the default.
 
 import sys
-import os
 from mock import Mock as MagicMock
 # from unittest.mock import MagicMock
 

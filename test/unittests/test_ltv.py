@@ -8,7 +8,6 @@ import unittest
 import pyparticleest.models.ltv as ltv
 import numpy
 import numpy.testing as npt
-import math
 
 
 class Model(ltv.LTV):

@@ -4,7 +4,6 @@
 """
 
 import numpy
-import copy
 
 from builtins import range
 
@@ -811,7 +810,7 @@ def mc_step(
     # The previously stored values for part already include the measurment from
     # cur_ind, we therefore need to recomputed the sufficient statistics
     # (for Rao-Blackwellized models)
-    if not ptraj is None:
+    if ptraj is not None:
         oldpart = numpy.copy(ptraj[-1].pa.part[pind_curr])
         part = model.cond_predict_single_step(
             part=oldpart,
