@@ -74,28 +74,26 @@ class Instrumenter:
         self.oc = OpCount()
 
     def print_statistics(self):
-        print("Modelclass : %s" % type(self.model))
-        print("cnt_sample: %d" % self.cnt_sample)
-        print("cnt_update: %d" % self.cnt_update)
-        print("cnt_measure: %d" % self.cnt_measure)
-        print("cnt_pdfxn: %d" % self.cnt_pdfxn + self.cnt_pdfxn_full)
-        print("cnt_pdfxnmax: %d" % self.cnt_pdfxnmax)
-        print("cnt_propsmooth: %d" % self.cnt_propsmooth)
-        print("cnt_pdfsmooth: %d" % self.cnt_pdfsmooth)
+        print(f"Modelclass : {type(self.model)}")
+        print(f"cnt_sample: {self.oc.cnt_sample}")
+        print(f"cnt_update: {self.oc.cnt_update}")
+        print(f"cnt_measure: {self.oc.cnt_measure}")
+        print(f"cnt_pdfxn: {self.oc.cnt_pdfxn + self.oc.cnt_pdfxn_full}")
+        print(f"cnt_pdfxnmax: {self.oc.cnt_pdfxnmax}")
+        print(f"cnt_propsmooth: {self.oc.cnt_propsmooth}")
+        print(f"cnt_pdfsmooth: {self.oc.cnt_pdfsmooth}")
 
     def print_total_ops(self):
-        print(
-            "total ops: %d"
-            % (
-                self.cnt_sample
-                + self.cnt_update
-                + self.cnt_measure
-                + self.cnt_pdfxn
-                + self.cnt_pdfxnmax
-                + self.cnt_propsmooth
-                + self.cnt_pdfsmooth
-            )
+        total = (
+            self.oc.cnt_sample
+            + self.oc.cnt_update
+            + self.oc.cnt_measure
+            + self.oc.cnt_pdfxn
+            + self.oc.cnt_pdfxnmax
+            + self.oc.cnt_propsmooth
+            + self.oc.cnt_pdfsmooth
         )
+        print(f"total ops: {total}")
 
     def create_initial_estimate(self, N):
         """Sample N particle from initial distribution"""

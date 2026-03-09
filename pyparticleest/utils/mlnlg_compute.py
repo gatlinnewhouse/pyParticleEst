@@ -6,8 +6,6 @@ models
 import scipy.linalg as lalg
 import numpy as np
 
-from builtins import range
-
 
 def compute_logprod_derivative(Alup, dA, B, dB):
     """I = logdet(A)+Tr(inv(A)*B)
