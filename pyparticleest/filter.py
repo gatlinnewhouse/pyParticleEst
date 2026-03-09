@@ -6,9 +6,10 @@
 import numpy
 import math
 import copy
+from typing import Any
 
 
-def sample(w, n):
+def sample(w: numpy.ndarray, n: int) -> numpy.ndarray:
     """
     Return n random indices, where the probability if index
     is given by w[i].
@@ -37,12 +38,11 @@ class ParticleFilter:
        triggers resampling. 0 disables resampling
     """
 
-    def __init__(self, model, res=0):
-
+    def __init__(self, model: Any, res: float = 0.0) -> None:
         self.res = res
         self.model = model
 
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> numpy.ndarray:
         """
         Create initial particle estimate
 
@@ -55,7 +55,14 @@ class ParticleFilter:
         """
         return self.model.create_initial_estimate(N)
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Forward the estimate stored in traj from t to t+1 using the motion model
         with input u=uvec[cur_ind] at time t=tvec[cur_ind] and measurement
@@ -106,7 +113,17 @@ class ParticleFilter:
             )
         return (pa, resampled, ancestors)
 
-    def update(self, traj, ancestors, uvec, yvec, tvec, cur_ind, pa, inplace=True):
+    def update(
+        self,
+        traj: list["TrajectoryStep"],
+        ancestors: numpy.ndarray,
+        uvec: numpy.ndarray,
+        yvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+        pa: "ParticleApproximation",
+        inplace: bool = True,
+    ) -> "ParticleApproximation":
         """
         Update particle approximation of x_t to x_{t+1} using u as input.
 
@@ -148,7 +165,17 @@ class ParticleFilter:
         )
         return pa
 
-    def measure(self, traj, ancestors, pa, uvec, yvec, tvec, cur_ind, inplace=True):
+    def measure(
+        self,
+        traj: list["TrajectoryStep"],
+        ancestors: numpy.ndarray,
+        pa: "ParticleApproximation",
+        uvec: numpy.ndarray,
+        yvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+        inplace: bool = True,
+    ) -> "ParticleApproximation":
         """
         Evaluate and update particle approximation using new measurement y
 
@@ -208,12 +235,11 @@ class SIR:
        triggers resampling. 0 disables resampling
     """
 
-    def __init__(self, model, res=0):
-
+    def __init__(self, model: Any, res: float = 0.0) -> None:
         self.res = res
         self.model = model
 
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> numpy.ndarray:
         """
         Create initial particle estimate
 
@@ -226,7 +252,14 @@ class SIR:
         """
         return self.model.create_initial_estimate(N)
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Forward the estimate stored in pa from t to t+1 using the motion model
         with input u=uvec[cur_ind] at time t=tvec[cur_ind] and measurement
@@ -290,7 +323,17 @@ class SIR:
 
         return (pa, resampled, ancestors)
 
-    def update(self, traj, ancestors, uvec, yvec, tvec, cur_ind, pa, inplace=True):
+    def update(
+        self,
+        traj: list["TrajectoryStep"],
+        ancestors: numpy.ndarray,
+        uvec: numpy.ndarray,
+        yvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+        pa: "ParticleApproximation",
+        inplace: bool = True,
+    ) -> "ParticleApproximation":
         """
         Update particle approximation of x_t to x_{t+1} using u as input.
 
@@ -311,7 +354,17 @@ class SIR:
 
         return pa
 
-    def measure(self, traj, ancestors, pa, uvec, yvec, tvec, cur_ind, inplace=True):
+    def measure(
+        self,
+        traj: list["TrajectoryStep"],
+        ancestors: numpy.ndarray,
+        pa: "ParticleApproximation",
+        uvec: numpy.ndarray,
+        yvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+        inplace: bool = True,
+    ) -> "ParticleApproximation":
         """
         Evaluate and update particle approximation using new measurement y
 
@@ -360,12 +413,18 @@ class SIR:
 
 
 class CSIRAS(SIR):
-    def __init__(self, model, cond_traj):
-
+    def __init__(self, model: Any, cond_traj: list["TrajectoryStep"]) -> None:
         self.ctraj = cond_traj
         self.model = model
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
@@ -449,13 +508,12 @@ class FFPropY:
        triggers resampling. 0 disables resampling
     """
 
-    def __init__(self, model, N, res=0):
-
+    def __init__(self, model: Any, N: int, res: float = 0.0) -> None:
         self.res = res
         self.model = model
         self.N = N
 
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> numpy.ndarray:
         """
         Create initial particle estimate
 
@@ -469,7 +527,14 @@ class FFPropY:
         self.N = N
         return self.model.create_initial_estimate(N)
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
@@ -526,7 +591,17 @@ class FFPropY:
 
         return (pa, resampled, ancestors)
 
-    def measure(self, traj, ancestors, pa, uvec, yvec, tvec, cur_ind, inplace=True):
+    def measure(
+        self,
+        traj: list["TrajectoryStep"],
+        ancestors: numpy.ndarray,
+        pa: "ParticleApproximation",
+        uvec: numpy.ndarray,
+        yvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+        inplace: bool = True,
+    ) -> "ParticleApproximation":
         """
         Evaluate and update particle approximation using new measurement y
 
@@ -564,12 +639,11 @@ class CPF(ParticleFilter):
        triggers resampling. 0 disables resampling
     """
 
-    def __init__(self, model, cond_traj):
-
+    def __init__(self, model: Any, cond_traj: list["TrajectoryStep"]) -> None:
         self.ctraj = cond_traj
         self.model = model
 
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> numpy.ndarray:
         """
         Create initial particle estimate
 
@@ -584,7 +658,14 @@ class CPF(ParticleFilter):
         part[-1] = self.ctraj[0].pa.part[0]
         return part
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
@@ -651,7 +732,14 @@ class CPFAS(CPF):
        triggers resampling. 0 disables resampling
     """
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
@@ -732,7 +820,14 @@ class AuxiliaryParticleFilter(ParticleFilter):
     methods in the supplied particle objects and handles resampling when
     a specified threshold is reach"""
 
-    def forward(self, traj, yvec, uvec, tvec, cur_ind):
+    def forward(
+        self,
+        traj: list["TrajectoryStep"],
+        yvec: numpy.ndarray,
+        uvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+    ) -> tuple["ParticleApproximation", bool, numpy.ndarray]:
         """
         Use the first stage weights to try to predict which particles will be in
         regions of high likely hood at time t+1, use this information to resample
@@ -799,7 +894,7 @@ class AuxiliaryParticleFilter(ParticleFilter):
 
 
 class CPFYAS(CPFAS):
-    def __init__(self, model, N, cond_traj):
+    def __init__(self, model: Any, N: int, cond_traj: list["TrajectoryStep"]) -> None:
         self.ctraj = numpy.copy(cond_traj)
         self.model = model
         self.N = N
@@ -876,7 +971,17 @@ class CPFYAS(CPFAS):
         pa.w_offset += m
         return (pa, resampled, ancestors)
 
-    def measure(self, traj, ancestors, pa, uvec, yvec, tvec, cur_ind, inplace=True):
+    def measure(
+        self,
+        traj: list["TrajectoryStep"],
+        ancestors: numpy.ndarray,
+        pa: "ParticleApproximation",
+        uvec: numpy.ndarray,
+        yvec: numpy.ndarray,
+        tvec: numpy.ndarray,
+        cur_ind: int,
+        inplace: bool = True,
+    ) -> "ParticleApproximation":
         """
         Evaluate and update particle approximation using new measurement y
 
@@ -918,7 +1023,9 @@ class TrajectoryStep:
      - ancestors (array-like): indices for each particles ancestor
     """
 
-    def __init__(self, pa, ancestors=None):
+    def __init__(
+        self, pa: "ParticleApproximation", ancestors: numpy.ndarray | None = None
+    ) -> None:
         self.pa = pa
         self.ancestors = ancestors
 
@@ -944,16 +1051,16 @@ class ParticleTrajectory:
 
     def __init__(
         self,
-        model,
-        N,
-        resample=2.0 / 3.0,
-        t0=0,
-        filter="PF",
-        filter_options={},
-        T=None,
-        utype=numpy.ndarray,
-        ytype=numpy.ndarray,
-    ):
+        model: Any,
+        N: int,
+        resample: float = 2.0 / 3.0,
+        t0: float = 0.0,
+        filter: str = "PF",
+        filter_options: dict[str, Any] | None = None,
+        T: int | None = None,
+        utype: type = numpy.ndarray,
+        ytype: type = numpy.ndarray,
+    ) -> None:
 
         self.using_pfy = False
         self.N = N
@@ -998,7 +1105,7 @@ class ParticleTrajectory:
 
         return
 
-    def forward(self, u, y):
+    def forward(self, u: Any, y: Any) -> bool:
         """
         Append new time step to trajectory
 
@@ -1041,7 +1148,7 @@ class ParticleTrajectory:
 
         return resampled
 
-    def measure(self, y):
+    def measure(self, y: Any) -> None:
         """
         Update estimate using new measurement
 
@@ -1103,25 +1210,30 @@ class ParticleTrajectory:
                 inplace=True,
             )
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.traj)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> TrajectoryStep:
         return self.traj[index]
 
-    def spawn(self):
+    def spawn(self) -> "ParticleTrajectory":
         """
         Create new ParticleTrajectory starting at the end of
         the current one
         """
         return ParticleTrajectory(
-            copy.deepcopy(self.traj[-1].pa),
+            model=self.pf.model,
+            N=self.N,
             resample=self.pf.res,
             t0=self.traj[-1].t,
-            lp_hack=self.pf.lp_hack,
         )
 
-    def perform_smoothing(self, M, method="full", smoother_options=None):
+    def perform_smoothing(
+        self,
+        M: int,
+        method: str = "full",
+        smoother_options: dict[str, Any] | None = None,
+    ) -> Any:
         """
 
         Run a smoothing algorithms on the filtered estimate
@@ -1187,7 +1299,13 @@ class ParticleApproximation:
 
     """
 
-    def __init__(self, particles=None, logw=None, seed=None, num=None):
+    def __init__(
+        self,
+        particles: numpy.ndarray | None = None,
+        logw: numpy.ndarray | None = None,
+        seed: Any = None,
+        num: int | None = None,
+    ) -> None:
         if particles is not None:
             self.part = numpy.copy(numpy.asarray(particles))
             num = len(particles)
@@ -1207,10 +1325,10 @@ class ParticleApproximation:
         # when the weights are rescaled to avoid going to -Inf
         self.w_offset = 0.0
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.part)
 
-    def calc_Neff(self):
+    def calc_Neff(self) -> float:
         """
         Calculate number of effective particles, common metric used to determine
         when to resample
@@ -1222,7 +1340,7 @@ class ParticleApproximation:
         tmp /= numpy.sum(tmp)
         return 1.0 / numpy.sum(numpy.square(tmp))
 
-    def resample(self, model, N=None):
+    def resample(self, model: Any, N: int | None = None) -> numpy.ndarray:
         """
         Resample approximation so all particles have the same weight
 
@@ -1246,7 +1364,7 @@ class ParticleApproximation:
         self.w_offset = 0.0
         return new_ind
 
-    def sample(self):
+    def sample(self) -> numpy.ndarray:
         """
         Draw one particle at random with probability corresponding to its weight
 
@@ -1254,7 +1372,7 @@ class ParticleApproximation:
          (array-like) sampled particle"""
         return self.part[sample(numpy.exp(self.w), 1)[0]]
 
-    def find_best_particles(self, n=1):
+    def find_best_particles(self, n: int = 1) -> numpy.ndarray:
         """
         Return particles with largest weights
 
