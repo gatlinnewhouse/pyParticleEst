@@ -3,17 +3,15 @@
 @author: Jerker Nordh
 """
 
-import pyparticleest.interfaces as interfaces
-import scipy.linalg
-import numpy.random
-import math
 import abc
+import math
+from typing import Any
 
-try:
-    import pyparticleest.utils.ckalman as kalman
-except ImportError:
-    print("Falling back to pure python implementaton, expect horrible performance")
-    import pyparticleest.utils.kalman as kalman
+import numpy.random
+import scipy.linalg
+
+import pyparticleest.interfaces as interfaces
+import pyparticleest.utils.kalman as kalman
 
 
 class NonlinearGaussian(
@@ -41,7 +39,9 @@ class NonlinearGaussian(
      - R (array-like): R (if constaint)
     """
 
-    def calc_f(self, particles, u, t):
+    def calc_f(
+        self, particles: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray | None:
         """
         Calucate f
 
@@ -56,7 +56,9 @@ class NonlinearGaussian(
         """
         return None
 
-    def calc_Q(self, particles, u, t):
+    def calc_Q(
+        self, particles: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray | None:
         """
         Calucate Q
 
@@ -71,7 +73,7 @@ class NonlinearGaussian(
         """
         return None
 
-    def calc_g(self, particles, t):
+    def calc_g(self, particles: numpy.ndarray, t: float) -> numpy.ndarray | None:
         """
         Calucate g
 
@@ -85,7 +87,7 @@ class NonlinearGaussian(
         """
         return None
 
-    def calc_R(self, particles, t):
+    def calc_R(self, particles: numpy.ndarray, t: float) -> numpy.ndarray | None:
         """
         Calucate R
 
@@ -99,7 +101,14 @@ class NonlinearGaussian(
         """
         return None
 
-    def __init__(self, lxi, f=None, g=None, Q=None, R=None):
+    def __init__(
+        self,
+        lxi: int,
+        f: Any = None,
+        g: Any = None,
+        Q: Any = None,
+        R: Any = None,
+    ) -> None:
         if f is not None:
             self.f = numpy.copy(f)
         else:
@@ -119,17 +128,19 @@ class NonlinearGaussian(
 
         self.lxi = lxi
 
-    def set_Q(self, Q):
+    def set_Q(self, Q: numpy.ndarray) -> None:
         self.Qchol = scipy.linalg.cho_factor(Q)
         self.Qcholtri = numpy.triu(self.Qchol[0])
         ld = numpy.sum(numpy.log(numpy.diag(self.Qchol[0]))) * 2
         self.logpdfmax = -0.5 * (self.lxi * math.log(2 * math.pi) + ld)
 
-    def set_R(self, R):
+    def set_R(self, R: numpy.ndarray) -> None:
         self.Rchol = scipy.linalg.cho_factor(R)
         self.Rcholtri = numpy.triu(self.Rchol[0])
 
-    def sample_process_noise(self, particles, u, t):
+    def sample_process_noise(
+        self, particles: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Sample process noise
 
@@ -155,7 +166,9 @@ class NonlinearGaussian(
 
         return noise.T
 
-    def update(self, particles, u, t, noise):
+    def update(
+        self, particles: numpy.ndarray, u: Any, t: float, noise: numpy.ndarray
+    ) -> numpy.ndarray:
         """Propagate estimate forward in time
 
         Args:
@@ -176,7 +189,7 @@ class NonlinearGaussian(
         particles[:] = f + noise
         return particles
 
-    def measure(self, particles, y, t):
+    def measure(self, particles: numpy.ndarray, y: Any, t: float) -> numpy.ndarray:
         """
         Return the log-pdf value of the measurement
 
@@ -214,7 +227,9 @@ class NonlinearGaussian(
 
         return lpy
 
-    def eval_1st_stage_weights(self, particles, u, y, t):
+    def eval_1st_stage_weights(
+        self, particles: numpy.ndarray, u: Any, y: Any, t: float
+    ) -> numpy.ndarray:
         """
         Evaluate "first stage weights" for the auxiliary particle filter.
         (log-probability of measurement using some propagated statistic, such
@@ -236,7 +251,7 @@ class NonlinearGaussian(
         partn = self.update(part, u, t, noise)
         return self.measure(partn, y, t + 1)
 
-    def logp_xnext_max(self, particles, u, t):
+    def logp_xnext_max(self, particles: numpy.ndarray, u: Any, t: float) -> float:
         """
         Return the max log-pdf value for all possible future states'
         given input u
@@ -266,7 +281,9 @@ class NonlinearGaussian(
                 pmax[i] = -0.5 * (dim * l2pi + ld)
             return numpy.max(pmax)
 
-    def logp_xnext(self, particles, next_part, u, t):
+    def logp_xnext(
+        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
         given input u
@@ -302,7 +319,17 @@ class NonlinearGaussian(
 
         return lpx
 
-    def propose_smooth(self, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind):
+    def propose_smooth(
+        self,
+        ptraj: list[Any] | None,
+        anc: numpy.ndarray,
+        future_trajs: list[Any] | None,
+        find: numpy.ndarray | None,
+        yt: numpy.ndarray,
+        ut: numpy.ndarray,
+        tt: numpy.ndarray,
+        cur_ind: int,
+    ) -> numpy.ndarray:
         """
         Sample from a distribution q(x_t | x_{0:t-1}, x_{t+1:T}, y_t:T)
 
@@ -334,8 +361,17 @@ class NonlinearGaussian(
         return prop_part
 
     def logp_proposal(
-        self, prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind
-    ):
+        self,
+        prop_part: numpy.ndarray,
+        ptraj: list[Any] | None,
+        anc: numpy.ndarray,
+        future_trajs: list[Any] | None,
+        find: numpy.ndarray | None,
+        yt: numpy.ndarray,
+        ut: numpy.ndarray,
+        tt: numpy.ndarray,
+        cur_ind: int,
+    ) -> numpy.ndarray:
         """
         Eval the log-propability of the proposal distribution
 
@@ -364,7 +400,7 @@ class NonlinearGaussian(
         else:
             return self.eval_logp_x0(prop_part, t=tt[0])
 
-    def set_params(self, params):
+    def set_params(self, params: numpy.ndarray) -> None:
         """
         This methods should be overriden if the system dynamics depends
         on any parameters, this method should however be called to store
@@ -375,10 +411,10 @@ class NonlinearGaussian(
         """
         self.params = numpy.copy(params).reshape((-1, 1))
 
-    def post_smoothing(self, st):
+    def post_smoothing(self, st: Any) -> list[Any]:
         return self.pre_mhips_pass(st)
 
-    def pre_mhips_pass(self, st):
+    def pre_mhips_pass(self, st: Any) -> list[Any]:
         return st.traj
 
 
@@ -392,8 +428,9 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
      - lxi (int): number of states, only needed if neither x0 or Px0 specified
     """
 
-    def __init__(self, x0=None, Px0=None, lxi=None, **kwargs):
-
+    def __init__(
+        self, x0: Any = None, Px0: Any = None, lxi: int | None = None, **kwargs: Any
+    ) -> None:
         if x0 is not None:
             self.x0 = numpy.copy(x0).reshape((-1, 1))
         elif lxi is not None:
@@ -410,7 +447,7 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
 
         super().__init__(lxi=len(self.x0), **kwargs)
 
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> numpy.ndarray:
         """Sample particles from initial distribution
 
         Args:
@@ -427,7 +464,7 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
             particles += (Pchol.dot(noise)).T
         return particles
 
-    def eval_logp_x0(self, particles, t):
+    def eval_logp_x0(self, particles: numpy.ndarray, t: float) -> numpy.ndarray:
         """
         Evaluate log p(x_0)
 

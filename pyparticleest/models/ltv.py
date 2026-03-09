@@ -2,18 +2,14 @@
 @author: Jerker Nordh
 """
 
-from pyparticleest.interfaces import FFBSi, ParticleFiltering
-
-try:
-    import pyparticleest.utils.ckalman as kalman
-    import pyparticleest.utils.cmlnlg_compute as mlnlg_compute
-except ImportError:
-    print("Falling back to pure python implementaton, expect horrible performance")
-    import pyparticleest.utils.kalman as kalman
-    import pyparticleest.utils.mlnlg_compute as mlnlg_compute
+from typing import Any
 
 import numpy
 import scipy.linalg
+
+import pyparticleest.utils.kalman as kalman
+import pyparticleest.utils.mlnlg_compute as mlnlg_compute
+from pyparticleest.interfaces import FFBSi, ParticleFiltering
 
 
 class LTV(FFBSi, ParticleFiltering):
@@ -40,17 +36,17 @@ class LTV(FFBSi, ParticleFiltering):
 
     def __init__(
         self,
-        z0,
-        P0,
-        A=None,
-        C=None,
-        Q=None,
-        R=None,
-        f=None,
-        h=None,
-        params=None,
-        **kwargs,
-    ):
+        z0: Any,
+        P0: Any,
+        A: Any = None,
+        C: Any = None,
+        Q: Any = None,
+        R: Any = None,
+        f: Any = None,
+        h: Any = None,
+        params: Any = None,
+        **kwargs: Any,
+    ) -> None:
         self.z0 = numpy.copy(z0).reshape((-1, 1))
         self.P0 = numpy.copy(P0)
         if f is None:
@@ -60,7 +56,7 @@ class LTV(FFBSi, ParticleFiltering):
         )
         super().__init__(**kwargs)
 
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> numpy.ndarray:
         """Sample particles from initial distribution
 
         Args:
@@ -84,7 +80,12 @@ class LTV(FFBSi, ParticleFiltering):
             particles[i, lz:] = numpy.copy(self.P0).ravel()
         return particles
 
-    def set_states(self, particles, z_list, P_list):
+    def set_states(
+        self,
+        particles: numpy.ndarray,
+        z_list: list[numpy.ndarray] | numpy.ndarray,
+        P_list: list[numpy.ndarray] | numpy.ndarray,
+    ) -> None:
         """
         Set the estimate of the states
 
@@ -101,7 +102,9 @@ class LTV(FFBSi, ParticleFiltering):
             lzP = lz + lz * lz
             particles[i, lz:lzP] = P_list[i].ravel()
 
-    def get_states(self, particles):
+    def get_states(
+        self, particles: numpy.ndarray
+    ) -> tuple[list[numpy.ndarray], list[numpy.ndarray]]:
         """
         Return the estimates contained in the particles array
 
@@ -125,7 +128,7 @@ class LTV(FFBSi, ParticleFiltering):
 
         return (zl, Pl)
 
-    def get_pred_dynamics(self, u, t):
+    def get_pred_dynamics(self, u: Any, t: float) -> tuple[Any, Any, Any]:
         """
         Return matrices describing affine relation of next
         nonlinear state conditioned on the current time and input signal
@@ -146,7 +149,9 @@ class LTV(FFBSi, ParticleFiltering):
         """
         return (None, None, None)
 
-    def update(self, particles, u, t, noise):
+    def update(
+        self, particles: numpy.ndarray, u: Any, t: float, noise: Any
+    ) -> numpy.ndarray:
         """Propagate estimate forward in time
 
         Args:
@@ -173,7 +178,7 @@ class LTV(FFBSi, ParticleFiltering):
         self.set_states(particles, zl, Pl)
         return particles
 
-    def get_meas_dynamics(self, y, t):
+    def get_meas_dynamics(self, y: Any, t: float) -> tuple[Any, Any, Any, Any]:
         """
         Return matrices describing affine relation of measurement and current
         state estimates
@@ -194,7 +199,7 @@ class LTV(FFBSi, ParticleFiltering):
         """
         return (y, None, None, None)
 
-    def measure(self, particles, y, t):
+    def measure(self, particles: numpy.ndarray, y: Any, t: float) -> numpy.ndarray:
         """
         Return the log-pdf value of the measurement and update the statistics
         for the states
@@ -221,7 +226,9 @@ class LTV(FFBSi, ParticleFiltering):
         self.set_states(particles, zl, Pl)
         return lyz
 
-    def logp_xnext(self, particles, next_part, u, t):
+    def logp_xnext(
+        self, particles: numpy.ndarray, next_part: Any, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
         given input u.
@@ -244,7 +251,7 @@ class LTV(FFBSi, ParticleFiltering):
         N = len(particles)
         return numpy.zeros((N,))
 
-    def sample_process_noise(self, particles, u, t):
+    def sample_process_noise(self, particles: numpy.ndarray, u: Any, t: float) -> None:
         """
         There is no need to sample noise for this type of model
 
@@ -260,7 +267,18 @@ class LTV(FFBSi, ParticleFiltering):
         """
         return None
 
-    def sample_smooth(self, part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind):
+    def sample_smooth(
+        self,
+        part: numpy.ndarray,
+        ptraj: list[Any] | None,
+        anc: numpy.ndarray,
+        future_trajs: list[Any] | None,
+        find: numpy.ndarray | None,
+        ut: numpy.ndarray,
+        yt: numpy.ndarray,
+        tt: numpy.ndarray,
+        cur_ind: int,
+    ) -> numpy.ndarray:
         """
         Update sufficient statistics based on the future states
 
@@ -304,7 +322,7 @@ class LTV(FFBSi, ParticleFiltering):
 
         return res
 
-    def fwd_peak_density(self, u, t):
+    def fwd_peak_density(self, u: Any, t: float) -> float:
         """
         No need for rejections sampling for this type of model, always returns
         0.0 since all particles are equivalent
@@ -318,7 +336,7 @@ class LTV(FFBSi, ParticleFiltering):
         """
         return 0.0
 
-    def eval_logp_x0(self, particles, t):
+    def eval_logp_x0(self, particles: numpy.ndarray, t: float) -> numpy.ndarray:
         """
         Evaluate sum log p(x_0)
 
@@ -338,7 +356,9 @@ class LTV(FFBSi, ParticleFiltering):
             lpz0[i] = -0.5 * (ld + numpy.trace(tmp))
         return lpz0
 
-    def eval_logp_x0_val_grad(self, particles, t):
+    def eval_logp_x0_val_grad(
+        self, particles: numpy.ndarray, t: float
+    ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate gradient of sum log p(x_0)
 
@@ -371,7 +391,9 @@ class LTV(FFBSi, ParticleFiltering):
                     )
         return (lpz0, lpz0_grad)
 
-    def eval_logp_xnext(self, particles, x_next, u, t):
+    def eval_logp_xnext(
+        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Evaluate log p(x_{t+1}|x_t)
 
@@ -405,7 +427,9 @@ class LTV(FFBSi, ParticleFiltering):
 
         return lpxn
 
-    def eval_logp_xnext_val_grad(self, particles, x_next, u, t):
+    def eval_logp_xnext_val_grad(
+        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float
+    ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate value and gradient of log p(x_{t+1}|x_t)
 
@@ -461,7 +485,7 @@ class LTV(FFBSi, ParticleFiltering):
 
         return (lpxn, lpxn_grad)
 
-    def eval_logp_y(self, particles, y, t):
+    def eval_logp_y(self, particles: numpy.ndarray, y: Any, t: float) -> numpy.ndarray:
         """
         Evaluate value of log p(y_t|x_t)
 
@@ -488,7 +512,9 @@ class LTV(FFBSi, ParticleFiltering):
 
         return logpy
 
-    def eval_logp_y_val_grad(self, particles, y, t):
+    def eval_logp_y_val_grad(
+        self, particles: numpy.ndarray, y: Any, t: float
+    ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate value and gradient of log p(y_t|x_t)
 
@@ -530,7 +556,7 @@ class LTV(FFBSi, ParticleFiltering):
 
         return (logpy, logpy_grad)
 
-    def get_pred_dynamics_grad(self, u, t):
+    def get_pred_dynamics_grad(self, u: Any, t: float) -> tuple[Any, Any, Any]:
         """
         Override this method if (A, f, Q) depends on the parameters
 
@@ -546,7 +572,7 @@ class LTV(FFBSi, ParticleFiltering):
         """
         return (None, None, None)
 
-    def get_meas_dynamics_grad(self, y, t):
+    def get_meas_dynamics_grad(self, y: Any, t: float) -> tuple[Any, Any, Any]:
         """
         Override this method if (C, h, R) depends on the parameters
 
@@ -562,7 +588,7 @@ class LTV(FFBSi, ParticleFiltering):
         """
         return (None, None, None)
 
-    def get_initial_grad(self):
+    def get_initial_grad(self) -> tuple[numpy.ndarray, numpy.ndarray]:
         """
         Default implementation has no dependence on xi, override if needed
 
@@ -582,13 +608,22 @@ class LTV(FFBSi, ParticleFiltering):
             numpy.zeros((lparam, self.kf.lz, self.kf.lz)),
         )
 
-    def calc_l1(self, z, P, z0, P0):
+    def calc_l1(
+        self, z: numpy.ndarray, P: numpy.ndarray, z0: numpy.ndarray, P0: numpy.ndarray
+    ) -> numpy.ndarray:
         """internal helper function"""
         z0_diff = z - z0
         l1 = z0_diff.dot(z0_diff.T) + P
         return l1
 
-    def calc_l1_grad(self, z, P, z0, P0, z0_grad):
+    def calc_l1_grad(
+        self,
+        z: numpy.ndarray,
+        P: numpy.ndarray,
+        z0: numpy.ndarray,
+        P0: numpy.ndarray,
+        z0_grad: numpy.ndarray | None,
+    ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
         lparams = len(self.params)
         z0_diff = z - z0
@@ -600,7 +635,16 @@ class LTV(FFBSi, ParticleFiltering):
                 l1_diff[j] += tmp + tmp.T
         return (l1, l1_diff)
 
-    def calc_l2(self, zn, Pn, z, P, A, f, M):
+    def calc_l2(
+        self,
+        zn: numpy.ndarray,
+        Pn: numpy.ndarray,
+        z: numpy.ndarray,
+        P: numpy.ndarray,
+        A: numpy.ndarray,
+        f: numpy.ndarray,
+        M: numpy.ndarray,
+    ) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
         predict_err = zn - f - A.dot(z)
         AM = A.dot(M)
@@ -608,7 +652,18 @@ class LTV(FFBSi, ParticleFiltering):
         l2 += Pn + A.dot(P).dot(A.T) - AM.T - AM
         return (l2, A, M, predict_err)
 
-    def calc_l2_grad(self, zn, Pn, z, P, A, f, M, A_grad, f_grad):
+    def calc_l2_grad(
+        self,
+        zn: numpy.ndarray,
+        Pn: numpy.ndarray,
+        z: numpy.ndarray,
+        P: numpy.ndarray,
+        A: numpy.ndarray,
+        f: numpy.ndarray,
+        M: numpy.ndarray,
+        A_grad: numpy.ndarray | None,
+        f_grad: numpy.ndarray | None,
+    ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
         lparam = len(self.params)
         predict_err = zn - f - A.dot(z)
@@ -630,7 +685,9 @@ class LTV(FFBSi, ParticleFiltering):
                 l2_grad[j] += tmp + tmp.T
         return (l2, l2_grad)
 
-    def calc_l3(self, y, z, P):
+    def calc_l3(
+        self, y: numpy.ndarray, z: numpy.ndarray, P: numpy.ndarray
+    ) -> numpy.ndarray:
         """internal helper function"""
         meas_diff = self.kf.measurement_diff(
             y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k
@@ -639,7 +696,14 @@ class LTV(FFBSi, ParticleFiltering):
         l3 += self.kf.C.dot(P).dot(self.kf.C.T)
         return l3
 
-    def calc_l3_grad(self, y, z, P, C_grad, h_grad):
+    def calc_l3_grad(
+        self,
+        y: numpy.ndarray,
+        z: numpy.ndarray,
+        P: numpy.ndarray,
+        C_grad: numpy.ndarray | None,
+        h_grad: numpy.ndarray | None,
+    ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
         lparam = len(self.params)
         meas_diff = self.kf.measurement_diff(

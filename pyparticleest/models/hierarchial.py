@@ -4,18 +4,15 @@
 """
 
 import abc
-
-try:
-    import pyparticleest.utils.ckalman as kalman
-except ImportError:
-    print("Falling back to pure python implementaton, expect horrible performance")
-    import pyparticleest.utils.kalman as kalman
-
-from pyparticleest.interfaces import FFBSiRS
-from pyparticleest.models.rbpf import RBPSBase
-import numpy
 import copy
 import math
+from typing import Any
+
+import numpy
+
+import pyparticleest.utils.kalman as kalman
+from pyparticleest.interfaces import FFBSiRS
+from pyparticleest.models.rbpf import RBPSBase
 
 
 class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
@@ -27,11 +24,11 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
      - len_z (int): number of linear states
     """
 
-    def __init__(self, len_xi, len_z, **kwargs):
+    def __init__(self, len_xi: int, len_z: int, **kwargs: Any) -> None:
         self.lxi = len_xi
         super().__init__(lz=len_z, **kwargs)
 
-    def measure(self, particles, y, t):
+    def measure(self, particles: numpy.ndarray, y: Any, t: float) -> numpy.ndarray:
         """
         Return the log-pdf value of the measurement and update the statistics
         for the linear states
@@ -67,7 +64,9 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         self.set_states(particles, xil, zl, Pl)
         return lyxi + lyz
 
-    def calc_cond_dynamics(self, particles, xi_next, u, t):
+    def calc_cond_dynamics(
+        self, particles: numpy.ndarray, xi_next: numpy.ndarray, u: Any, t: float
+    ) -> tuple[Any, Any, Any]:
         """
         Calculates the linear dynamics for each particle
 
@@ -88,12 +87,16 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         (Az, fz, Qz, _, _, _) = self.get_lin_pred_dynamics_int(particles, u, t)
         return (Az, fz, Qz)
 
-    def meas_xi_next(self, particles, xi_next, u, t):
+    def meas_xi_next(
+        self, particles: numpy.ndarray, xi_next: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         # There is no information in the next nonlinear state about the
         # current linear states for this class of models
         return particles
 
-    def logp_xnext(self, particles, next_part, u, t):
+    def logp_xnext(
+        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next_part' given
         input u
@@ -140,7 +143,18 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
 
         return lpxi + lpz
 
-    def sample_smooth(self, part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind):
+    def sample_smooth(
+        self,
+        part: numpy.ndarray,
+        ptraj: list[Any] | None,
+        anc: numpy.ndarray,
+        future_trajs: list[Any] | None,
+        find: numpy.ndarray | None,
+        ut: numpy.ndarray,
+        yt: numpy.ndarray,
+        tt: numpy.ndarray,
+        cur_ind: int,
+    ) -> numpy.ndarray:
         """
         Sampled linear state conditioned on future_trajs
 
@@ -193,7 +207,9 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         return res
 
     @abc.abstractmethod
-    def logp_xnext_xi(self, particles, next_xi, u, t):
+    def logp_xnext_xi(
+        self, particles: numpy.ndarray, next_xi: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Evaluate the log-probability of the next nonlinear state
 
@@ -211,7 +227,9 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def calc_xi_next(self, particles, u, t, noise):
+    def calc_xi_next(
+        self, particles: numpy.ndarray, u: Any, t: float, noise: numpy.ndarray
+    ) -> numpy.ndarray:
         """
         Calculate the next nonlinear state given the input and noise
         realization
@@ -229,7 +247,9 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def measure_nonlin(self, particles, y, t):
+    def measure_nonlin(
+        self, particles: numpy.ndarray, y: Any, t: float
+    ) -> numpy.ndarray:
         """
         Measurement probability for the nonlinear parts of the measurement
         equations
@@ -248,10 +268,10 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
 
 
 class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def logp_xnext_max(self, particles, u, t):
+    def logp_xnext_max(self, particles: numpy.ndarray, u: Any, t: float) -> float:
         """
         Calculate maximum value of the logp_xnext function, used for
         rejection sampling
@@ -280,7 +300,9 @@ class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
         return lpmax
 
     @abc.abstractmethod
-    def logp_xnext_xi_max(self, particles, u, t):
+    def logp_xnext_xi_max(
+        self, particles: numpy.ndarray, u: Any, t: float
+    ) -> numpy.ndarray:
         """
         Maximum for nonlinear part of the logp_xnext, called from
         logp_xnext_max
