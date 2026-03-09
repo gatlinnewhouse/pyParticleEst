@@ -9,17 +9,13 @@ import numpy
 import scipy.optimize
 
 
-class ParamEst:
-    __metaclass__ = abc.ABCMeta
-
+class ParamEst(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def maximize(self, straj):
         pass
 
 
-class ParamEstIntFullTraj:
-    __metaclass__ = abc.ABCMeta
-
+class ParamEstIntFullTraj(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def set_params(self, params):
         """
@@ -53,12 +49,10 @@ class ParamEstIntFullTraj:
         pass
 
 
-class ParamEstInterface(ParamEstIntFullTraj):
+class ParamEstInterface(ParamEstIntFullTraj, metaclass=abc.ABCMeta):
     """Interface s for particles to be used with the parameter estimation
     algorithm presented in [1]
     [1] - 'System identification of nonlinear state-space models' by Schon, Wills and Ninness"""
-
-    __metaclass__ = abc.ABCMeta
 
     def eval_logp_xnext_fulltraj(self, straj, ut, tt):
         logp_xnext = 0.0
@@ -131,12 +125,12 @@ class ParamEstInterface_GradientSearchFullTraj(ParamEstInterface):
         pass
 
 
-class ParamEstInterface_GradientSearch(ParamEstInterface_GradientSearchFullTraj):
+class ParamEstInterface_GradientSearch(
+    ParamEstInterface_GradientSearchFullTraj, metaclass=abc.ABCMeta
+):
     """Interface s for particles to be used with the parameter estimation
     algorithm presented in [1] using analytic gradients
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def eval_logp_y_val_grad_fulltraj(self, straj, yt, tt):
         logp_y_grad = numpy.zeros(len(self.params))
@@ -254,7 +248,7 @@ class ParamEstBaseNumeric(ParamEstIntFullTraj):
             x0=self.params,
             method="l-bfgs-b",
             jac=False,
-            options=dict({"maxiter": 10, "maxfun": 100}),
+            options={"maxiter": 10, "maxfun": 100},
             bounds=self.param_bounds,
         )
         return res.x
@@ -291,7 +285,7 @@ class ParamEstBaseNumericGrad(ParamEstInterface_GradientSearchFullTraj):
             x0=self.params,
             method="l-bfgs-b",
             jac=True,
-            options=dict({"maxiter": 10, "maxfun": 100}),
+            options={"maxiter": 10, "maxfun": 100},
             bounds=self.param_bounds,
         )
 

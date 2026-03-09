@@ -6,8 +6,6 @@
 from pyparticleest.simulator import Simulator
 import numpy
 
-from builtins import range
-
 
 class ParamEstimation(Simulator):
     """
@@ -282,7 +280,7 @@ class ParamEstimationPSAEM(Simulator):
         if callback is None:
             callback = default_callback
 
-        ind = numpy.asarray(range(num_part), dtype=int)
+        ind = numpy.arange(num_part, dtype=int)
         i = 0
         while True:
             i += 1
@@ -297,7 +295,7 @@ class ParamEstimationPSAEM(Simulator):
                 meas_first=meas_first,
             )
 
-            if raoblackwell == True:
+            if raoblackwell:
                 tmp = self.straj.calculate_ancestors(self.pt, ind)
                 w = numpy.exp(self.pt.traj[-1].pa.w)
                 w = numpy.copy(w / numpy.sum(w))
