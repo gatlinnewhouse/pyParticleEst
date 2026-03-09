@@ -6,7 +6,7 @@ framework.
 """
 
 import numpy
-
+from typing import Any
 from .filter import ParticleTrajectory
 
 
@@ -22,7 +22,7 @@ class Simulator:
        to the particlar model class being used
     """
 
-    def __init__(self, model, u, y):
+    def __init__(self, model: Any, u: Any, y: Any) -> None:
         if u is not None:
             self.u = u
         else:
@@ -33,7 +33,7 @@ class Simulator:
         self.params = None
         self.model = model
 
-    def set_params(self, params):
+    def set_params(self, params: numpy.ndarray) -> None:
         """
         Set the parameters of the model (if any)
 
@@ -45,15 +45,15 @@ class Simulator:
 
     def simulate(
         self,
-        num_part,
-        num_traj,
-        filter="PF",
-        filter_options=None,
-        smoother="full",
-        smoother_options=None,
-        res=0.67,
-        meas_first=False,
-    ):
+        num_part: int,
+        num_traj: int,
+        filter: str = "PF",
+        filter_options: dict[str, Any] | None = None,
+        smoother: str | None = "full",
+        smoother_options: dict[str, Any] | None = None,
+        res: float = 0.67,
+        meas_first: bool = False,
+    ) -> int:
         """
         Solve the estimation problem
 
@@ -122,7 +122,7 @@ class Simulator:
             )
         return resamplings
 
-    def get_filtered_estimates(self):
+    def get_filtered_estimates(self) -> tuple[numpy.ndarray, numpy.ndarray]:
         """
         Returns type (est, w) (must first have called 'simulate')
          - est: (T, N, D) array containing all particles
@@ -147,7 +147,7 @@ class Simulator:
 
         return (est, w)
 
-    def get_filtered_mean(self):
+    def get_filtered_mean(self) -> numpy.ndarray:
         """
         Calculate mean of filtered estimates (must first have
         called 'simulate')
@@ -169,7 +169,7 @@ class Simulator:
 
         return mean
 
-    def get_smoothed_estimates(self):
+    def get_smoothed_estimates(self) -> numpy.ndarray:
         """
         Return smoothed estimates (must first have called 'simulate')
 
@@ -182,7 +182,7 @@ class Simulator:
         """
         return self.straj.get_smoothed_estimates()
 
-    def get_smoothed_mean(self):
+    def get_smoothed_mean(self) -> numpy.ndarray:
         """
         Calculate mean of smoothed estimates (must first have
         called 'simulate')

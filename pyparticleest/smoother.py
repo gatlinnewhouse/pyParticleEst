@@ -4,12 +4,24 @@
 """
 
 import numpy
+from typing import Any
 
 from . import filter as pf
 from .filter import ParticleApproximation, TrajectoryStep
 
 
-def bsi_full(model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind):
+def bsi_full(
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: numpy.ndarray,
+    future_trajs: list[Any],
+    find: numpy.ndarray,
+    ut: numpy.ndarray,
+    yt: numpy.ndarray,
+    tt: numpy.ndarray,
+    cur_ind: int,
+) -> numpy.ndarray:
     """
     Perform backward simulation by drawing particles from
     the categorical distribution with weights given by
@@ -51,8 +63,19 @@ def bsi_full(model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind):
 
 
 def bsi_rs(
-    model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind, maxpdf, max_iter
-):
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: numpy.ndarray,
+    future_trajs: list[Any],
+    find: numpy.ndarray,
+    ut: numpy.ndarray,
+    yt: numpy.ndarray,
+    tt: numpy.ndarray,
+    cur_ind: int,
+    maxpdf: float,
+    max_iter: int,
+) -> numpy.ndarray:
     """
     Perform backward simulation by using rejection sampling to draw particles
     from the categorical distribution with weights given by
@@ -107,23 +130,23 @@ def bsi_rs(
 
 
 def bsi_rsas(
-    model,
-    pa,
-    ptraj,
-    pind,
-    future_trajs,
-    find,
-    ut,
-    yt,
-    tt,
-    cur_ind,
-    maxpdf,
-    x1,
-    P1,
-    sv,
-    sw,
-    ratio,
-):
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: numpy.ndarray,
+    future_trajs: list[Any],
+    find: numpy.ndarray,
+    ut: numpy.ndarray,
+    yt: numpy.ndarray,
+    tt: numpy.ndarray,
+    cur_ind: int,
+    maxpdf: float,
+    x1: float,
+    P1: float,
+    sv: float,
+    sw: float,
+    ratio: float,
+) -> numpy.ndarray:
     """
     Perform backward simulation by using rejection sampling to draw particles
     from the categorical distribution with weights given by
@@ -201,8 +224,19 @@ def bsi_rsas(
 
 
 def bsi_mcmc(
-    model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind, R, ancestors
-):
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: numpy.ndarray,
+    future_trajs: list[Any],
+    find: numpy.ndarray,
+    ut: numpy.ndarray,
+    yt: numpy.ndarray,
+    tt: numpy.ndarray,
+    cur_ind: int,
+    R: int,
+    ancestors: numpy.ndarray,
+) -> numpy.ndarray:
     """
     Perform backward simulation by using Metropolis-Hastings to draw particles
     from the categorical distribution with weights given by
@@ -275,7 +309,13 @@ class SmoothTrajectory:
      - options (dict): options to pass on to the smoothing algorithm
     """
 
-    def __init__(self, pt, M=1, method="full", options=None):
+    def __init__(
+        self,
+        pt: Any,
+        M: int = 1,
+        method: str = "full",
+        options: dict[str, Any] | None = None,
+    ) -> None:
 
         self.traj = None
 
@@ -319,10 +359,12 @@ class SmoothTrajectory:
         if hasattr(self.model, "post_smoothing"):
             self.traj = self.model.post_smoothing(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
+        if self.traj is None:
+            return 0
         return len(self.traj)
 
-    def perform_ancestors(self, pt, M):
+    def perform_ancestors(self, pt: Any, M: int) -> None:
         """
         Create smoothed trajectories by taking the forward trajectories
 
@@ -336,7 +378,7 @@ class SmoothTrajectory:
             # Do e.g. constrained smoothing for RBPS models
             self.traj = self.model.post_smoothing(self)
 
-    def calculate_ancestors(self, pt, ind):
+    def calculate_ancestors(self, pt: Any, ind: numpy.ndarray) -> numpy.ndarray:
         T = len(pt)
         M = len(ind)
         ancestors = pt[T - 1].ancestors[ind]
@@ -380,7 +422,7 @@ class SmoothTrajectory:
             )
         return traj
 
-    def perform_ancestors_int(self, pt, M):
+    def perform_ancestors_int(self, pt: Any, M: int) -> numpy.ndarray:
         """
         Create smoothed trajectories by taking the forward trajectories, don't
         perform post processing
@@ -398,7 +440,9 @@ class SmoothTrajectory:
 
         return self.calculate_ancestors(pt, ind)
 
-    def perform_bsi(self, pt, M, method, options):
+    def perform_bsi(
+        self, pt: Any, M: int, method: str, options: dict[str, Any]
+    ) -> None:
         """
         Create smoothed trajectories using Backward Simulation
 
@@ -543,7 +587,7 @@ class SmoothTrajectory:
     #            # Do e.g. constrained smoothing for RBPS models
     #            self.traj = self.model.post_smoothing(self)
 
-    def perform_mhbp(self, pt, M, R, reduced=False):
+    def perform_mhbp(self, pt: Any, M: int, R: int, reduced: bool = False) -> None:
         """
         Create smoothed trajectories using Metropolis-Hastings Backward Propeser
 
@@ -635,7 +679,9 @@ class SmoothTrajectory:
             # Do e.g. constrained smoothing for RBPS models
             self.traj = self.model.post_smoothing(self)
 
-    def perform_mhips_pass(self, options, reduced=False):
+    def perform_mhips_pass(
+        self, options: dict[str, Any] | None, reduced: bool = False
+    ) -> numpy.ndarray:
         """
         Runs MHIPS with the proposal density q as p(x_{t+1}|x_t)
 
@@ -756,7 +802,7 @@ class SmoothTrajectory:
 
         return straj
 
-    def get_smoothed_estimates(self):
+    def get_smoothed_estimates(self) -> numpy.ndarray:
         """
         Return smoothed estimates (must first have called 'simulate')
 
@@ -780,19 +826,19 @@ class SmoothTrajectory:
 
 
 def mc_step(
-    model,
-    part,
-    ptraj,
-    pind_prop,
-    pind_curr,
-    future_trajs,
-    find,
-    ut,
-    yt,
-    tt,
-    cur_ind,
-    reduced,
-):
+    model: Any,
+    part: numpy.ndarray,
+    ptraj: list[Any] | None,
+    pind_prop: numpy.ndarray | None,
+    pind_curr: numpy.ndarray | None,
+    future_trajs: list[Any] | None,
+    find: numpy.ndarray,
+    ut: numpy.ndarray,
+    yt: numpy.ndarray,
+    tt: numpy.ndarray,
+    cur_ind: int,
+    reduced: bool,
+) -> tuple[numpy.ndarray, numpy.ndarray]:
     """
     Perform a single iteration of the MCMC sampler used for MHIPS and MHBP
 
