@@ -1,9 +1,20 @@
 [project]
-name = "pyParticleEst"
-version = "0.0.1"
+urls = { homepage = "http://www.control.lth.se/Staff/JerkerNordh/pyparticleest.html" }
 dependencies = ["numpy>=2.1.2", "scipy>=1.14.1", "matplotlib>=3.9.2"]
+name = "pyParticleEst"
+authors = [{ email = "ajn@ajn.se", name = "Jerker Nordh" }]
+description = "Framework for particle based estimation methods, such as particle filtering and smoothing"
+license-files = ["COPYING"]
+version = "1.1.4"
 requires-python = ">=3.13"
-dynamic = ["description", "license", "authors"]
+
+[tool.setuptools]
+packages = [
+  "pyparticleest",
+  "pyparticleest.models",
+  "pyparticleest.paramest",
+  "pyparticleest.utils",
+]
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel", "numpy>=2.1.2"]
