@@ -360,6 +360,22 @@ wheels = [
 ]
 
 [[package]]
+name = "matplot2tikz"
+version = "0.5.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "typing-extensions" },
+    { name = "webcolors" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/06/3d/0674031de9c643b270a7262d4430c988be7cc70e56b25a1a84eeaaf4d2ac/matplot2tikz-0.5.3.tar.gz", hash = "sha256:52fa76e6ec7d83fc88a6a51e4d0baa2c273f6487db1051cf98ea37589210dbfb", size = 163082, upload-time = "2026-02-04T13:46:09.654Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/2f/3a8f2b40fca5e4f7f5b75ca933bc6cda5f57371762f66c9711303ead629b/matplot2tikz-0.5.3-py3-none-any.whl", hash = "sha256:835c4cdfeae9e5162819362c08c12c5eb0a585c44fc2580c0bd6b2a8d169f491", size = 61225, upload-time = "2026-02-04T13:46:08.267Z" },
+]
+
+[[package]]
 name = "matplotlib"
 version = "3.10.8"
 source = { registry = "https://pypi.org/simple" }
@@ -578,13 +594,12 @@ version = "1.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "latextable" },
+    { name = "matplot2tikz" },
     { name = "matplotlib" },
     { name = "numba" },
     { name = "numpy" },
     { name = "scipy" },
     { name = "texttable" },
-    { name = "tikzplotlib" },
-    { name = "webcolors" },
 ]
 
 [package.optional-dependencies]
@@ -595,14 +610,13 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "latextable" },
+    { name = "matplot2tikz" },
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "numba", specifier = ">=0.61.0,<0.63.0" },
     { name = "numpy", specifier = ">=2.1.2" },
     { name = "numpydoc", marker = "extra == 'docs'", specifier = ">=1.7.0" },
     { name = "scipy", specifier = ">=1.14.1" },
     { name = "texttable" },
-    { name = "tikzplotlib" },
-    { name = "webcolors", specifier = "<24.6.0" },
 ]
 provides-extras = ["docs"]
 
@@ -803,18 +817,12 @@ wheels = [
 ]
 
 [[package]]
-name = "tikzplotlib"
-version = "0.10.1"
+name = "typing-extensions"
+version = "4.15.0"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "pillow" },
-    { name = "webcolors" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/98/22/3ed358885b75c222f39221d0cc2793f4059c02788b669363a0e7df03241f/tikzplotlib-0.10.1.tar.gz", hash = "sha256:93d141342d143804fc1dfabe03e6d4e38e547cf72803bdf124615affdd56f59d", size = 104475, upload-time = "2022-01-31T13:43:33.402Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/94/1a15dd82efb362ac84269196e94cf00f187f7ed21c242792a923cdb1c61f/typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466", size = 109391, upload-time = "2025-08-25T13:49:26.313Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/67/3e/24d1c41cbe520d17cfb887e1d527937ad3b6a1c3dc42c12cd48fa60d2dc7/tikzplotlib-0.10.1-py3-none-any.whl", hash = "sha256:bf0451b86fe4db40aa742f7e5a180dfaaadf57c746ddb2ab7e58a5163d8be75f", size = 54151, upload-time = "2022-01-31T13:43:31.014Z" },
+    { url = "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548", size = 44614, upload-time = "2025-08-25T13:49:24.86Z" },
 ]
 
 [[package]]

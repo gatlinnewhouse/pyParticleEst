@@ -11,5 +11,5 @@ docs/_build/
 *.so
 *.egg-info
 plots/*.png
-plots/*.tex
+plots/*.tikz
 __pycache__/

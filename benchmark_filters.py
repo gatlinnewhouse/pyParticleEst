@@ -27,7 +27,7 @@ import latextable
 import matplotlib.pyplot as plt
 import numpy
 import scipy.stats
-import tikzplotlib
+import matplot2tikz
 from texttable import Texttable
 
 import pyparticleest.filter as pfilter
@@ -470,7 +470,7 @@ def plot_individual_estimates(results, STEPS, xs, ys):
 
         safe_name = name.lower().replace(" ", "_").replace("(", "").replace(")", "")
         fig.savefig(f"plots/estimate_{safe_name}.png", dpi=150)
-        tikzplotlib.save(f"plots/estimate_{safe_name}.tex")
+        matplot2tikz.save(f"plots/estimate_{safe_name}.tikz")
         plt.close(fig)
 
 
@@ -497,7 +497,7 @@ def plot_combined_estimates(results, STEPS, xs, ys):
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig("plots/benchmark_filters_combined.png", dpi=150)
-    tikzplotlib.save("plots/benchmark_filters_combined.tex")
+    matplot2tikz.save("plots/benchmark_filters_combined.tikz")
     plt.close(fig)
 
 
@@ -516,7 +516,7 @@ def plot_neff(results, strajs, STEPS, output_prefix="benchmark"):
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(f"plots/{output_prefix}_neff.png", dpi=150)
-    tikzplotlib.save(f"plots/{output_prefix}_neff.tex")
+    matplot2tikz.save(f"plots/{output_prefix}_neff.tikz")
     plt.close(fig)
 
 
@@ -540,7 +540,7 @@ def plot_rmse_over_time(
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
     fig.savefig(f"plots/{output_prefix}_{est_key}_rmse_time.png", dpi=150)
-    tikzplotlib.save(f"plots/{output_prefix}_{est_key}_rmse_time.tex")
+    matplot2tikz.save(f"plots/{output_prefix}_{est_key}_rmse_time.tikz")
     plt.close(fig)
 
 
@@ -723,7 +723,7 @@ def run_mlnlg_benchmark():
         ax.grid(True, alpha=0.3)
         fig.tight_layout()
         fig.savefig(f"plots/mlnlg_{state_name}.png", dpi=150)
-        tikzplotlib.save(f"plots/mlnlg_{state_name}.tex")
+        matplot2tikz.save(f"plots/mlnlg_{state_name}.tikz")
         plt.close(fig)
 
     print("\nMLNLG plots saved to plots/mlnlg_{xi,z1,z2}.png")
