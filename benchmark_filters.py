@@ -24,10 +24,10 @@ Metrics reported per filter:
 import time
 
 import latextable
+import matplot2tikz
 import matplotlib.pyplot as plt
 import numpy
 import scipy.stats
-import matplot2tikz
 from texttable import Texttable
 
 import pyparticleest.filter as pfilter
@@ -158,7 +158,7 @@ class NLGSSModel(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFilte
         x_pred = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * numpy.cos(1.2 * t)
         y_hat = x_pred**2 / 20.0
         return scipy.stats.norm.logpdf(
-            float(y), loc=y_hat, scale=numpy.sqrt(R + Q * (x_pred / 10.0) ** 2)
+            float(y), loc=y_hat, scale=numpy.sqrt(R + Q * (x_pred / 10.0) ** 2),
         )
 
 
@@ -374,13 +374,13 @@ def rmse(estimates, truth):
 # ══════════════════════════════════════════════════════════════════════════════
 def print_metrics(results):
     print(
-        f"\n{'Filter':<20} {'RMSE':>8} {'Mean Neff':>10} {'Time (s)':>10} {'Resamples':>10}"
+        f"\n{'Filter':<20} {'RMSE':>8} {'Mean Neff':>10} {'Time (s)':>10} {'Resamples':>10}",
     )
     print("-" * 62)
     for name, r in results.items():
         print(
             f"{name:<20} {r['rmse']:>8.4f} {r['neff']:>10.4f} "
-            f"{r['time_s']:>10.4f} {r['resamples']:>10d}"
+            f"{r['time_s']:>10.4f} {r['resamples']:>10d}",
         )
 
 
@@ -397,7 +397,7 @@ def print_latex_table_standard(results):
             "Time (s)",
             "Resamples",
             "Log ML",
-        ]
+        ],
     ]
 
     for name, r in results.items():
@@ -409,7 +409,7 @@ def print_latex_table_standard(results):
                 f"{r['time_s']:.4f}",
                 r["resamples"],
                 f"{r['log_ml']:.4f}",
-            ]
+            ],
         )
 
     table.add_rows(rows)
@@ -418,7 +418,7 @@ def print_latex_table_standard(results):
             table,
             caption="Standard Non-linear Non-Gaussian SSM Benchmark Results",
             label="tab:standard_benchmark",
-        )
+        ),
     )
 
 
@@ -521,7 +521,7 @@ def plot_neff(results, strajs, STEPS, output_prefix="benchmark"):
 
 
 def plot_rmse_over_time(
-    results, xs, STEPS, output_prefix="benchmark", est_key="estimates"
+    results, xs, STEPS, output_prefix="benchmark", est_key="estimates",
 ):
     """Cumulative RMSE over time for each filter."""
     t_axis = numpy.arange(1, STEPS + 1)
@@ -530,7 +530,7 @@ def plot_rmse_over_time(
         est = r[est_key]
         cum_rmse = numpy.sqrt(
             numpy.cumsum((est[1 : STEPS + 1] - xs[1 : STEPS + 1]) ** 2)
-            / numpy.arange(1, STEPS + 1)
+            / numpy.arange(1, STEPS + 1),
         )
         ax.plot(t_axis, cum_rmse, label=name, color=colors[name], lw=1)
     ax.set_title(f"Cumulative RMSE for {output_prefix} {est_key} over time")
@@ -560,7 +560,7 @@ def run_mlnlg_benchmark():
     # ── SIS ────────────────────────────────────────
     pf_model = MLNLGModelPF()
     straj_sis, t_sis, res_sis, log_sis = run_filter(
-        pf_model, "pf", ys, us=None, N=N, resample=0
+        pf_model, "pf", ys, us=None, N=N, resample=0,
     )
     est_xi_sis = weighted_means(straj_sis, state_index=0)
     est_z1_sis = weighted_means(straj_sis, state_index=1)
@@ -639,14 +639,14 @@ def run_mlnlg_benchmark():
     print("\n=== MLNLG Benchmark ===")
     print(
         f"\n{'Filter':<20} {'RMSE(ξ)':>8} {'RMSE(z1)':>9} {'RMSE(z2)':>9}"
-        f" {'Neff':>8} {'Time(s)':>8} {'Resamp':>7}"
+        f" {'Neff':>8} {'Time(s)':>8} {'Resamp':>7}",
     )
     print("-" * 75)
     for name, r in results.items():
         print(
             f"{name:<20} {r['rmse_xi']:>8.4f} {r['rmse_z1']:>9.4f}"
             f" {r['rmse_z2']:>9.4f} {r['neff']:>8.4f}"
-            f" {r['time_s']:>8.4f} {r['resamples']:>7d}"
+            f" {r['time_s']:>8.4f} {r['resamples']:>7d}",
         )
 
     # ── LaTeX Table MLNLG using latextable ───────────────────────────────────
@@ -663,7 +663,7 @@ def run_mlnlg_benchmark():
             "Time (s)",
             "Resamples",
             "Log ML",
-        ]
+        ],
     ]
 
     for name, r in results.items():
@@ -677,7 +677,7 @@ def run_mlnlg_benchmark():
                 f"{r['time_s']:.4f}",
                 r["resamples"],
                 f"{r['log_ml']:.4f}",
-            ]
+            ],
         )
 
     table.add_rows(rows)
@@ -686,7 +686,7 @@ def run_mlnlg_benchmark():
             table,
             caption="Mixed Linear/Non-linear Gaussian SSM Benchmark Results",
             label="tab:mlnlg_benchmark",
-        )
+        ),
     )
 
     # ── Plot ξ estimates ─────────────────────────────────────────────────────
@@ -736,10 +736,10 @@ def run_mlnlg_benchmark():
     plot_neff(results, mlnlg_strajs, STEPS, output_prefix="mlnlg")
     plot_rmse_over_time(results, xis, STEPS, output_prefix="mlnlg", est_key="est_xi")
     plot_rmse_over_time(
-        results, zs[:, 0], STEPS, output_prefix="mlnlg", est_key="est_z1"
+        results, zs[:, 0], STEPS, output_prefix="mlnlg", est_key="est_z1",
     )
     plot_rmse_over_time(
-        results, zs[:, 1], STEPS, output_prefix="mlnlg", est_key="est_z2"
+        results, zs[:, 1], STEPS, output_prefix="mlnlg", est_key="est_z2",
     )
 
 
@@ -758,7 +758,7 @@ def main():
     # ── Pure SIS ─────────────────────────────────────────────────────────────
     sis_model = NLGSSModel()
     straj_sis, t_sis, res_sis, log_sis = run_filter(
-        sis_model, "pf", ys, us=None, N=N, resample=0
+        sis_model, "pf", ys, us=None, N=N, resample=0,
     )
     est_sis = extract_state(straj_sis)
     results["SIS"] = {
