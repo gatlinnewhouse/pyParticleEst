@@ -2,7 +2,7 @@
 Also illustrates that the"""
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 import pyparticleest.interfaces as interfaces
 import pyparticleest.simulator as simulator
@@ -10,12 +10,12 @@ import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
-    x = numpy.zeros((steps + 1,))
-    y = numpy.zeros((steps,))
-    x[0] = 2.0 + 0.0 * numpy.random.normal(0.0, P0)
+    x = np.zeros((steps + 1,))
+    y = np.zeros((steps,))
+    x[0] = 2.0 + 0.0 * np.random.normal(0.0, P0)
     for k in range(1, steps + 1):
-        x[k] = x[k - 1] + numpy.random.normal(0.0, Q)
-        y[k - 1] = x[k] + numpy.random.normal(0.0, R)
+        x[k] = x[k - 1] + np.random.normal(0.0, Q)
+        y[k - 1] = x[k] + np.random.normal(0.0, R)
 
     return (x, y)
 
@@ -25,26 +25,26 @@ class Model(interfaces.ParticleFiltering):
     y_k = x_k + e_k, e_k ~ N(0,R),
     x(0) ~ N(0,P0)"""
 
-    def __init__(self, P0, Q, R):
-        self.P0 = numpy.copy(P0)
-        self.Q = numpy.copy(Q)
-        self.R = numpy.copy(R)
+    def __init__(self, P0, Q, R) -> None:
+        self.P0 = np.copy(P0)
+        self.Q = np.copy(Q)
+        self.R = np.copy(R)
 
     def create_initial_estimate(self, N):
-        return numpy.random.normal(0.0, self.P0, (N,)).reshape((-1, 1))
+        return np.random.normal(0.0, self.P0, (N,)).reshape((-1, 1))
 
     def sample_process_noise(self, particles, u, t):
         """Return process noise for input u"""
         N = len(particles)
-        return numpy.random.normal(0.0, self.Q, (N,)).reshape((-1, 1))
+        return np.random.normal(0.0, self.Q, (N,)).reshape((-1, 1))
 
-    def update(self, particles, u, t, noise):
+    def update(self, particles, u, t, noise) -> None:
         """Update estimate using 'data' as input"""
         particles += noise
 
     def measure(self, particles, y, t):
         """Return the log-pdf value of the measurement"""
-        logyprob = numpy.empty(len(particles), dtype=float)
+        logyprob = np.empty(len(particles), dtype=float)
         for k in range(len(particles)):
             logyprob[k] = kalman.lognormpdf(particles[k].reshape(-1, 1) - y, self.R)
         return logyprob
@@ -74,10 +74,10 @@ if __name__ == "__main__":
     num = 50
     P0 = 1.0
     Q = 1.0
-    R = numpy.asarray(((1.0,),))
+    R = np.asarray(((1.0,),))
 
     # Make realization deterministic
-    numpy.random.seed(1)
+    np.random.seed(1)
     (x, y) = generate_dataset(steps, P0, Q, R)
 
     model = Model(P0, Q, R)

@@ -7,7 +7,7 @@ framework.
 
 from typing import Any
 
-import numpy
+import numpy as np
 
 from .filter import ParticleTrajectory
 
@@ -35,14 +35,14 @@ class Simulator:
         self.params = None
         self.model = model
 
-    def set_params(self, params: numpy.ndarray) -> None:
+    def set_params(self, params: np.ndarray) -> None:
         """
         Set the parameters of the model (if any)
 
         Args:
          - params (array-like): Model specific paremeters
         """
-        self.params = numpy.copy(params)
+        self.params = np.copy(params)
         self.model.set_params(self.params)
 
     def simulate(
@@ -124,7 +124,7 @@ class Simulator:
             )
         return resamplings
 
-    def get_filtered_estimates(self) -> tuple[numpy.ndarray, numpy.ndarray]:
+    def get_filtered_estimates(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Returns type (est, w) (must first have called 'simulate')
          - est: (T, N, D) array containing all particles
@@ -138,18 +138,18 @@ class Simulator:
         N = self.pt.traj[0].pa.part.shape[0]
         D = self.pt.traj[0].pa.part.shape[1]
 
-        est = numpy.empty((T, N, D))
+        est = np.empty((T, N, D))
 
-        w = numpy.empty((T, N))
+        w = np.empty((T, N))
 
         for t in range(T):
-            wtmp = numpy.exp(self.pt.traj[t].pa.w)
-            w[t] = wtmp / numpy.sum(wtmp)
+            wtmp = np.exp(self.pt.traj[t].pa.w)
+            w[t] = wtmp / np.sum(wtmp)
             est[t] = self.pt.traj[t].pa.part
 
         return (est, w)
 
-    def get_filtered_mean(self) -> numpy.ndarray:
+    def get_filtered_mean(self) -> np.ndarray:
         """
         Calculate mean of filtered estimates (must first have
         called 'simulate')
@@ -165,13 +165,13 @@ class Simulator:
         T = len(self.pt.traj)
         D = self.pt.traj[0].pa.part.shape[1]
 
-        mean = numpy.empty((T, D))
+        mean = np.empty((T, D))
         for t in range(T):
-            mean[t] = numpy.sum((w[t].ravel() * est[t].T).T, 0)
+            mean[t] = np.sum((w[t].ravel() * est[t].T).T, 0)
 
         return mean
 
-    def get_smoothed_estimates(self) -> numpy.ndarray:
+    def get_smoothed_estimates(self) -> np.ndarray:
         """
         Return smoothed estimates (must first have called 'simulate')
 
@@ -184,7 +184,7 @@ class Simulator:
         """
         return self.straj.get_smoothed_estimates()
 
-    def get_smoothed_mean(self) -> numpy.ndarray:
+    def get_smoothed_mean(self) -> np.ndarray:
         """
         Calculate mean of smoothed estimates (must first have
         called 'simulate')
@@ -195,4 +195,4 @@ class Simulator:
         T is the length of the dataset, N is the number of particles and
         D is the dimension of each particle
         """
-        return numpy.mean(self.get_smoothed_estimates(), 1)
+        return np.mean(self.get_smoothed_estimates(), 1)

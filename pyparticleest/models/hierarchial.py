@@ -8,14 +8,14 @@ import copy
 import math
 from typing import Any
 
-import numpy
+import numpy as np
 
 import pyparticleest.utils.kalman as kalman
 from pyparticleest.interfaces import FFBSiRS
 from pyparticleest.models.rbpf import RBPSBase
 
 
-class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
+class HierarchicalBase(RBPSBase, abc.ABC):
     """
     Base class for Rao-Blackwellization of hierarchical models
 
@@ -28,7 +28,7 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         self.lxi = len_xi
         super().__init__(lz=len_z, **kwargs)
 
-    def measure(self, particles: numpy.ndarray, y: Any, t: float) -> numpy.ndarray:
+    def measure(self, particles: np.ndarray, y: Any, t: float) -> np.ndarray:
         """
         Return the log-pdf value of the measurement and update the statistics
         for the linear states
@@ -49,23 +49,23 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         N = len(particles)
         (y, Cz, hz, Rz) = self.get_lin_meas_dynamics(particles, y, t)
         if Cz is None:
-            Cz = numpy.repeat(self.kf.C[numpy.newaxis, :, :], N, axis=0)
+            Cz = np.repeat(self.kf.C[np.newaxis, :, :], N, axis=0)
         if hz is None:
-            hz = numpy.repeat(self.kf.h_k[numpy.newaxis, :, :], N, axis=0)
+            hz = np.repeat(self.kf.h_k[np.newaxis, :, :], N, axis=0)
         if Rz is None:
-            Rz = numpy.repeat(self.kf.R[numpy.newaxis, :, :], N, axis=0)
+            Rz = np.repeat(self.kf.R[np.newaxis, :, :], N, axis=0)
 
-        lyz = numpy.empty_like(lyxi)
+        lyz = np.empty_like(lyxi)
         for i in range(len(zl)):
             lyz[i] = self.kf.measure_full(
-                numpy.asarray(y).reshape((-1, 1)), zl[i], Pl[i], Cz[i], hz[i], Rz[i],
+                np.asarray(y).reshape((-1, 1)), zl[i], Pl[i], Cz[i], hz[i], Rz[i],
             )
 
         self.set_states(particles, xil, zl, Pl)
         return lyxi + lyz
 
     def calc_cond_dynamics(
-        self, particles: numpy.ndarray, xi_next: numpy.ndarray, u: Any, t: float,
+        self, particles: np.ndarray, xi_next: np.ndarray, u: Any, t: float,
     ) -> tuple[Any, Any, Any]:
         """
         Calculates the linear dynamics for each particle
@@ -88,15 +88,15 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         return (Az, fz, Qz)
 
     def meas_xi_next(
-        self, particles: numpy.ndarray, xi_next: numpy.ndarray, u: Any, t: float,
-    ) -> numpy.ndarray:
+        self, particles: np.ndarray, xi_next: np.ndarray, u: Any, t: float,
+    ) -> np.ndarray:
         # There is no information in the next nonlinear state about the
         # current linear states for this class of models
         return particles
 
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float,
-    ) -> numpy.ndarray:
+        self, particles: np.ndarray, next_part: np.ndarray, u: Any, t: float,
+    ) -> np.ndarray:
         """
         Return the log-pdf value for the possible future state 'next_part' given
         input u
@@ -120,14 +120,14 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
         N = len(particles)
         Nn = len(next_part)
         if N > 1 and Nn == 1:
-            next_part = numpy.repeat(next_part, N, 0)
+            next_part = np.repeat(next_part, N, 0)
 
-        lpz = numpy.empty(N)
+        lpz = np.empty(N)
 
         (Az, fz, Qz, _, _, _) = self.get_lin_pred_dynamics_int(particles, u, t)
         (_xil, zl, Pl) = self.get_states(particles)
-        zln = numpy.empty_like(zl)
-        Pln = numpy.empty_like(Pl)
+        zln = np.empty_like(zl)
+        Pln = np.empty_like(Pl)
 
         lpxi = self.logp_xnext_xi(particles, next_part[:, : self.lxi], u, t).ravel()
 
@@ -145,16 +145,16 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
 
     def sample_smooth(
         self,
-        part: numpy.ndarray,
+        part: np.ndarray,
         ptraj: list[Any] | None,
-        anc: numpy.ndarray,
+        anc: np.ndarray,
         future_trajs: list[Any] | None,
-        find: numpy.ndarray | None,
-        ut: numpy.ndarray,
-        yt: numpy.ndarray,
-        tt: numpy.ndarray,
+        find: np.ndarray | None,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
         cur_ind: int,
-    ) -> numpy.ndarray:
+    ) -> np.ndarray:
         """
         Sampled linear state conditioned on future_trajs
 
@@ -176,9 +176,9 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
          (array-like) with first dimension = N
         """
         M = len(part)
-        res = numpy.zeros((M, self.lxi + self.kf.lz + 2 * self.kf.lz**2))
+        res = np.zeros((M, self.lxi + self.kf.lz + 2 * self.kf.lz**2))
         for j in range(M):
-            partj = numpy.copy(part[j : j + 1])
+            partj = np.copy(part[j : j + 1])
             (xil, zl, Pl) = self.get_states(
                 part,
             )
@@ -201,15 +201,15 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
             xi = copy.copy(xil[0]).ravel()
             # Sample the linear variables, the full conditional density
             # is recovred later in the post_smoothing step
-            rng = numpy.random.default_rng()
+            rng = np.random.default_rng()
             z = rng.multivariate_normal(zl[0].ravel(), Pl[0]).ravel()
-            res[j, : (self.lxi + self.kf.lz)] = numpy.hstack((xi, z))
+            res[j, : (self.lxi + self.kf.lz)] = np.hstack((xi, z))
         return res
 
     @abc.abstractmethod
     def logp_xnext_xi(
-        self, particles: numpy.ndarray, next_xi: numpy.ndarray, u: Any, t: float,
-    ) -> numpy.ndarray:
+        self, particles: np.ndarray, next_xi: np.ndarray, u: Any, t: float,
+    ) -> np.ndarray:
         """
         Evaluate the log-probability of the next nonlinear state
 
@@ -228,8 +228,8 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def calc_xi_next(
-        self, particles: numpy.ndarray, u: Any, t: float, noise: numpy.ndarray,
-    ) -> numpy.ndarray:
+        self, particles: np.ndarray, u: Any, t: float, noise: np.ndarray,
+    ) -> np.ndarray:
         """
         Calculate the next nonlinear state given the input and noise
         realization
@@ -248,8 +248,8 @@ class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def measure_nonlin(
-        self, particles: numpy.ndarray, y: Any, t: float,
-    ) -> numpy.ndarray:
+        self, particles: np.ndarray, y: Any, t: float,
+    ) -> np.ndarray:
         """
         Measurement probability for the nonlinear parts of the measurement
         equations
@@ -271,7 +271,7 @@ class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
 
-    def logp_xnext_max(self, particles: numpy.ndarray, u: Any, t: float) -> float:
+    def logp_xnext_max(self, particles: np.ndarray, u: Any, t: float) -> float:
         """
         Calculate maximum value of the logp_xnext function, used for
         rejection sampling
@@ -289,20 +289,19 @@ class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
         N = len(particles)
         lpxi = self.logp_xnext_xi_max(particles, u, t)
         (Az, _fz, Qz, _, _, _) = self.get_lin_pred_dynamics_int(particles, u, t)
-        lpz = numpy.empty_like(lpxi)
+        lpz = np.empty_like(lpxi)
         (_xil, _zl, Pl) = self.get_states(particles)
         nx = len(Qz[0])
         for i in range(N):
             # Predict z_{t+1}
             Pn = Az[i].dot(Pl[i]).dot(Az[i].T) + Qz[i]
-            lpz[i] = -0.5 * nx * math.log(2 * math.pi) + numpy.linalg.slogdet(Pn)[1]
-        lpmax = numpy.max(lpxi + lpz)
-        return lpmax
+            lpz[i] = -0.5 * nx * math.log(2 * math.pi) + np.linalg.slogdet(Pn)[1]
+        return np.max(lpxi + lpz)
 
     @abc.abstractmethod
     def logp_xnext_xi_max(
-        self, particles: numpy.ndarray, u: Any, t: float,
-    ) -> numpy.ndarray:
+        self, particles: np.ndarray, u: Any, t: float,
+    ) -> np.ndarray:
         """
         Maximum for nonlinear part of the logp_xnext, called from
         logp_xnext_max

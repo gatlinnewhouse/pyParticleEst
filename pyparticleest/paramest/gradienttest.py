@@ -7,14 +7,14 @@ Created on Mar 27, 2015
 from typing import Any
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 from pyparticleest.paramest.paramest import ParamEstimation
 
 
 class GradPlot:
     def __init__(
-        self, params: numpy.ndarray, vals: numpy.ndarray, diff: numpy.ndarray | None,
+        self, params: np.ndarray, vals: np.ndarray, diff: np.ndarray | None,
     ) -> None:
         self.params = params
         self.vals = vals
@@ -42,22 +42,22 @@ class GradientTest(ParamEstimation):
     def test(
         self,
         param_id: int,
-        param_vals: numpy.ndarray,
+        param_vals: np.ndarray,
         num: int = 100,
         nums: int = 1,
         analytic_grad: bool = True,
     ) -> None:
         self.simulate(num_part=num, num_traj=nums)
         param_steps = len(param_vals)
-        logpy = numpy.zeros((param_steps,))
-        logpxn = numpy.zeros((param_steps,))
-        logpx0 = numpy.zeros((param_steps,))
+        logpy = np.zeros((param_steps,))
+        logpxn = np.zeros((param_steps,))
+        logpx0 = np.zeros((param_steps,))
         if analytic_grad:
-            grad_logpy = numpy.zeros((param_steps, len(self.params)))
-            grad_logpxn = numpy.zeros((param_steps, len(self.params)))
-            grad_logpx0 = numpy.zeros((param_steps, len(self.params)))
+            grad_logpy = np.zeros((param_steps, len(self.params)))
+            grad_logpxn = np.zeros((param_steps, len(self.params)))
+            grad_logpx0 = np.zeros((param_steps, len(self.params)))
         for k in range(param_steps):
-            tmp = numpy.copy(self.params)
+            tmp = np.copy(self.params)
             tmp[param_id] = param_vals[k]
             self.set_params(tmp)
             logpy[k] = self.model.eval_logp_y_fulltraj(
@@ -67,7 +67,7 @@ class GradientTest(ParamEstimation):
                 self.straj, self.straj.u, self.straj.t,
             )
             tmp = self.model.eval_logp_x0(self.straj.traj[0].pa.part, self.straj.t[0])
-            logpx0[k] = numpy.mean(tmp)
+            logpx0[k] = np.mean(tmp)
 
             if analytic_grad:
                 (_, grad_logp_y) = self.model.eval_logp_y_val_grad_fulltraj(
@@ -79,7 +79,7 @@ class GradientTest(ParamEstimation):
                 (tmp1, tmp2) = self.model.eval_logp_x0_val_grad(
                     self.straj.traj[0].pa.part, self.straj.t[0],
                 )
-                (_, grad_logp_x0) = (numpy.mean(tmp1), numpy.mean(tmp2))
+                (_, grad_logp_x0) = (np.mean(tmp1), np.mean(tmp2))
 
                 grad_logpy[k] = grad_logp_y
                 grad_logpxn[k] = grad_logp_xnext

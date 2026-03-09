@@ -182,9 +182,8 @@ class MixedNLGaussianSampled(RBPSBase):
         xi_pred = self.pred_xi(particles=particles, u=u, t=t)
 
         # additive Gaussian noise
-        xi_next = xi_pred + noise
+        return xi_pred + noise
 
-        return xi_next
 
     def pred_xi(self, particles: numpy.ndarray, u: Any, t: float) -> numpy.ndarray:
         """
@@ -301,9 +300,9 @@ class MixedNLGaussianSampled(RBPSBase):
             particles=particles, u=u, t=t,
         )
 
-        Acond = list()
-        fcond = list()
-        Qcond = list()
+        Acond = []
+        fcond = []
+        Qcond = []
 
         for i in range(N):
             # TODO linalg.solve instead?
@@ -440,7 +439,7 @@ class MixedNLGaussianSampled(RBPSBase):
             A = numpy.repeat(numpy.vstack((Axi[0], Az[0]))[numpy.newaxis], N, 0)
             A_identical = True
         else:
-            A = list()
+            A = []
             for i in range(N):
                 A.append(numpy.vstack((Axi[i], Az[i])))
 
@@ -448,7 +447,7 @@ class MixedNLGaussianSampled(RBPSBase):
             f = N * (numpy.vstack((fxi[0], fz[0])),)
             f_identical = True
         else:
-            f = list()
+            f = []
             for i in range(N):
                 f.append(numpy.vstack((fxi[i], fz[i])))
 
@@ -460,7 +459,7 @@ class MixedNLGaussianSampled(RBPSBase):
             )
             Q_identical = True
         else:
-            Q = list()
+            Q = []
             for i in range(N):
                 Q.append(
                     numpy.vstack(
@@ -1400,8 +1399,9 @@ class MixedNLGaussianMarginalized(MixedNLGaussianSampled):
     their particular problem"""
 
     def logp_xnext_max(self, particles: numpy.ndarray, u: Any, t: float) -> float:
+        msg = "MixedNLGaussianMarginalized doesn't support rejection sampling"
         raise NotImplementedError(
-            "MixedNLGaussianMarginalized doesn't support rejection sampling",
+            msg,
         )
 
     def calc_prop1(

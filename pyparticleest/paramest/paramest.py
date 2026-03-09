@@ -6,7 +6,7 @@
 from collections.abc import Callable
 from typing import Any
 
-import numpy
+import numpy as np
 
 from pyparticleest.simulator import Simulator
 
@@ -20,9 +20,9 @@ class ParamEstimation(Simulator):
 
     def maximize(
         self,
-        param0: numpy.ndarray,
-        num_part: int | numpy.ndarray | list[int],
-        num_traj: int | numpy.ndarray | list[int],
+        param0: np.ndarray,
+        num_part: int | np.ndarray | list[int],
+        num_traj: int | np.ndarray | list[int],
         max_iter: int = 1000,
         tol: float = 0.001,
         callback: Callable[..., Any] | None = None,
@@ -31,7 +31,7 @@ class ParamEstimation(Simulator):
         filter: str = "pf",
         smoother: str = "full",
         smoother_options: dict[str, Any] | None = None,
-    ) -> tuple[numpy.ndarray, float]:
+    ) -> tuple[np.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -58,25 +58,19 @@ class ParamEstimation(Simulator):
            implements ParamEstInterface_GradientSearch)
         """
 
-        params_local = numpy.copy(param0)
-        Q = -numpy.inf
+        params_local = np.copy(param0)
+        Q = -np.inf
         for i in range(max_iter):
             Q_old = Q
             self.set_params(params_local)
-            if numpy.isscalar(num_part):
+            if np.isscalar(num_part):
                 nump = num_part
             else:
-                if i < len(num_part):
-                    nump = num_part[i]
-                else:
-                    nump = num_part[-1]
-            if numpy.isscalar(num_traj):
+                nump = num_part[i] if i < len(num_part) else num_part[-1]
+            if np.isscalar(num_traj):
                 numt = num_traj
             else:
-                if i < len(num_traj):
-                    numt = num_traj[i]
-                else:
-                    numt = num_traj[-1]
+                numt = num_traj[i] if i < len(num_traj) else num_traj[-1]
 
             self.simulate(
                 nump,
@@ -99,11 +93,11 @@ class ParamEstimation(Simulator):
             # Q = -Q
             # Q_grad = -Q_grad
             if callback is not None:
-                callback(params=params_local, Q=-numpy.inf, cur_iter=i)  # , Q=Q)
+                callback(params=params_local, Q=-np.inf, cur_iter=i)  # , Q=Q)
         #            if (numpy.abs(Q - Q_old) < tol):
         #                break
         # return (params_local, Q)
-        return (params_local, -numpy.inf)
+        return (params_local, -np.inf)
 
 
 def alpha_gen(it: int) -> float:
@@ -122,9 +116,9 @@ class ParamEstimationSAEM(Simulator):
 
     def maximize(
         self,
-        param0: numpy.ndarray,
-        num_part: int | numpy.ndarray | list[int],
-        num_traj: int | numpy.ndarray | list[int],
+        param0: np.ndarray,
+        num_part: int | np.ndarray | list[int],
+        num_traj: int | np.ndarray | list[int],
         max_iter: int = 1000,
         tol: float = 0.001,
         callback: Callable[..., Any] | None = None,
@@ -135,7 +129,7 @@ class ParamEstimationSAEM(Simulator):
         smoother: str = "full",
         smoother_options: dict[str, Any] | None = None,
         alpha_gen: Callable[[int], float] = alpha_gen,
-    ) -> tuple[numpy.ndarray, float]:
+    ) -> tuple[np.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -162,27 +156,21 @@ class ParamEstimationSAEM(Simulator):
            implements ParamEstInterface_GradientSearch)
         """
 
-        params_local = numpy.copy(param0)
+        params_local = np.copy(param0)
         alltrajs = None
         weights = None
 
         for i in range(max_iter):
             self.set_params(params_local)
 
-            if numpy.isscalar(num_part):
+            if np.isscalar(num_part):
                 nump = num_part
             else:
-                if i < len(num_part):
-                    nump = num_part[i]
-                else:
-                    nump = num_part[-1]
-            if numpy.isscalar(num_traj):
+                nump = num_part[i] if i < len(num_part) else num_part[-1]
+            if np.isscalar(num_traj):
                 numt = num_traj
             else:
-                if i < len(num_traj):
-                    numt = num_traj[i]
-                else:
-                    numt = num_traj[-1]
+                numt = num_traj[i] if i < len(num_traj) else num_traj[-1]
 
             self.simulate(
                 nump,
@@ -194,21 +182,21 @@ class ParamEstimationSAEM(Simulator):
                 meas_first=meas_first,
             )
 
-            w = numpy.ones((numt,)) / numt
-            newtrajs = numpy.copy(self.straj.traj)
+            w = np.ones((numt,)) / numt
+            newtrajs = np.copy(self.straj.traj)
             alpha = alpha_gen(i)
             if weights is None:
                 weights = w
             else:
-                weights = numpy.concatenate(((1.0 - alpha) * weights, alpha * w))
+                weights = np.concatenate(((1.0 - alpha) * weights, alpha * w))
 
             if callback_sim is not None:
                 callback_sim(self)
 
             if alltrajs is None:
-                alltrajs = numpy.copy(newtrajs)
+                alltrajs = np.copy(newtrajs)
             else:
-                alltrajs = numpy.concatenate((alltrajs, newtrajs), axis=1)
+                alltrajs = np.concatenate((alltrajs, newtrajs), axis=1)
 
             zero_ind = weights == 0.0
             weights = weights[~zero_ind]
@@ -216,8 +204,8 @@ class ParamEstimationSAEM(Simulator):
             params_local = self.model.maximize_weighted(self.straj, alltrajs, weights)
 
             if callback is not None:
-                callback(params=params_local, Q=-numpy.inf, cur_iter=i)  # , Q=Q)
-        return (params_local, -numpy.inf)
+                callback(params=params_local, Q=-np.inf, cur_iter=i)  # , Q=Q)
+        return (params_local, -np.inf)
 
 
 class ParamEstimationPSAEM(Simulator):
@@ -229,7 +217,7 @@ class ParamEstimationPSAEM(Simulator):
 
     def maximize(
         self,
-        param0: numpy.ndarray,
+        param0: np.ndarray,
         num_part: int,
         max_iter: int = 1000,
         tol: float = 0.001,
@@ -245,7 +233,7 @@ class ParamEstimationPSAEM(Simulator):
         smoother: str = "ancestor",
         raoblackwell: bool = False,
         max_traj: int = 0,
-    ) -> tuple[numpy.ndarray, float]:
+    ) -> tuple[np.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -272,20 +260,21 @@ class ParamEstimationPSAEM(Simulator):
            implements ParamEstInterface_GradientSearch)
         """
 
-        params_local = numpy.copy(param0)
+        params_local = np.copy(param0)
         alltrajs = None
         weights = None
 
         def default_callback(
-            params: numpy.ndarray, Q: float, cur_iter: int,
+            params: np.ndarray, Q: float, cur_iter: int,
         ) -> bool | None:
             if cur_iter >= max_iter:
                 return True
+            return None
 
         if callback is None:
             callback = default_callback
 
-        ind = numpy.arange(num_part, dtype=int)
+        ind = np.arange(num_part, dtype=int)
         i = 0
         while True:
             i += 1
@@ -302,36 +291,36 @@ class ParamEstimationPSAEM(Simulator):
 
             if raoblackwell:
                 tmp = self.straj.calculate_ancestors(self.pt, ind)
-                w = numpy.exp(self.pt.traj[-1].pa.w)
-                w = numpy.copy(w / numpy.sum(w))
+                w = np.exp(self.pt.traj[-1].pa.w)
+                w = np.copy(w / np.sum(w))
                 N = tmp[0].pa.part.shape[0]
                 T = len(tmp)
                 D = tmp[0].pa.part.shape[1]
-                newtrajs = numpy.empty((T, N, D))
+                newtrajs = np.empty((T, N, D))
 
             else:
                 newtrajs = self.get_smoothed_estimates()
                 N = newtrajs.shape[1]
-                w = numpy.ones((N,)) / float(N)
+                w = np.ones((N,)) / float(N)
 
             alpha = alpha_gen(i - 1)
             if weights is None:
                 weights = w
             else:
-                weights = numpy.concatenate(((1.0 - alpha) * weights, alpha * w))
+                weights = np.concatenate(((1.0 - alpha) * weights, alpha * w))
 
-            filter_options["cond_traj"] = numpy.copy(self.straj.traj)
+            filter_options["cond_traj"] = np.copy(self.straj.traj)
             if callback_sim is not None:
                 callback_sim(self)
 
             if alltrajs is None:
-                alltrajs = numpy.copy(newtrajs)
+                alltrajs = np.copy(newtrajs)
             else:
-                alltrajs = numpy.concatenate((alltrajs, newtrajs), axis=1)
+                alltrajs = np.concatenate((alltrajs, newtrajs), axis=1)
 
             # Discard at max the lowest 'discard_percentile' of the weights
-            tmp = numpy.percentile(weights, discard_percentile)
-            wlow = numpy.max(numpy.hstack((weights[weights < tmp], 0.0)))
+            tmp = np.percentile(weights, discard_percentile)
+            wlow = np.max(np.hstack((weights[weights < tmp], 0.0)))
             threshold = min(discard_eps, wlow)
             zero_ind = weights <= threshold
             weights = weights[~zero_ind]
@@ -341,15 +330,15 @@ class ParamEstimationPSAEM(Simulator):
                 weights = weights[-max_traj:]
                 alltrajs = alltrajs[:, -max_traj:]
             # Make sure weights sum to one
-            weights /= numpy.sum(weights)
+            weights /= np.sum(weights)
 
             params_local = self.model.maximize_weighted(self.straj, alltrajs, weights)
 
             if callback is not None:
-                rval = callback(params=params_local, Q=-numpy.inf, cur_iter=i)
+                rval = callback(params=params_local, Q=-np.inf, cur_iter=i)
                 if rval:
                     break
-        return (params_local, -numpy.inf)
+        return (params_local, -np.inf)
 
 
 class ParamEstimationPSAEM2(Simulator):
@@ -361,7 +350,7 @@ class ParamEstimationPSAEM2(Simulator):
 
     def maximize(
         self,
-        param0: numpy.ndarray,
+        param0: np.ndarray,
         num_part: int,
         max_iter: int = 1000,
         tol: float = 0.001,
@@ -375,7 +364,7 @@ class ParamEstimationPSAEM2(Simulator):
         alpha_gen: Callable[[int], float] = alpha_gen,
         discard_eps: float = 0.0,
         discard_percentile: float = 0.0,
-    ) -> tuple[numpy.ndarray, float]:
+    ) -> tuple[np.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -402,9 +391,9 @@ class ParamEstimationPSAEM2(Simulator):
            implements ParamEstInterface_GradientSearch)
         """
 
-        params_local = numpy.copy(param0)
+        params_local = np.copy(param0)
         alltrajs = None
-        weights = numpy.empty((max_iter * num_part,))
+        weights = np.empty((max_iter * num_part,))
 
         datalen = 0
         for i in range(max_iter):
@@ -420,12 +409,12 @@ class ParamEstimationPSAEM2(Simulator):
                 meas_first=meas_first,
             )
 
-            tmp = numpy.copy(self.straj.traj)
+            tmp = np.copy(self.straj.traj)
             T = len(tmp)
             N = tmp[0].pa.part.shape[0]
             D = tmp[0].pa.part.shape[1]
 
-            newtrajs = numpy.empty((T, N, D))
+            newtrajs = np.empty((T, N, D))
 
             for t in range(T):
                 newtrajs[t] = tmp[t].pa.part
@@ -438,35 +427,35 @@ class ParamEstimationPSAEM2(Simulator):
 
             #            weights[datalen:datalen + 1] = alpha * w
 
-            filter_options["cond_traj"] = numpy.copy(self.straj.traj)
+            filter_options["cond_traj"] = np.copy(self.straj.traj)
             if callback_sim is not None:
                 callback_sim(self)
 
             if alltrajs is None:
-                alltrajs = numpy.copy(newtrajs)
+                alltrajs = np.copy(newtrajs)
             else:
-                alltrajs = numpy.concatenate((alltrajs[:, :datalen], newtrajs), axis=1)
+                alltrajs = np.concatenate((alltrajs[:, :datalen], newtrajs), axis=1)
 
             datalen += 1
 
             # Discard at max the lowest 'discard_percentile' of the weights
-            tmp = numpy.percentile(weights[:datalen], discard_percentile)
-            wlow = numpy.max(
-                numpy.hstack((weights[:datalen][weights[:datalen] < tmp], 0.0)),
+            tmp = np.percentile(weights[:datalen], discard_percentile)
+            wlow = np.max(
+                np.hstack((weights[:datalen][weights[:datalen] < tmp], 0.0)),
             )
             threshold = min(discard_eps, wlow)
 
             zero_ind = weights[:datalen] <= threshold
-            zerolen = numpy.count_nonzero(zero_ind)
+            zerolen = np.count_nonzero(zero_ind)
             weights[: datalen - zerolen] = weights[:datalen][~zero_ind]
             alltrajs[:, : datalen - zerolen] = alltrajs[:, :datalen][:, ~zero_ind]
             datalen -= zerolen
-            weights[:datalen] /= numpy.sum(weights[:datalen])
+            weights[:datalen] /= np.sum(weights[:datalen])
             params_local = self.model.maximize_weighted(
                 self.straj, alltrajs[:, :datalen], weights[:datalen],
             )
             #            params_local = self.model.maximize_weighted(self.straj, alltrajs[:, -1:], numpy.asarray((1.0,)))
 
             if callback is not None:
-                callback(params=params_local, Q=-numpy.inf, cur_iter=i + 1)  # , Q=Q)
-        return (params_local, -numpy.inf)
+                callback(params=params_local, Q=-np.inf, cur_iter=i + 1)  # , Q=Q)
+        return (params_local, -np.inf)

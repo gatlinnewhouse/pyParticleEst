@@ -15,7 +15,7 @@ import pyparticleest.utils.kalman as kalman
 
 
 class NonlinearGaussian(
-    interfaces.ParticleFiltering, interfaces.FFBSiRS, metaclass=abc.ABCMeta,
+    interfaces.ParticleFiltering, interfaces.FFBSiRS, abc.ABC,
 ):
     """
     Base class for particles of the type mixed linear/non-linear with

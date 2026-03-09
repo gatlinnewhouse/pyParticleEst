@@ -1,24 +1,24 @@
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 import pyparticleest.models.mlnlg as mlnlg
 import pyparticleest.simulator as simulator
 
 
 def generate_dataset(steps, P0_xi, P0_z, Qxi, Qz, Qxiz, R):
-    Q = numpy.vstack((numpy.hstack((Qxi, Qxiz)), numpy.hstack((Qxiz.T, Qz))))
-    xi = numpy.zeros((1, steps + 1))
-    z = numpy.zeros((1, steps + 1))
-    y = numpy.zeros((steps, 1))
-    xi[:, 0] = numpy.random.normal(0.0, numpy.sqrt(P0_xi))
-    z[:, 0] = numpy.random.normal(0.0, numpy.sqrt(P0_z))
+    Q = np.vstack((np.hstack((Qxi, Qxiz)), np.hstack((Qxiz.T, Qz))))
+    xi = np.zeros((1, steps + 1))
+    z = np.zeros((1, steps + 1))
+    y = np.zeros((steps, 1))
+    xi[:, 0] = np.random.normal(0.0, np.sqrt(P0_xi))
+    z[:, 0] = np.random.normal(0.0, np.sqrt(P0_z))
     for k in range(1, steps + 1):
-        noise = numpy.random.multivariate_normal(numpy.zeros((2,)), Q)
+        noise = np.random.multivariate_normal(np.zeros((2,)), Q)
         xi[:, k] = xi[:, k - 1] + z[:, k - 1] + noise[0]
         z[:, k] = z[:, k - 1] + noise[1]
-        y[k - 1, 0] = xi[:, k] + numpy.random.normal(0.0, numpy.sqrt(R))
+        y[k - 1, 0] = xi[:, k] + np.random.normal(0.0, np.sqrt(R))
 
-    x = numpy.vstack((xi, z))
+    x = np.vstack((xi, z))
     return (x, y)
 
 
@@ -29,14 +29,14 @@ class Model(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
     y_k = xi_k + +z_k + e_k, e_k ~ N(0,R_z),
     (v_xi v_z).T ~ N(0, ((Q_xi, Qxiz), (Qxiz.T Qz))"""
 
-    def __init__(self, P0_xi, P0_z, Q_xi, Q_z, Q_xiz, R):
-        Axi = numpy.eye(1)
-        Az = numpy.eye(1)
+    def __init__(self, P0_xi, P0_z, Q_xi, Q_z, Q_xiz, R) -> None:
+        Axi = np.eye(1)
+        Az = np.eye(1)
         self.pn_count = 0
-        P0_xi = numpy.copy(P0_xi)
-        P0_z = numpy.copy(P0_z)
-        z0 = numpy.zeros((1,))
-        xi0 = numpy.zeros((1,))
+        P0_xi = np.copy(P0_xi)
+        P0_z = np.copy(P0_z)
+        z0 = np.zeros((1,))
+        xi0 = np.zeros((1,))
         super().__init__(
             z0=z0,
             Pz0=P0_z,
@@ -51,13 +51,13 @@ class Model(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
         )
 
     def get_nonlin_pred_dynamics(self, particles, u, t):
-        tmp = numpy.vstack(particles)
+        tmp = np.vstack(particles)
         fxi = tmp[:, 0].tolist()
         return (None, fxi, None)
 
     def get_meas_dynamics(self, particles, y, t):
         N = len(particles)
-        tmp = numpy.vstack(particles)
+        tmp = np.vstack(particles)
         h = tmp[:, 0].reshape(N, 1, 1)
         return (y, None, h, None)
 
@@ -66,13 +66,13 @@ if __name__ == "__main__":
     steps = 30
     num = 100
     nums = 10
-    P0_xi = numpy.eye(1)
-    P0_z = numpy.eye(1)
-    Q_xi = 1.0 * numpy.eye(1)
-    Q_z = 1.0 * numpy.eye(1)
-    Q_xiz = 0.0 * numpy.eye(1)
-    R = 0.1 * numpy.eye(1)
-    numpy.random.seed(0)
+    P0_xi = np.eye(1)
+    P0_z = np.eye(1)
+    Q_xi = 1.0 * np.eye(1)
+    Q_z = 1.0 * np.eye(1)
+    Q_xiz = 0.0 * np.eye(1)
+    R = 0.1 * np.eye(1)
+    np.random.seed(0)
     (x, y) = generate_dataset(steps, P0_xi, P0_z, Q_xi, Q_z, Q_xiz, R)
 
     model = Model(P0_xi, P0_z, Q_xi, Q_z, Q_xiz, R)

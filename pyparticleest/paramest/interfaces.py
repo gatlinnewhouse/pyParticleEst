@@ -7,19 +7,19 @@ Interfaces required for using the parameter estimation methods
 import abc
 from typing import Any
 
-import numpy
+import numpy as np
 import scipy.optimize
 
 
-class ParamEst(metaclass=abc.ABCMeta):
+class ParamEst(abc.ABC):
     @abc.abstractmethod
-    def maximize(self, straj: Any) -> numpy.ndarray:
+    def maximize(self, straj: Any) -> np.ndarray:
         pass
 
 
-class ParamEstIntFullTraj(metaclass=abc.ABCMeta):
+class ParamEstIntFullTraj(abc.ABC):
     @abc.abstractmethod
-    def set_params(self, params: numpy.ndarray) -> None:
+    def set_params(self, params: np.ndarray) -> None:
         """
         New set of parameters for which the integral approximation terms will be evaluated
 
@@ -29,7 +29,7 @@ class ParamEstIntFullTraj(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def eval_logp_x0(self, particles: numpy.ndarray, t: float) -> numpy.ndarray | float:
+    def eval_logp_x0(self, particles: np.ndarray, t: float) -> np.ndarray | float:
         """
         Calculate term of the I1 integral approximation as specified in [1].
         Eg. Evaluate log p(x_0) or sum log p(x_0)
@@ -51,7 +51,7 @@ class ParamEstIntFullTraj(metaclass=abc.ABCMeta):
         pass
 
 
-class ParamEstInterface(ParamEstIntFullTraj, metaclass=abc.ABCMeta):
+class ParamEstInterface(ParamEstIntFullTraj, abc.ABC):
     """Interface s for particles to be used with the parameter estimation
     algorithm presented in [1]
     [1] - 'System identification of nonlinear state-space models' by Schon, Wills and Ninness"""
@@ -63,7 +63,7 @@ class ParamEstInterface(ParamEstIntFullTraj, metaclass=abc.ABCMeta):
         T = straj.traj.shape[0]
         for i in range(T - 1):
             val = self.eval_logp_xnext(sest[i], sest[i + 1], ut[i], tt[i])
-            logp_xnext += numpy.sum(val)
+            logp_xnext += np.sum(val)
         return logp_xnext / M
 
     def eval_logp_y_fulltraj(self, straj: Any, yt: Any, tt: Any) -> float:
@@ -74,13 +74,13 @@ class ParamEstInterface(ParamEstIntFullTraj, metaclass=abc.ABCMeta):
         for i in range(T):
             if yt[i] is not None:
                 val = self.eval_logp_y(sest[i], yt[i], tt[i])
-                logp_y += numpy.sum(val)
+                logp_y += np.sum(val)
 
         return logp_y / M
 
     def eval_logp_xnext(
-        self, particles: numpy.ndarray, particles_next: numpy.ndarray, u: Any, t: float,
-    ) -> numpy.ndarray | float:
+        self, particles: np.ndarray, particles_next: np.ndarray, u: Any, t: float,
+    ) -> np.ndarray | float:
         """
         Calculate gradient of a term of the I2 integral approximation
         as specified in [1].
@@ -99,8 +99,8 @@ class ParamEstInterface(ParamEstIntFullTraj, metaclass=abc.ABCMeta):
         return self.logp_xnext(particles, particles_next, u, t)
 
     def eval_logp_y(
-        self, particles: numpy.ndarray, y: Any, t: float,
-    ) -> numpy.ndarray | float:
+        self, particles: np.ndarray, y: Any, t: float,
+    ) -> np.ndarray | float:
         """
         Calculate gradient of a term of the I3 integral approximation
         as specified in [1].
@@ -125,18 +125,18 @@ class ParamEstInterface_GradientSearchFullTraj(ParamEstInterface):
     @abc.abstractmethod
     def eval_logp_y_val_grad_fulltraj(
         self, straj: Any, yt: Any, tt: Any,
-    ) -> tuple[float, numpy.ndarray]:
+    ) -> tuple[float, np.ndarray]:
         pass
 
     @abc.abstractmethod
     def eval_logp_xnext_val_grad_fulltraj(
         self, straj: Any, ut: Any, tt: Any,
-    ) -> tuple[float, numpy.ndarray]:
+    ) -> tuple[float, np.ndarray]:
         pass
 
 
 class ParamEstInterface_GradientSearch(
-    ParamEstInterface_GradientSearchFullTraj, metaclass=abc.ABCMeta,
+    ParamEstInterface_GradientSearchFullTraj, abc.ABC,
 ):
     """Interface s for particles to be used with the parameter estimation
     algorithm presented in [1] using analytic gradients
@@ -144,8 +144,8 @@ class ParamEstInterface_GradientSearch(
 
     def eval_logp_y_val_grad_fulltraj(
         self, straj: Any, yt: Any, tt: Any,
-    ) -> tuple[float, numpy.ndarray]:
-        logp_y_grad = numpy.zeros(len(self.params))
+    ) -> tuple[float, np.ndarray]:
+        logp_y_grad = np.zeros(len(self.params))
         logp_y = 0.0
         sest = straj.get_smoothed_estimates()
         M = sest.shape[1]
@@ -159,8 +159,8 @@ class ParamEstInterface_GradientSearch(
 
     def eval_logp_xnext_val_grad_fulltraj(
         self, straj: Any, ut: Any, tt: Any,
-    ) -> tuple[float, numpy.ndarray]:
-        logp_xnext_grad = numpy.zeros(len(self.params))
+    ) -> tuple[float, np.ndarray]:
+        logp_xnext_grad = np.zeros(len(self.params))
         logp_xnext = 0.0
         sest = straj.get_smoothed_estimates()
         M = sest.shape[1]
@@ -176,8 +176,8 @@ class ParamEstInterface_GradientSearch(
 
     @abc.abstractmethod
     def eval_logp_x0_val_grad(
-        self, particles: numpy.ndarray, t: float,
-    ) -> tuple[numpy.ndarray | float, numpy.ndarray]:
+        self, particles: np.ndarray, t: float,
+    ) -> tuple[np.ndarray | float, np.ndarray]:
         """
         Calculate term of the I1 integral approximation as specified in [1].
         Eg. Evaluate log p(x_0) or sum log p(x_0)
@@ -196,8 +196,8 @@ class ParamEstInterface_GradientSearch(
 
     @abc.abstractmethod
     def eval_logp_xnext_val_grad(
-        self, particles: numpy.ndarray, particles_next: numpy.ndarray, u: Any, t: float,
-    ) -> tuple[numpy.ndarray | float, numpy.ndarray]:
+        self, particles: np.ndarray, particles_next: np.ndarray, u: Any, t: float,
+    ) -> tuple[np.ndarray | float, np.ndarray]:
         """
         Calculate gradient of a term of the I2 integral approximation
         as specified in [1].
@@ -220,8 +220,8 @@ class ParamEstInterface_GradientSearch(
 
     @abc.abstractmethod
     def eval_logp_y_val_grad(
-        self, particles: numpy.ndarray, y: Any, t: float,
-    ) -> tuple[numpy.ndarray | float, numpy.ndarray]:
+        self, particles: np.ndarray, y: Any, t: float,
+    ) -> tuple[np.ndarray | float, np.ndarray]:
         """
         Calculate gradient of a term of the I3 integral approximation
         as specified in [1].
@@ -253,17 +253,16 @@ class ParamEstBaseNumeric(ParamEstIntFullTraj):
     def set_param_bounds(self, bounds: list[tuple[float, float]] | None) -> None:
         self.param_bounds = bounds
 
-    def maximize(self, straj: Any) -> numpy.ndarray:
-        def fval(params_val: numpy.ndarray) -> float:
+    def maximize(self, straj: Any) -> np.ndarray:
+        def fval(params_val: np.ndarray) -> float:
             """internal function"""
             self.set_params(params_val)
             log_py = self.eval_logp_y_fulltraj(straj, straj.y, straj.t)
             log_pxnext = self.eval_logp_xnext_fulltraj(straj, straj.u, straj.t)
             tmp = self.eval_logp_x0(straj.traj[0].pa.part, straj.t[0])
-            log_px0 = numpy.mean(tmp)
+            log_px0 = np.mean(tmp)
 
-            val = -1.0 * (log_py + log_px0 + log_pxnext)
-            return val
+            return -1.0 * (log_py + log_px0 + log_pxnext)
 
         res = scipy.optimize.minimize(
             fun=fval,
@@ -286,9 +285,9 @@ class ParamEstBaseNumericGrad(ParamEstInterface_GradientSearchFullTraj):
     def set_param_bounds(self, bounds: list[tuple[float, float]] | None) -> None:
         self.param_bounds = bounds
 
-    def maximize(self, straj: Any) -> numpy.ndarray:
+    def maximize(self, straj: Any) -> np.ndarray:
 
-        def fval_grad(params_val: numpy.ndarray) -> tuple[float, numpy.ndarray]:
+        def fval_grad(params_val: np.ndarray) -> tuple[float, np.ndarray]:
             """internal function"""
             self.set_params(params_val)
             (logp_y, grad_logp_y) = self.eval_logp_y_val_grad_fulltraj(
@@ -299,7 +298,7 @@ class ParamEstBaseNumericGrad(ParamEstInterface_GradientSearchFullTraj):
             )
 
             (tmp1, tmp2) = self.eval_logp_x0_val_grad(straj.traj[0].pa.part, straj.t[0])
-            (logp_x0, grad_logp_x0) = (numpy.mean(tmp1), numpy.mean(tmp2))
+            (logp_x0, grad_logp_x0) = (np.mean(tmp1), np.mean(tmp2))
             val = -1.0 * (logp_y + logp_x0 + logp_xnext)
             grad = -1.0 * (grad_logp_y + grad_logp_xnext + grad_logp_x0)
             return (val, grad)

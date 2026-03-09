@@ -8,7 +8,7 @@ import math
 import sys
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 import pyparticleest.models.mlnlg as mlnlg
 import pyparticleest.paramest.gradienttest as gradienttest
@@ -16,21 +16,21 @@ import pyparticleest.paramest.interfaces as pestinf
 import pyparticleest.paramest.paramest as param_est
 
 
-def sign(x):
+def sign(x) -> float:
     if x < 0.0:
         return -1.0
     return 1.0
 
 
 def calc_h(eta):
-    return numpy.asarray(((0.1 * eta[0, 0] * math.fabs(eta[0, 0])), 0.0)).reshape(
+    return np.asarray(((0.1 * eta[0, 0] * math.fabs(eta[0, 0])), 0.0)).reshape(
         (-1, 1),
     )
 
 
 def generate_dataset(params, length):
-    Ae = numpy.array([[params[1], 0.0, 0.0]])
-    Az = numpy.asarray(
+    Ae = np.array([[params[1], 0.0, 0.0]])
+    Az = np.asarray(
         (
             (1.0, params[2], 0.0),
             (0.0, params[3] * math.cos(params[4]), -params[3] * math.sin(params[4])),
@@ -38,30 +38,30 @@ def generate_dataset(params, length):
         ),
     )
 
-    C = numpy.array([[0.0, 0.0, 0.0], [1.0, -1.0, 1.0]])
+    C = np.array([[0.0, 0.0, 0.0], [1.0, -1.0, 1.0]])
 
-    e_vec = numpy.zeros((1, length))
-    z_vec = numpy.zeros((3, length))
+    e_vec = np.zeros((1, length))
+    z_vec = np.zeros((3, length))
 
-    e = numpy.asarray(((numpy.random.normal(0.0, 1.0),),))
-    z = numpy.zeros((3, 1))
+    e = np.asarray(((np.random.normal(0.0, 1.0),),))
+    z = np.zeros((3, 1))
 
     e_vec[:, 0] = e.ravel()
     z_vec[:, 0] = z.ravel()
 
-    y = numpy.zeros((2, length))
+    y = np.zeros((2, length))
     h = calc_h(e)
     y[:, 0] = (h + C.dot(z)).ravel()
 
     for i in range(1, length):
         e = (
-            params[0] * numpy.arctan(e)
+            params[0] * np.arctan(e)
             + Ae.dot(z)
-            + numpy.random.normal(0.0, math.sqrt(0.01))
+            + np.random.normal(0.0, math.sqrt(0.01))
         )
 
         wz = (
-            numpy.random.multivariate_normal(numpy.zeros((3,)), 0.01 * numpy.eye(3, 3))
+            np.random.multivariate_normal(np.zeros((3,)), 0.01 * np.eye(3, 3))
             .ravel()
             .reshape((-1, 1))
         )
@@ -82,10 +82,10 @@ class ParticleLS2(
 ):
     """Implement a simple system by extending the MixedNLGaussian class"""
 
-    def __init__(self, params):
+    def __init__(self, params) -> None:
         """Define all model variables"""
-        Axi = numpy.array([[params[1], 0.0, 0.0]])
-        Az = numpy.asarray(
+        Axi = np.array([[params[1], 0.0, 0.0]])
+        Az = np.asarray(
             (
                 (1.0, params[2], 0.0),
                 (
@@ -97,18 +97,18 @@ class ParticleLS2(
             ),
         )
 
-        C = numpy.array([[0.0, 0.0, 0.0], [1.0, -1.0, 1.0]])
-        Qxi = numpy.diag(
+        C = np.array([[0.0, 0.0, 0.0], [1.0, -1.0, 1.0]])
+        Qxi = np.diag(
             [
                 0.01,
             ],
         )
-        Qz = numpy.diag([0.01, 0.01, 0.01])
-        R = numpy.diag([0.1, 0.1])
-        xi0 = numpy.asarray((0.0,)).reshape((-1, 1))
-        Pxi0 = numpy.eye(1)
-        z0 = numpy.zeros((3,))
-        Pz0 = 0.0 * numpy.eye(3)
+        Qz = np.diag([0.01, 0.01, 0.01])
+        R = np.diag([0.1, 0.1])
+        xi0 = np.asarray((0.0,)).reshape((-1, 1))
+        Pxi0 = np.eye(1)
+        z0 = np.zeros((3,))
+        Pz0 = 0.0 * np.eye(3)
 
         # Linear states handled by base-class
         super().__init__(
@@ -127,15 +127,15 @@ class ParticleLS2(
 
     def get_nonlin_pred_dynamics(self, particles, u, t):
         xil = particles[:, 0]
-        fxil = self.params[0] * numpy.arctan(xil)
-        return (None, fxil[:, numpy.newaxis, numpy.newaxis], None)
+        fxil = self.params[0] * np.arctan(xil)
+        return (None, fxil[:, np.newaxis, np.newaxis], None)
 
     def get_meas_dynamics(self, particles, y, t):
         N = len(particles)
-        xil = numpy.vstack(particles)[:, 0]
-        h = numpy.zeros((N, 2, 1))
-        h[:, 0, 0] = 0.1 * numpy.fabs(xil) * xil
-        return (numpy.asarray(y).reshape((-1, 1)), None, h, None)
+        xil = np.vstack(particles)[:, 0]
+        h = np.zeros((N, 2, 1))
+        h[:, 0, 0] = 0.1 * np.fabs(xil) * xil
+        return (np.asarray(y).reshape((-1, 1)), None, h, None)
 
     # Override this method since there is no uncertainty in z0
     def eval_logp_x0(self, particles, t):
@@ -150,19 +150,19 @@ class ParticleLS2(
     def get_pred_dynamics_grad(self, particles, u, t):
         N = len(particles)
         xil = particles[:, 0]
-        f_grad = numpy.zeros((N, 5, 4, 1))
-        f_grad[:, 0, 0, 0] = numpy.arctan(xil)
+        f_grad = np.zeros((N, 5, 4, 1))
+        f_grad[:, 0, 0, 0] = np.arctan(xil)
 
-        return (numpy.repeat(self.A_grad[numpy.newaxis], N, 0), f_grad, None)
+        return (np.repeat(self.A_grad[np.newaxis], N, 0), f_grad, None)
 
-    def set_params(self, params):
+    def set_params(self, params) -> None:
         """New set of parameters"""
         # Update all needed matrices and derivates with respect
         # to the new parameter set
-        self.params = numpy.copy(params)
-        Axi = numpy.array([[params[1], 0.0, 0.0]])
+        self.params = np.copy(params)
+        Axi = np.array([[params[1], 0.0, 0.0]])
 
-        Az = numpy.asarray(
+        Az = np.asarray(
             (
                 (1.0, params[2], 0.0),
                 (
@@ -174,24 +174,24 @@ class ParticleLS2(
             ),
         )
 
-        self.A_grad = numpy.vstack(
+        self.A_grad = np.vstack(
             (
-                numpy.zeros((4, 3))[numpy.newaxis],
-                numpy.asarray(
+                np.zeros((4, 3))[np.newaxis],
+                np.asarray(
                     ((1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
-                )[numpy.newaxis],
-                numpy.asarray(
+                )[np.newaxis],
+                np.asarray(
                     ((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
-                )[numpy.newaxis],
-                numpy.asarray(
+                )[np.newaxis],
+                np.asarray(
                     (
                         (0.0, 0.0, 0.0),
                         (0.0, 0.0, 0.0),
                         (0.0, math.cos(params[4]), -math.sin(params[4])),
                         (0.0, math.sin(params[4]), math.cos(params[4])),
                     ),
-                )[numpy.newaxis],
-                numpy.asarray(
+                )[np.newaxis],
+                np.asarray(
                     (
                         (0.0, 0.0, 0.0),
                         (0.0, 0.0, 0.0),
@@ -206,7 +206,7 @@ class ParticleLS2(
                             -params[3] * math.sin(params[4]),
                         ),
                     ),
-                )[numpy.newaxis],
+                )[np.newaxis],
             ),
         )
         self.set_dynamics(Axi=Axi, Az=Az)
@@ -217,16 +217,16 @@ if __name__ == "__main__":
         num = 50
         nums = 5
 
-        theta_true = numpy.array((1.0, 1.0, 0.3, 0.968, 0.315))
+        theta_true = np.array((1.0, 1.0, 0.3, 0.968, 0.315))
 
         # How many steps forward in time should our simulation run
         steps = 200
         sims = 1
 
         # Create arrays for storing some values for later plotting
-        vals = numpy.zeros((2, num + 1, steps + 1))
+        vals = np.zeros((2, num + 1, steps + 1))
 
-        estimate = numpy.zeros((5, sims))
+        estimate = np.zeros((5, sims))
 
         plt.ion()
         fig1 = plt.figure()
@@ -235,14 +235,13 @@ if __name__ == "__main__":
         max_iter = 1000
 
         for k in range(sims):
-            print(k)
-            theta_guess = numpy.array(
+            theta_guess = np.array(
                 (
-                    numpy.random.uniform(0.0, 2.0),
-                    numpy.random.uniform(0.0, 2.0),
-                    numpy.random.uniform(0.0, 0.6),
-                    numpy.random.uniform(0.0, 1.0),
-                    numpy.random.uniform(0.0, math.pi / 2.0),
+                    np.random.uniform(0.0, 2.0),
+                    np.random.uniform(0.0, 2.0),
+                    np.random.uniform(0.0, 0.6),
+                    np.random.uniform(0.0, 1.0),
+                    np.random.uniform(0.0, math.pi / 2.0),
                 ),
             )
 
@@ -252,17 +251,16 @@ if __name__ == "__main__":
             (y, e, z) = generate_dataset(theta_true, steps)
             # Store values for last time-step aswell
 
-            print("estimation start")
 
             plt.figure(fig1.number)
             plt.clf()
-            x = numpy.asarray(range(steps + 1))
-            plt.plot(x[1:], numpy.asarray(y)[:, :], ".")
+            x = np.asarray(range(steps + 1))
+            plt.plot(x[1:], np.asarray(y)[:, :], ".")
             fig1.show()
             plt.draw()
 
-            params_it = numpy.zeros((max_iter, len(theta_guess)))
-            Q_it = numpy.zeros(max_iter)
+            params_it = np.zeros((max_iter, len(theta_guess)))
+            Q_it = np.zeros(max_iter)
             it = 0
 
             def callback(params, Q, cur_iter):
@@ -303,7 +301,7 @@ if __name__ == "__main__":
                 tol=0.0,
             )
 
-            svals = numpy.zeros((4, nums, steps + 1))
+            svals = np.zeros((4, nums, steps + 1))
 
             fig3 = plt.figure()
             fig4 = plt.figure()
@@ -359,7 +357,6 @@ if __name__ == "__main__":
 
             plt.draw()
 
-            print("maximization start")
 
             estimate[:, k] = param
 
@@ -374,32 +371,31 @@ if __name__ == "__main__":
         plt.ioff()
         plt.show()
         plt.draw()
-        print("exit")
     elif sys.argv[1].lower() == "nogui":
         num = 50
         nums = 10
 
-        theta_true = numpy.array((1.0, 1.0, 0.3, 0.968, 0.315))
+        theta_true = np.array((1.0, 1.0, 0.3, 0.968, 0.315))
 
         # How many steps forward in time should our simulation run
         steps = 200
         sims = 20
 
         # Create arrays for storing some values for later plotting
-        vals = numpy.zeros((2, num + 1, steps + 1))
+        vals = np.zeros((2, num + 1, steps + 1))
 
-        estimate = numpy.zeros((5, sims))
+        estimate = np.zeros((5, sims))
 
         max_iter = 1000
 
         for k in range(sims):
-            theta_guess = numpy.array(
+            theta_guess = np.array(
                 (
-                    numpy.random.uniform(0.0, 2.0),
-                    numpy.random.uniform(0.0, 2.0),
-                    numpy.random.uniform(0.0, 0.6),
-                    numpy.random.uniform(0.0, 1.0),
-                    numpy.random.uniform(0.0, math.pi / 2.0),
+                    np.random.uniform(0.0, 2.0),
+                    np.random.uniform(0.0, 2.0),
+                    np.random.uniform(0.0, 0.6),
+                    np.random.uniform(0.0, 1.0),
+                    np.random.uniform(0.0, math.pi / 2.0),
                 ),
             )
 
@@ -425,21 +421,20 @@ if __name__ == "__main__":
 
             print("{} {} {} {} {}") % tuple(round(param, 4))
 
-        print("exit")
     elif sys.argv[1].lower() == "gradient":
         num = 50
         nums = 5
-        numpy.random.seed(4)  # 3
-        theta_true = numpy.array((1.0, 1.0, 0.3, 0.968, 0.315))
+        np.random.seed(4)  # 3
+        theta_true = np.array((1.0, 1.0, 0.3, 0.968, 0.315))
 
         # How many steps forward in time should our simulation run
         steps = 50
         sims = 1
 
         # Create arrays for storing some values for later plotting
-        vals = numpy.zeros((2, num + 1, steps + 1))
+        vals = np.zeros((2, num + 1, steps + 1))
 
-        estimate = numpy.zeros((5, sims))
+        estimate = np.zeros((5, sims))
 
         (y, e, z) = generate_dataset(theta_true, steps)
 
@@ -451,7 +446,7 @@ if __name__ == "__main__":
         param_id = 4
         param_steps = 101
         tval = theta_true[param_id]
-        param_vals = numpy.linspace(
+        param_vals = np.linspace(
             tval - math.fabs(tval), tval + math.fabs(tval), param_steps,
         )
         gt.test(param_id, param_vals, nums=nums)
@@ -461,4 +456,4 @@ if __name__ == "__main__":
         gt.plot_x0.plot(3)
         plt.show()
     else:
-        print("Unsupported option")
+        pass

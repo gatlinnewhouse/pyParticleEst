@@ -262,10 +262,7 @@ class KalmanFilter:
                 scipy.linalg.cho_solve(Schol, C.dot(P), check_finite=False),
             )
         else:
-            if h_k is not None:
-                err = y - h_k
-            else:
-                err = y
+            err = y - h_k if h_k is not None else y
             Schol = scipy.linalg.cho_factor(R, check_finite=False)
             Sinv_err = scipy.linalg.cho_solve(Schol, err, check_finite=False)
 
@@ -299,10 +296,7 @@ class KalmanFilter:
             P[:, :] = P - tmp.T.dot(tmp) / S.item()
         else:
             S = R
-            if h_k is not None:
-                err = y - h_k
-            else:
-                err = y
+            err = y - h_k if h_k is not None else y
 
         # Return the probability of the received measurement
         return lognormpdf_scalar(err, S)

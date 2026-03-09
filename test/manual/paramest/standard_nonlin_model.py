@@ -1,7 +1,7 @@
 import math
 
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 
 import pyparticleest.interfaces as interfaces
 import pyparticleest.paramest.interfaces as pestint
@@ -10,26 +10,26 @@ import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
-    x = numpy.zeros((steps + 1,))
-    y = numpy.zeros((steps + 1,))
-    x[0] = numpy.random.multivariate_normal((0.0,), P0)
-    y[0] = 0.05 * x[0] ** 2 + numpy.random.multivariate_normal((0.0,), R)
+    x = np.zeros((steps + 1,))
+    y = np.zeros((steps + 1,))
+    x[0] = np.random.multivariate_normal((0.0,), P0)
+    y[0] = 0.05 * x[0] ** 2 + np.random.multivariate_normal((0.0,), R)
     for k in range(0, steps):
         x[k + 1] = (
             0.5 * x[k]
             + 25.0 * x[k] / (1 + x[k] ** 2)
             + 8 * math.cos(1.2 * k)
-            + numpy.random.multivariate_normal((0.0,), Q)
+            + np.random.multivariate_normal((0.0,), Q)
         )
-        y[k + 1] = 0.05 * x[k + 1] ** 2 + numpy.random.multivariate_normal((0.0,), R)
+        y[k + 1] = 0.05 * x[k + 1] ** 2 + np.random.multivariate_normal((0.0,), R)
 
     return (x, y)
 
 
 def wmean(logw, val):
-    w = numpy.exp(logw)
+    w = np.exp(logw)
     w = w / sum(w)
-    return numpy.sum(w * val.ravel())
+    return np.sum(w * val.ravel())
 
 
 class Model(
@@ -42,22 +42,22 @@ class Model(
     y_k = x_k + e_k, e_k ~ N(0,R),
     x(0) ~ N(0,P0)"""
 
-    def __init__(self, P0, Q, R):
-        self.P0 = numpy.copy(P0)
-        self.Q = numpy.copy(Q)
-        self.R = numpy.copy(R)
-        self.logxn_max = kalman.lognormpdf_scalar(numpy.zeros((1,)), self.Q)
+    def __init__(self, P0, Q, R) -> None:
+        self.P0 = np.copy(P0)
+        self.Q = np.copy(Q)
+        self.R = np.copy(R)
+        self.logxn_max = kalman.lognormpdf_scalar(np.zeros((1,)), self.Q)
         super().__init__()
 
     def create_initial_estimate(self, N):
-        return numpy.random.normal(0.0, numpy.sqrt(self.P0).ravel(), (N,))
+        return np.random.normal(0.0, np.sqrt(self.P0).ravel(), (N,))
 
     def sample_process_noise(self, particles, u, t):
         """Return process noise for input u"""
         N = len(particles)
-        return numpy.random.normal(0.0, numpy.sqrt(self.Q).ravel(), (N,))
+        return np.random.normal(0.0, np.sqrt(self.Q).ravel(), (N,))
 
-    def update(self, particles, u, noise, t):
+    def update(self, particles, u, noise, t) -> None:
         """Update estimate using 'data' as input"""
         particles[:] = (
             0.5 * particles
@@ -86,11 +86,11 @@ class Model(
         """Update ev. Rao-Blackwellized states conditioned on "next_part" """
         return part.reshape((-1, 1))
 
-    def set_params(self, params):
+    def set_params(self, params) -> None:
         """New set of parameters for which the integral approximation terms will be evaluated"""
-        self.params = numpy.copy(params)
-        self.Q = math.exp(params[0]) * numpy.eye(1)
-        self.R = math.exp(params[1]) * numpy.eye(1)
+        self.params = np.copy(params)
+        self.Q = math.exp(params[0]) * np.eye(1)
+        self.R = math.exp(params[1]) * np.eye(1)
 
     def eval_logp_x0(self, particles, t):
         """Calculate gradient of a term of the I1 integral approximation
@@ -101,37 +101,37 @@ class Model(
 
     def copy_ind(self, particles, new_ind=None):
         if new_ind is not None:
-            return numpy.copy(particles[new_ind])
-        return numpy.copy(particles)
+            return np.copy(particles[new_ind])
+        return np.copy(particles)
 
     def eval_logp_xnext_fulltraj(self, straj, ut, tt):
         part = straj.get_smoothed_estimates()
         M = part.shape[1]
-        cost = 8.0 * numpy.cos(1.2 * numpy.asarray(tt, dtype=float))
+        cost = 8.0 * np.cos(1.2 * np.asarray(tt, dtype=float))
         xp = (
             0.5 * part
             + 25.0 * part / (1 + part**2)
-            + numpy.repeat(cost.reshape(-1, 1, 1), repeats=M, axis=1)
+            + np.repeat(cost.reshape(-1, 1, 1), repeats=M, axis=1)
         )
         diff = part[1:] - xp[:-1]
         logp = kalman.lognormpdf_scalar(diff.ravel(), self.Q)
-        return numpy.sum(logp) / M
+        return np.sum(logp) / M
 
     def eval_logp_y_fulltraj(self, straj, yt, tt):
         sest = straj.get_smoothed_estimates()
         M = sest.shape[1]
         yp = 0.05 * sest**2
-        diff = yp - numpy.repeat(
-            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
+        diff = yp - np.repeat(
+            np.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
         )
-        return numpy.sum(kalman.lognormpdf_scalar(diff.ravel(), self.R)) / M
+        return np.sum(kalman.lognormpdf_scalar(diff.ravel(), self.R)) / M
 
 
-def callback(params, Q, cur_iter):
-    print(f"params = {numpy.exp(params)}")
+def callback(params, Q, cur_iter) -> None:
+    pass
 
 
-def callback_sim(estimator):
+def callback_sim(estimator) -> None:
     # vals = numpy.empty((num, steps+1))
 
     plt.figure(1)
@@ -156,16 +156,16 @@ def callback_sim(estimator):
 
 
 if __name__ == "__main__":
-    numpy.random.seed(1)
+    np.random.seed(1)
     steps = 1499
-    iterations = numpy.arange(1000)
-    num = numpy.ceil(500 + 4500.0 / (iterations[-1] ** 3) * iterations**3).astype(int)
-    M = numpy.ceil(50 + 450.0 / (iterations[-1] ** 3) * iterations**3).astype(int)
-    P0 = 5.0 * numpy.eye(1)
-    Q = 1.0 * numpy.eye(1)
-    R = 0.1 * numpy.eye(1)
+    iterations = np.arange(1000)
+    num = np.ceil(500 + 4500.0 / (iterations[-1] ** 3) * iterations**3).astype(int)
+    M = np.ceil(50 + 450.0 / (iterations[-1] ** 3) * iterations**3).astype(int)
+    P0 = 5.0 * np.eye(1)
+    Q = 1.0 * np.eye(1)
+    R = 0.1 * np.eye(1)
     (x, y) = generate_dataset(steps, P0, Q, R)
-    theta0 = numpy.log(numpy.asarray((2.0, 2.0)))
+    theta0 = np.log(np.asarray((2.0, 2.0)))
     model = Model(P0, Q, R)
     estimator = param_est.ParamEstimation(model, u=None, y=y)
     callback(theta0, None, -1)
