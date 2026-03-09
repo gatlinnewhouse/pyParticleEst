@@ -9,7 +9,6 @@ from typing import Any
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.subplots
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as sla
@@ -310,7 +309,7 @@ def finalize_plot(fig, ax, filename):
     png_path = f"plots/{filename}.png"
     fig.savefig(png_path, dpi=150, bbox_inches="tight", facecolor="white")
 
-    tex_path = f"plots/{filename}.tex"
+    tex_path = f"plots/{filename}.tikz"
     matplot2tikz.save(tex_path, strict=True)
 
     plt.close(fig)
@@ -318,7 +317,9 @@ def finalize_plot(fig, ax, filename):
 
 def plot_xi_estimates(results, STEPS, xis):
     t_axis = np.arange(STEPS + 1)
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
+
     ax.plot(t_axis, xis, "k-", lw=2, label="Ground truth", zorder=5)
 
     for name, r in results.items():
@@ -343,7 +344,9 @@ def plot_xi_estimates(results, STEPS, xis):
 def plot_xi_estimate_individual(name, r, STEPS, xis):
     """Plot an individual filter's ξ estimate against ground truth."""
     t_axis = np.arange(STEPS + 1)
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
+
     ax.plot(t_axis, xis, "k-", lw=2, label="Ground truth", zorder=5)
 
     ax.plot(
@@ -372,7 +375,9 @@ def plot_tap_magnitude(results, STEPS, zs, tap_idx: int):
     re, im = 2 * tap_idx, 2 * tap_idx + 1
     gt_mag = np.sqrt(zs[:, re] ** 2 + zs[:, im] ** 2)
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
+
     ax.plot(t_axis, gt_mag, "k-", lw=2, label="Ground truth", zorder=5)
 
     for name, r in results.items():
@@ -400,7 +405,8 @@ def plot_tap_magnitude(results, STEPS, zs, tap_idx: int):
 
 def plot_neff(results, strajs, STEPS):
     t_axis = np.arange(STEPS + 1)
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
 
     for name, straj in strajs:
         neffs = [step.pa.calc_Neff() / step.pa.num for step in straj.traj]
@@ -418,7 +424,8 @@ def plot_neff(results, strajs, STEPS):
 
 def plot_rmse_over_time(results, xis, STEPS):
     t_axis = np.arange(1, STEPS + 1)
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
 
     for name, r in results.items():
         est = r["est_xi"]
@@ -512,7 +519,6 @@ def main() -> None:
 
     plot_xi_estimates(results, STEPS, xis)
 
-    # Plot individual specific filter estimations against the ground truth
     for name, r in results.items():
         plot_xi_estimate_individual(name, r, STEPS, xis)
 
