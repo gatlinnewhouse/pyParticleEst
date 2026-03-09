@@ -15,8 +15,6 @@ except ImportError:
 import numpy
 import scipy.linalg
 
-from builtins import range
-
 
 class LTV(FFBSi, ParticleFiltering):
     """
@@ -117,8 +115,8 @@ class LTV(FFBSi, ParticleFiltering):
              - Pl: list of covariance matrices for z
         """
         N = len(particles)
-        zl = list()
-        Pl = list()
+        zl = []
+        Pl = []
         lz = len(self.z0)
         for i in range(N):
             zl.append(particles[i, :lz].reshape(-1, 1))

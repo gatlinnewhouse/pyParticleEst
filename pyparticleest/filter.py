@@ -20,7 +20,8 @@ def sample(w, n):
 
     wc = numpy.cumsum(w)
     wc /= wc[-1]  # Normalize
-    u = (range(n) + numpy.random.rand(1)) / n
+    rng = numpy.random.default_rng()
+    u = (numpy.arange(n) + rng.random()) / n
     return numpy.searchsorted(wc, u)
 
 
@@ -1263,4 +1264,4 @@ class ParticleApproximation:
         Returns:
          - (array-like) with len=n, representing the n most likely estimates"""
         indices = numpy.argsort(self.w)
-        return indices[range(n)]
+        return indices[:n]

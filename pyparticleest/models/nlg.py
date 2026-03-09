@@ -16,10 +16,9 @@ except ImportError:
     import pyparticleest.utils.kalman as kalman
 
 
-from builtins import range
-
-
-class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
+class NonlinearGaussian(
+    interfaces.ParticleFiltering, interfaces.FFBSiRS, metaclass=abc.ABCMeta
+):
     """
     Base class for particles of the type mixed linear/non-linear with
     additive gaussian noise.
@@ -41,8 +40,6 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
      - Q (array-like): Q (if constaint)
      - R (array-like): R (if constaint)
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def calc_f(self, particles, u, t):
         """
@@ -147,7 +144,8 @@ class NonlinearGaussian(interfaces.ParticleFiltering, interfaces.FFBSiRS):
         """
         N = len(particles)
         Q = self.calc_Q(particles=particles, u=u, t=t)
-        noise = numpy.random.normal(size=(self.lxi, N))
+        rng = numpy.random.default_rng()
+        noise = rng.standard_normal(size=(self.lxi, N))
         if Q is None:
             noise = self.Qcholtri.T.dot(noise)
         else:
@@ -410,9 +408,7 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         else:
             self.Px0 = numpy.copy(Px0)
 
-        super().__init__(
-            lxi=len(self.x0), **kwargs
-        )
+        super().__init__(lxi=len(self.x0), **kwargs)
 
     def create_initial_estimate(self, N):
         """Sample particles from initial distribution
@@ -426,7 +422,8 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         particles = numpy.repeat(self.x0, N, 1).T
         if numpy.any(self.Px0):
             Pchol = scipy.linalg.cho_factor(self.Px0)[0]
-            noise = numpy.random.normal(size=(self.lxi, N))
+            rng = numpy.random.default_rng()
+            noise = rng.standard_normal(size=(self.lxi, N))
             particles += (Pchol.dot(noise)).T
         return particles
 

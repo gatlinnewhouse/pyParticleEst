@@ -7,8 +7,6 @@ import numpy as np
 import math
 import scipy.linalg
 
-from builtins import range
-
 l2pi = math.log(2 * math.pi)
 
 
@@ -74,7 +72,7 @@ def lognormpdf_scalar(err, S):
     Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,S) and each element in err is a scalar
     """
-    return -0.5 * (l2pi + math.log(S[0, 0]) + (err.ravel() ** 2) / S[0, 0])
+    return -0.5 * (l2pi + math.log(S.item()) + (err.ravel() ** 2) / S.item())
 
 
 class KalmanFilter:
@@ -206,9 +204,9 @@ class KalmanFilter:
             err = y - C.dot(z)
             if h_k is not None:
                 err -= h_k
-            z[:] = z + P.dot(C.T).dot(err) / S[0, 0]
+            z[:] = z + P.dot(C.T).dot(err) / S.item()
             tmp = C.dot(P)
-            P[:, :] = P - tmp.T.dot(tmp) / S[0, 0]
+            P[:, :] = P - tmp.T.dot(tmp) / S.item()
         else:
             S = R
             if h_k is not None:

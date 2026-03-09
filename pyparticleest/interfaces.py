@@ -8,9 +8,7 @@ import abc
 import numpy
 
 
-class SIR:
-    __metaclass__ = abc.ABCMeta
-
+class SIR(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def measure(self, particles, y, t):
         pass
@@ -62,9 +60,7 @@ class SIR:
         return numpy.copy(part)
 
 
-class ParticleFilteringNonMarkov:
-    __metaclass__ = abc.ABCMeta
-
+class ParticleFilteringNonMarkov(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def update_full(self, particles, traj, uvec, yvec, tvec, ancestors, noise):
         """
@@ -234,14 +230,12 @@ class ParticleFilteringNonMarkov:
         return numpy.copy(part)
 
 
-class ParticleFiltering(ParticleFilteringNonMarkov):
+class ParticleFiltering(ParticleFilteringNonMarkov, metaclass=abc.ABCMeta):
     """
     Base class for particles to be used with particle filtering.
     particles are a model specific array where the first dimension
     indexes the different particles.
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def sample_process_noise_full(self, ptraj, ancestors, ut, tt):
         return self.sample_process_noise(
@@ -294,12 +288,10 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
         pass
 
 
-class AuxiliaryParticleFiltering:
+class AuxiliaryParticleFiltering(metaclass=abc.ABCMeta):
     """
     Base class for particles to be used with auxiliary particle filtering
     """
-
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def eval_1st_stage_weights(self, particles, u, y, t):
@@ -322,9 +314,7 @@ class AuxiliaryParticleFiltering:
         pass
 
 
-class FFBSiNonMarkov:
-    __metaclass__ = abc.ABCMeta
-
+class FFBSiNonMarkov(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def logp_xnext_full(
         self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
@@ -338,9 +328,7 @@ class FFBSiNonMarkov:
         pass
 
 
-class FFProposeFromMeasure(FFBSiNonMarkov):
-    __metaclass__ = abc.ABCMeta
-
+class FFProposeFromMeasure(FFBSiNonMarkov, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def propose_from_y(self, N, y, t):
         """
@@ -349,13 +337,11 @@ class FFProposeFromMeasure(FFBSiNonMarkov):
         pass
 
 
-class FFBSi(FFBSiNonMarkov):
+class FFBSi(FFBSiNonMarkov, metaclass=abc.ABCMeta):
     """
     Base class for particles to be used with particle smoothing
     (Backward Simulation)
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def logp_xnext_full(
         self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
@@ -445,12 +431,10 @@ class FFBSi(FFBSiNonMarkov):
         pass
 
 
-class FFBSiRSNonMarkov(FFBSiNonMarkov):
+class FFBSiRSNonMarkov(FFBSiNonMarkov, metaclass=abc.ABCMeta):
     """
     Base class for models to be used with rejection sampling methods
     """
-
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def logp_xnext_max_full(self, part, past_trajs, pind, uvec, yvec, tvec, cur_ind):
@@ -475,12 +459,10 @@ class FFBSiRSNonMarkov(FFBSiNonMarkov):
         pass
 
 
-class FFBSiRS(FFBSi):
+class FFBSiRS(FFBSi, metaclass=abc.ABCMeta):
     """
     Base class for models to be used with rejection sampling methods
     """
-
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def logp_xnext_max(self, particles, u, t):
@@ -505,13 +487,11 @@ class FFBSiRS(FFBSi):
         return self.logp_xnext_max(part, u=uvec[cur_ind], t=tvec[cur_ind])
 
 
-class SampleProposer:
+class SampleProposer(metaclass=abc.ABCMeta):
     """
     Base class for models to be used with methods that require drawing of new
     samples. Here 'q' is the name we give to the proposal distribtion.
     """
-
-    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def propose_smooth(self, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind):

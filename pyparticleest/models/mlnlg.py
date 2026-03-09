@@ -16,8 +16,6 @@ except Exception:
     import pyparticleest.utils.kalman as kalman
     import pyparticleest.utils.mlnlg_compute as mlnlg_compute
 
-from builtins import range
-
 
 class MixedNLGaussianSampled(RBPSBase):
     """
@@ -84,9 +82,7 @@ class MixedNLGaussianSampled(RBPSBase):
 
         self.lxi = lxi
 
-        return super().__init__(
-            lz=lz, Az=Az, C=C, Qz=Qz, R=R, hz=h, fz=fz, **kwargs
-        )
+        return super().__init__(lz=lz, Az=Az, C=C, Qz=Qz, R=R, hz=h, fz=fz, **kwargs)
 
     def set_dynamics(
         self,
@@ -119,9 +115,7 @@ class MixedNLGaussianSampled(RBPSBase):
          - fxi (arraylike): fxi (if constant)
          - h (arraylike): h (if constant)
         """
-        super().set_dynamics(
-            Az=Az, C=C, Qz=Qz, R=R, fz=fz, hz=h
-        )
+        super().set_dynamics(Az=Az, C=C, Qz=Qz, R=R, fz=fz, hz=h)
 
         if Axi is not None:
             self.Axi = numpy.copy(Axi)
@@ -162,9 +156,10 @@ class MixedNLGaussianSampled(RBPSBase):
         dim = len(_xil[0])
         noise = numpy.empty((N, dim))
         zeros = numpy.zeros(dim)
+        rng = numpy.random.default_rng()
         for i in range(N):
             Sigma = Qxi[i] + Axi[i].dot(Pl[i]).dot(Axi[i].T)
-            noise[i] = numpy.random.multivariate_normal(zeros, Sigma).ravel()
+            noise[i] = rng.multivariate_normal(zeros, Sigma).ravel()
         return noise
 
     def calc_xi_next(self, particles, noise, u, t):
@@ -647,9 +642,10 @@ class MixedNLGaussianSampled(RBPSBase):
         # z-variables, the full distrubition for the z_1:T conditioned on xi_1:T
         # is recovered in the post_smooting step
 
+        rng = numpy.random.default_rng()
         for j in range(M):
             xi = numpy.copy(xil[j]).ravel()
-            z = numpy.random.multivariate_normal(zl[j].ravel(), Pl[j]).ravel()
+            z = rng.multivariate_normal(zl[j].ravel(), Pl[j]).ravel()
             res[j] = numpy.hstack((xi, z))
         return res
 
@@ -1158,9 +1154,7 @@ class MixedNLGaussianSampledInitialGaussian(MixedNLGaussianSampled):
             self.Pz0 = numpy.copy(Pz0)
         self.z0 = numpy.copy(z0).reshape((-1, 1))
         self.Pz0 = numpy.copy(Pz0)
-        super().__init__(
-            lxi=len(self.xi0), lz=len(self.z0), **kwargs
-        )
+        super().__init__(lxi=len(self.xi0), lz=len(self.z0), **kwargs)
 
     def create_initial_estimate(self, N):
         """Sample particles from initial distribution
@@ -1174,8 +1168,9 @@ class MixedNLGaussianSampledInitialGaussian(MixedNLGaussianSampled):
         dim = self.lxi + self.kf.lz + self.kf.lz**2
         particles = numpy.empty((N, dim))
 
+        rng = numpy.random.default_rng()
         for i in range(N):
-            particles[i, 0 : self.lxi] = numpy.random.multivariate_normal(
+            particles[i, 0 : self.lxi] = rng.multivariate_normal(
                 self.xi0.ravel(), self.Pxi0
             )
             particles[i, self.lxi : (self.lxi + self.kf.lz)] = numpy.copy(

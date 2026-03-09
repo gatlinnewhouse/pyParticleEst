@@ -7,8 +7,6 @@ framework.
 
 import numpy
 
-from builtins import range
-
 from .filter import ParticleTrajectory
 
 

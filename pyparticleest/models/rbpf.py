@@ -15,10 +15,8 @@ except ImportError:
     import pyparticleest.utils.kalman as kalman
 import numpy
 
-from builtins import range
 
-
-class RBPFBase(interfaces.ParticleFiltering):
+class RBPFBase(interfaces.ParticleFiltering, metaclass=abc.ABCMeta):
     """
     Base class for Rao-Blackwellized models
 
@@ -31,8 +29,6 @@ class RBPFBase(interfaces.ParticleFiltering):
      - C (array-like): Measurement dynamic for linear states (if constant)
      - hz (array-like): Affine measurement term for linear states (if constant)
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def __init__(
         self, lz, Az=None, fz=None, Qz=None, C=None, hz=None, R=None, **kwargs
@@ -317,9 +313,7 @@ class RBPFBase(interfaces.ParticleFiltering):
         self.set_states(particles, xi_next, zl, Pl)
 
 
-class RBPSBase(RBPFBase, interfaces.FFBSiRS):
-    __metaclass__ = abc.ABCMeta
-
+class RBPSBase(RBPFBase, interfaces.FFBSiRS, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_rb_initial(self, xi_initial):
         """

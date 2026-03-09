@@ -17,10 +17,8 @@ import numpy
 import copy
 import math
 
-from builtins import range
 
-
-class HierarchicalBase(RBPSBase):
+class HierarchicalBase(RBPSBase, metaclass=abc.ABCMeta):
     """
     Base class for Rao-Blackwellization of hierarchical models
 
@@ -28,8 +26,6 @@ class HierarchicalBase(RBPSBase):
      - len_xi (int): number of nonlinear states
      - len_z (int): number of linear states
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, len_xi, len_z, **kwargs):
         self.lxi = len_xi
@@ -191,7 +187,8 @@ class HierarchicalBase(RBPSBase):
             xi = copy.copy(xil[0]).ravel()
             # Sample the linear variables, the full conditional density
             # is recovred later in the post_smoothing step
-            z = numpy.random.multivariate_normal(zl[0].ravel(), Pl[0]).ravel()
+            rng = numpy.random.default_rng()
+            z = rng.multivariate_normal(zl[0].ravel(), Pl[0]).ravel()
             res[j, : (self.lxi + self.kf.lz)] = numpy.hstack((xi, z))
         return res
 
