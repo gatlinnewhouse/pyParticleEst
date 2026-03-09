@@ -9,7 +9,13 @@ import numba as nb
 
 @nb.njit(cache=True)
 def _nb_unifsum_eval(
-    p: float, c: float, w_min: float, w_diff: float, l: float, h: float, t: float,
+    p: float,
+    c: float,
+    w_min: float,
+    w_diff: float,
+    l: float,
+    h: float,
+    t: float,
 ) -> float:
     if p < l:
         return 0.0
@@ -77,5 +83,11 @@ class unifsum:
          (float): the pdf value
         """
         return _nb_unifsum_eval(
-            p, self.c, self.w_min, self.w_diff, self.l, self.h, self.t,
+            p,
+            self.c,
+            self.w_min,
+            self.w_diff,
+            self.l,
+            self.h,
+            self.t,
         )

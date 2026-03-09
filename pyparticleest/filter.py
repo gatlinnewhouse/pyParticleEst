@@ -19,6 +19,34 @@ def _numba_sample(w: numpy.ndarray, n: int, u_rand: float) -> numpy.ndarray:
     return numpy.searchsorted(wc, u)
 
 
+@nb.njit(cache=True)
+def _nb_calc_neff(w: numpy.ndarray) -> float:
+    w_max = numpy.max(w)
+    sum_w = 0.0
+    sum_sq = 0.0
+    for i in range(len(w)):
+        val = numpy.exp(w[i] - w_max)
+        sum_w += val
+        sum_sq += val * val
+    return (sum_w * sum_w) / sum_sq if sum_sq > 0 else 0.0
+
+
+@nb.njit(cache=True)
+def _nb_normalize_weights(
+    w: numpy.ndarray,
+    new_weights: numpy.ndarray,
+    w_offset: float,
+) -> tuple[numpy.ndarray, float]:
+    m1 = numpy.max(new_weights)
+    w_offset += m1
+    w = w + (new_weights - m1)
+
+    m2 = numpy.max(w)
+    w_offset += m2
+    w = w - m2
+    return w, w_offset
+
+
 def sample(w: numpy.ndarray, n: int) -> numpy.ndarray:
     """
     Return n random indices, where the probability if index
@@ -215,17 +243,7 @@ class ParticleFilter:
             tvec=tvec[: cur_ind + 1],
         )
 
-        # Try to keep weights from going to -Inf
-        m = numpy.max(new_weights)
-        pa.w_offset += m
-        new_weights -= m
-
-        pa.w = pa.w + new_weights
-
-        # Keep the weights from going to -Inf
-        m = numpy.max(pa.w)
-        pa.w_offset += m
-        pa.w -= m
+        pa.w, pa.w_offset = _nb_normalize_weights(pa.w, new_weights, pa.w_offset)
 
         return pa
 
@@ -323,17 +341,7 @@ class SIR:
 
         new_weights = yw + nw - qw
 
-        # Try to keep weights from going to -Inf
-        m = numpy.max(new_weights)
-        pa.w_offset += m
-        new_weights -= m
-
-        pa.w = pa.w + new_weights
-
-        # Keep the weights from going to -Inf
-        m = numpy.max(pa.w)
-        pa.w_offset += m
-        pa.w -= m
+        pa.w, pa.w_offset = _nb_normalize_weights(pa.w, new_weights, pa.w_offset)
         pa.part = pnext
 
         return (pa, resampled, ancestors)
@@ -412,17 +420,7 @@ class SIR:
             tvec=tvec[: cur_ind + 1],
         )
 
-        # Try to keep weights from going to -Inf
-        m = numpy.max(new_weights)
-        pa.w_offset += m
-        new_weights -= m
-
-        pa.w = pa.w + new_weights
-
-        # Keep the weights from going to -Inf
-        m = numpy.max(pa.w)
-        pa.w_offset += m
-        pa.w -= m
+        pa.w, pa.w_offset = _nb_normalize_weights(pa.w, new_weights, pa.w_offset)
 
         return pa
 
@@ -600,17 +598,7 @@ class FFPropY:
             cur_ind=cur_ind,
         )
         pa.part = partn
-        # Try to keep weights from going to -Inf
-        m = numpy.max(wn)
-        pa.w_offset += m
-        wn -= m
-
-        pa.w = pa.w + wn
-
-        # Keep the weights from going to -Inf
-        m = numpy.max(pa.w)
-        pa.w_offset += m
-        pa.w -= m
+        pa.w, pa.w_offset = _nb_normalize_weights(pa.w, wn, pa.w_offset)
 
         return (pa, resampled, ancestors)
 
@@ -1370,9 +1358,7 @@ class ParticleApproximation:
         Returns:
          (float) number of effective particles
         """
-        tmp = numpy.exp(self.w - numpy.max(self.w))
-        tmp /= numpy.sum(tmp)
-        return 1.0 / numpy.sum(numpy.square(tmp))
+        return _nb_calc_neff(self.w)
 
     def resample(self, model: Any, N: int | None = None) -> numpy.ndarray:
         """

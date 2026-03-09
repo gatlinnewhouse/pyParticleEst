@@ -14,6 +14,62 @@ from pyparticleest.interfaces import FFBSi, ParticleFiltering
 
 
 @nb.njit(cache=True)
+def _nb_eval_logp_y(
+    N: int,
+    particles: numpy.ndarray,
+    lz: int,
+    lzP: int,
+    y: numpy.ndarray,
+    C: numpy.ndarray,
+    h_k: numpy.ndarray | None,
+    R: numpy.ndarray,
+) -> numpy.ndarray:
+    logpy = numpy.empty(N)
+    ld = numpy.linalg.slogdet(R)[1]
+    R_inv = numpy.linalg.inv(R)
+
+    for i in range(N):
+        # Slice the matrices directly out of the raw particle array
+        z_i = particles[i, :lz].reshape(-1, 1)
+        P_i = particles[i, lz:lzP].reshape((lz, lz))
+
+        if h_k is not None:
+            meas_diff = y - (numpy.dot(C, z_i) + h_k)
+        else:
+            meas_diff = y - numpy.dot(C, z_i)
+
+        l3 = numpy.dot(meas_diff, meas_diff.T) + numpy.dot(C, numpy.dot(P_i, C.T))
+        tmp = numpy.dot(R_inv, l3)
+        logpy[i] = -0.5 * (ld + numpy.trace(tmp))
+    return logpy
+
+
+@nb.njit(cache=True)
+def _nb_eval_logp_x0(
+    N: int,
+    particles: numpy.ndarray,
+    lz: int,
+    lzP: int,
+    z0: numpy.ndarray,
+    P0: numpy.ndarray,
+) -> numpy.ndarray:
+    lpz0 = numpy.empty(N)
+    ld = numpy.linalg.slogdet(P0)[1]
+    P0_inv = numpy.linalg.inv(P0)
+
+    for i in range(N):
+        # Slice directly
+        z_i = particles[i, :lz].reshape(-1, 1)
+        P_i = particles[i, lz:lzP].reshape((lz, lz))
+
+        z0_diff = z_i - z0
+        l1 = numpy.dot(z0_diff, z0_diff.T) + P_i
+        tmp = numpy.dot(P0_inv, l1)
+        lpz0[i] = -0.5 * (ld + numpy.trace(tmp))
+    return lpz0
+
+
+@nb.njit(cache=True)
 def _nb_calc_l1(z: numpy.ndarray, P: numpy.ndarray, z0: numpy.ndarray) -> numpy.ndarray:
     z0_diff = z - z0
     l1 = numpy.dot(z0_diff, z0_diff.T) + P
@@ -504,15 +560,9 @@ class LTV(FFBSi, ParticleFiltering):
          - t (float): time stamp
         """
         # Calculate l1 according to (19a)
-        N = len(particles)
-        (zl, Pl) = self.get_states(particles)
-        lpz0 = numpy.empty(N)
-        for i in range(N):
-            l1 = self.calc_l1(zl[i], Pl[i], self.z0, self.P0)
-            (_tmp, ld) = numpy.linalg.slogdet(self.P0)
-            tmp = numpy.linalg.solve(self.P0, l1)
-            lpz0[i] = -0.5 * (ld + numpy.trace(tmp))
-        return lpz0
+        lz = len(self.z0)
+        lzP = lz + lz * lz
+        return _nb_eval_logp_x0(len(particles), particles, lz, lzP, self.z0, self.P0)
 
     def eval_logp_x0_val_grad(
         self,
@@ -681,20 +731,23 @@ class LTV(FFBSi, ParticleFiltering):
 
         Returns: (array-like)
         """
-        N = len(particles)
         self.t = t
         (y, C, h, R) = self.get_meas_dynamics(y=y, t=t)
         self.kf.set_dynamics(C=C, R=R, h_k=h)
-        (zl, Pl) = self.get_states(particles)
-        logpy = numpy.empty(N)
-        for i in range(N):
-            # Calculate l3 according to (19b)
-            l3 = self.calc_l3(y, zl[i], Pl[i])
-            (_tmp, ld) = numpy.linalg.slogdet(self.kf.R)
-            tmp = numpy.linalg.solve(self.kf.R, l3)
-            logpy[i] = -0.5 * (ld + numpy.trace(tmp))
 
-        return logpy
+        lz = len(self.z0)
+        lzP = lz + lz * lz
+
+        return _nb_eval_logp_y(
+            len(particles),
+            particles,
+            lz,
+            lzP,
+            numpy.asarray(y).reshape((-1, 1)),
+            self.kf.C,
+            self.kf.h_k,
+            self.kf.R,
+        )
 
     def eval_logp_y_val_grad(
         self,
@@ -846,7 +899,17 @@ class LTV(FFBSi, ParticleFiltering):
     ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
         return _nb_calc_l2_grad(
-            zn, Pn, z, P, A, f, M, A_grad, f_grad, len(self.params), self.kf.lz,
+            zn,
+            Pn,
+            z,
+            P,
+            A,
+            f,
+            M,
+            A_grad,
+            f_grad,
+            len(self.params),
+            self.kf.lz,
         )
 
     def calc_l3(
