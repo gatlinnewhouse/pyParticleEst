@@ -426,31 +426,14 @@ def main():
     # ── Plot ──────────────────────────────────────────────────────────────────
     plot_individual_estimates(results, STEPS, xs, ys)
     plot_combined_estimates(results, STEPS, xs, ys)
-    # plot_neff(results,)
-    plot_rmse_over_time(results, xs, STEPS)
-    exit()
-
-    # Neff over time per filter
-    for name, straj in [
+    strajs = [
         ("SIS", straj_sis),
         ("SIR (Bootstrap PF)", straj_pf),
         ("APF", straj_apf),
         ("RBPF", straj_rb),
-    ]:
-        neffs = [step.pa.calc_Neff() / step.pa.num for step in straj.traj]
-        plt.plot(t_axis, neffs, label=name, color=colors[name], lw=1)
-    plt.axhline(2.0 / 3.0, color="k", ls=":", lw=1, label="Resample threshold")
-    plt.title("Normalised effective sample size (Neff / N)")
-    plt.xlabel("Time step")
-    plt.ylabel("Neff / N")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    # plt.tight_layout()
-    plt.savefig("benchmark_filters.png", dpi=150)
-    print("\nPlot saved to benchmark_filters.png")
-    tikzplotlib.clean_figure()
-    tikzplotlib.save("benchmark_filters.tex")
-    plt.show()
+    ]
+    plot_neff(results, strajs, STEPS)
+    plot_rmse_over_time(results, xs, STEPS)
 
 
 if __name__ == "__main__":
