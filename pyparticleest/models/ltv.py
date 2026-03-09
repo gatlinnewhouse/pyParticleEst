@@ -60,7 +60,7 @@ class LTV(FFBSi, ParticleFiltering):
         self.kf = kalman.KalmanSmoother(
             lz=len(self.z0), A=A, C=C, Q=Q, R=R, f_k=f, h_k=h
         )
-        super(LTV, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def create_initial_estimate(self, N):
         """Sample particles from initial distribution
@@ -75,7 +75,7 @@ class LTV(FFBSi, ParticleFiltering):
 
         if N > 1:
             print(
-                "N > 1 redundamt for LTV system (N={0})".format(N),
+                f"N > 1 redundamt for LTV system (N={N})",
             )
         lz = len(self.z0)
         dim = lz + lz * lz
@@ -215,7 +215,7 @@ class LTV(FFBSi, ParticleFiltering):
         (zl, Pl) = self.get_states(particles)
         (y, C, h, R) = self.get_meas_dynamics(y=y, t=t)
         self.kf.set_dynamics(C=C, R=R, h_k=h)
-        lyz = numpy.empty((len(particles)))
+        lyz = numpy.empty(len(particles))
         for i in range(len(zl)):
             # Predict z_{t+1}
             lyz[i] = self.kf.measure(y, zl[i], Pl[i])

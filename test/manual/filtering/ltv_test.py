@@ -42,7 +42,7 @@ class Model(LTV):
     def __init__(self, z0, P0, Q, R):
         A = numpy.asarray(((1.0, 1.0), (0.0, 1.0)))
         C = numpy.asarray(((0.0, 0.0), (0.0, 0.0)))
-        super(Model, self).__init__(A=A, C=C, z0=z0, P0=P0, Q=Q, R=R)
+        super().__init__(A=A, C=C, z0=z0, P0=P0, Q=Q, R=R)
 
     def get_meas_dynamics(self, y, t):
         C = numpy.asarray(((math.cos(t), 0.0), (math.sin(t), 0.0))).reshape((2, 2))

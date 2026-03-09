@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pyParticleEst documentation build configuration file, created by
 # sphinx-quickstart on Wed Oct  8 13:24:07 2014.
@@ -13,7 +12,7 @@
 # serve to show the default.
 
 import sys
-from mock import Mock as MagicMock
+from unittest.mock import Mock as MagicMock
 # from unittest.mock import MagicMock
 
 

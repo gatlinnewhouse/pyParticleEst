@@ -9,7 +9,7 @@ import numpy
 import scipy.optimize
 
 
-class ParamEst(object):
+class ParamEst:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -17,7 +17,7 @@ class ParamEst(object):
         pass
 
 
-class ParamEstIntFullTraj(object):
+class ParamEstIntFullTraj:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -139,7 +139,7 @@ class ParamEstInterface_GradientSearch(ParamEstInterface_GradientSearchFullTraj)
     __metaclass__ = abc.ABCMeta
 
     def eval_logp_y_val_grad_fulltraj(self, straj, yt, tt):
-        logp_y_grad = numpy.zeros((len(self.params)))
+        logp_y_grad = numpy.zeros(len(self.params))
         logp_y = 0.0
         sest = straj.get_smoothed_estimates()
         M = sest.shape[1]
@@ -152,7 +152,7 @@ class ParamEstInterface_GradientSearch(ParamEstInterface_GradientSearchFullTraj)
         return (logp_y / M, logp_y_grad / M)
 
     def eval_logp_xnext_val_grad_fulltraj(self, straj, ut, tt):
-        logp_xnext_grad = numpy.zeros((len(self.params)))
+        logp_xnext_grad = numpy.zeros(len(self.params))
         logp_xnext = 0.0
         sest = straj.get_smoothed_estimates()
         M = sest.shape[1]
@@ -232,7 +232,7 @@ class ParamEstInterface_GradientSearch(ParamEstInterface_GradientSearchFullTraj)
 class ParamEstBaseNumeric(ParamEstIntFullTraj):
     def __init__(self, param_bounds=None, **kwargs):
         self.param_bounds = param_bounds
-        super(ParamEstBaseNumeric, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def set_param_bounds(self, bounds):
         self.param_bounds = bounds
@@ -263,7 +263,7 @@ class ParamEstBaseNumeric(ParamEstIntFullTraj):
 class ParamEstBaseNumericGrad(ParamEstInterface_GradientSearchFullTraj):
     def __init__(self, param_bounds=None, **kwargs):
         self.param_bounds = param_bounds
-        super(ParamEstBaseNumericGrad, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def set_param_bounds(self, bounds):
         self.param_bounds = bounds

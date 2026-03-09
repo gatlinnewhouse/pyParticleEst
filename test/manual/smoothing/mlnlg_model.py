@@ -36,7 +36,7 @@ class Model(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
         P0_z = numpy.copy(P0_z)
         z0 = numpy.zeros((1,))
         xi0 = numpy.zeros((1,))
-        super(Model, self).__init__(
+        super().__init__(
             z0=z0,
             Pz0=P0_z,
             Pxi0=P0_xi,

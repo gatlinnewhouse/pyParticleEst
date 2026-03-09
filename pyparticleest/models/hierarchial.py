@@ -33,7 +33,7 @@ class HierarchicalBase(RBPSBase):
 
     def __init__(self, len_xi, len_z, **kwargs):
         self.lxi = len_xi
-        super(HierarchicalBase, self).__init__(lz=len_z, **kwargs)
+        super().__init__(lz=len_z, **kwargs)
 
     def measure(self, particles, y, t):
         """
@@ -252,7 +252,7 @@ class HierarchicalBase(RBPSBase):
 
 class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
     def __init__(self, **kwargs):
-        super(HierarchicalRSBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def logp_xnext_max(self, particles, u, t):
         """

@@ -26,7 +26,7 @@ def generate_dataset(steps, P0_xi, P0_z, Q_xi, Q_z, R_xi, R_z):
         z[:, k] = Ak.dot(z[:, k - 1]) + numpy.random.multivariate_normal(
             numpy.zeros((2,)), Q_z
         )
-        C = numpy.asarray(((math.cos(xi[:, k - 1]), math.sin(xi[:, k - 1]))))
+        C = numpy.asarray((math.cos(xi[:, k - 1]), math.sin(xi[:, k - 1])))
         y[k - 1, 0] = xi[:, k] + numpy.random.normal(0.0, math.sqrt(R_xi))
         y[k - 1, 1] = C.dot(z[:, k]) + numpy.random.normal(0.0, math.sqrt(R_z))
 
@@ -51,7 +51,7 @@ class Model(HierarchicalRSBase):
         fz = numpy.zeros((2, 1))
         hz = numpy.zeros((1, 1))
         self.pn_count = 0
-        super(Model, self).__init__(len_xi=1, len_z=2, fz=fz, Qz=Q_z, hz=hz, R=R_z)
+        super().__init__(len_xi=1, len_z=2, fz=fz, Qz=Q_z, hz=hz, R=R_z)
 
     def create_initial_estimate(self, N):
         particles = numpy.zeros((N, self.lxi + self.kf.lz + 2 * self.kf.lz**2))

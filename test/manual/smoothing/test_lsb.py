@@ -123,7 +123,7 @@ class ParticleLSB(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
             ]
         )
 
-        super(ParticleLSB, self).__init__(
+        super().__init__(
             xi0=xi0,
             z0=z0,
             Pz0=P0,
@@ -186,7 +186,7 @@ if __name__ == "__main__":
                 rmse_eta = numpy.sqrt(numpy.mean(sqr_err_eta[k, :]))
                 rmse_theta = numpy.sqrt(numpy.mean(sqr_err_theta[k, :]))
                 print(
-                    "{} {} {}".format(k, numpy.mean(rmse_eta), numpy.mean(rmse_theta))
+                    f"{k} {numpy.mean(rmse_eta)} {numpy.mean(rmse_theta)}"
                 )
 
     else:

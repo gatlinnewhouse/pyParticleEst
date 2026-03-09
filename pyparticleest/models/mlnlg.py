@@ -84,7 +84,7 @@ class MixedNLGaussianSampled(RBPSBase):
 
         self.lxi = lxi
 
-        return super(MixedNLGaussianSampled, self).__init__(
+        return super().__init__(
             lz=lz, Az=Az, C=C, Qz=Qz, R=R, hz=h, fz=fz, **kwargs
         )
 
@@ -119,7 +119,7 @@ class MixedNLGaussianSampled(RBPSBase):
          - fxi (arraylike): fxi (if constant)
          - h (arraylike): h (if constant)
         """
-        super(MixedNLGaussianSampled, self).set_dynamics(
+        super().set_dynamics(
             Az=Az, C=C, Qz=Qz, R=R, fz=fz, hz=h
         )
 
@@ -1151,14 +1151,14 @@ class MixedNLGaussianSampledInitialGaussian(MixedNLGaussianSampled):
         if Pxi0 is None:
             self.Pxi0 = numpy.zeros((len(self.xi0), len(self.xi0)))
         else:
-            self.Pxi0 = numpy.copy((Pxi0))
+            self.Pxi0 = numpy.copy(Pxi0)
         if Pz0 is None:
             self.Pz0 = numpy.zeros((len(self.z0), len(self.z0)))
         else:
-            self.Pz0 = numpy.copy((Pz0))
+            self.Pz0 = numpy.copy(Pz0)
         self.z0 = numpy.copy(z0).reshape((-1, 1))
         self.Pz0 = numpy.copy(Pz0)
-        super(MixedNLGaussianSampledInitialGaussian, self).__init__(
+        super().__init__(
             lxi=len(self.xi0), lz=len(self.z0), **kwargs
         )
 

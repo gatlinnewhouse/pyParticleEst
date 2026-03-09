@@ -3,7 +3,7 @@ Utilities for evalutating probability density functions
 """
 
 
-class unifsum(object):
+class unifsum:
     """
     pdf for sum of two uniform variables
 
@@ -38,7 +38,7 @@ class unifsum(object):
         # self.c = numpy.mean([a2, b2]) + numpy.mean([a1, b1])
         self.c = (a1 + a2 + b1 + b2) / 2.0
         # self.w_min = numpy.min([w1, w2])
-        self.w_min = w1 if w1 < w2 else w2
+        self.w_min = min(w2, w1)
 
         # self.w_diff = numpy.abs(numpy.diff([w1, w2]))
         # self.w_diff = numpy.abs(w1-w2)

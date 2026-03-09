@@ -5,7 +5,7 @@ Created on Jun 25, 2014
 """
 
 
-class OpCount(object):
+class OpCount:
     def __init__(
         self,
         cnt_sample=0,
@@ -46,7 +46,7 @@ class OpCount(object):
         return x
 
 
-class Instrumenter(object):
+class Instrumenter:
     """
     Count number of operations performed
 

@@ -408,9 +408,9 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         if Px0 is None:
             self.Px0 = numpy.zeros((len(self.x0), len(self.x0)))
         else:
-            self.Px0 = numpy.copy((Px0))
+            self.Px0 = numpy.copy(Px0)
 
-        super(NonlinearGaussianInitialGaussian, self).__init__(
+        super().__init__(
             lxi=len(self.x0), **kwargs
         )
 
@@ -449,7 +449,7 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
                 if numpy.array_equiv(particles[i], x0):
                     res[i] = 0.0
                 else:
-                    res[i] = -numpy.Inf
+                    res[i] = -numpy.inf
         else:
             Pchol = scipy.linalg.cho_factor(self.Px0, check_finite=False)
             for i in range(N):

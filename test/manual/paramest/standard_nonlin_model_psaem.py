@@ -223,7 +223,7 @@ if __name__ == "__main__":
         plt.show()
 
     params_it = numpy.zeros((max_iter + 1, 2))
-    Q_it = numpy.zeros((max_iter + 1))
+    Q_it = numpy.zeros(max_iter + 1)
 
     theta_true = numpy.asarray((1.0, 0.1))
 

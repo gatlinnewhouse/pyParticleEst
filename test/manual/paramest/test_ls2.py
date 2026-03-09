@@ -111,7 +111,7 @@ class ParticleLS2(
         Pz0 = 0.0 * numpy.eye(3)
 
         # Linear states handled by base-class
-        super(ParticleLS2, self).__init__(
+        super().__init__(
             xi0=xi0,
             z0=z0,
             Pz0=Pz0,
@@ -262,7 +262,7 @@ if __name__ == "__main__":
             plt.draw()
 
             params_it = numpy.zeros((max_iter, len(theta_guess)))
-            Q_it = numpy.zeros((max_iter))
+            Q_it = numpy.zeros(max_iter)
             it = 0
 
             def callback(params, Q, cur_iter):

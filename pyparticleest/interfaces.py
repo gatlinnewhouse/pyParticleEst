@@ -294,7 +294,7 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
         pass
 
 
-class AuxiliaryParticleFiltering(object):
+class AuxiliaryParticleFiltering:
     """
     Base class for particles to be used with auxiliary particle filtering
     """
@@ -322,7 +322,7 @@ class AuxiliaryParticleFiltering(object):
         pass
 
 
-class FFBSiNonMarkov(object):
+class FFBSiNonMarkov:
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -505,7 +505,7 @@ class FFBSiRS(FFBSi):
         return self.logp_xnext_max(part, u=uvec[cur_ind], t=tvec[cur_ind])
 
 
-class SampleProposer(object):
+class SampleProposer:
     """
     Base class for models to be used with methods that require drawing of new
     samples. Here 'q' is the name we give to the proposal distribtion.

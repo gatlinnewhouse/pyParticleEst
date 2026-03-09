@@ -34,7 +34,7 @@ class Model(nlg.NonlinearGaussianInitialGaussian):
     x(0) ~ N(0,P0)"""
 
     def __init__(self, P0, Q, R):
-        super(Model, self).__init__(Px0=P0, Q=Q, R=R)
+        super().__init__(Px0=P0, Q=Q, R=R)
 
     def calc_g(self, particles, t):
         return 0.05 * particles**2
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         plt.draw()
         plt.show()
 
-    print("rmse filter = {}".format(rmse_filt / iterations))
-    print("rmse smooth = {}".format(rmse_smooth / iterations))
-    print("rmse2 filter = {}".format(rmse2_filt / iterations))
-    print("rmse2 smooth = {}".format(rmse2_smooth / iterations))
+    print(f"rmse filter = {rmse_filt / iterations}")
+    print(f"rmse smooth = {rmse_smooth / iterations}")
+    print(f"rmse2 filter = {rmse2_filt / iterations}")
+    print(f"rmse2 smooth = {rmse2_smooth / iterations}")

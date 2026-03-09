@@ -39,7 +39,7 @@ class RBPFBase(interfaces.ParticleFiltering):
     ):
 
         self.kf = kalman.KalmanSmoother(lz, A=Az, C=C, Q=Qz, R=R, f_k=fz, h_k=hz)
-        super(RBPFBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def set_dynamics(self, Az=None, C=None, Qz=None, R=None, fz=None, hz=None):
         """

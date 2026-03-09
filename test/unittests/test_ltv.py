@@ -16,7 +16,7 @@ class Model(ltv.LTV):
     x(0) ~ N(0,P0)"""
 
     def __init__(self, x0, P0, A, C, f, Q, R):
-        super(Model, self).__init__(
+        super().__init__(
             numpy.asarray(x0).reshape((1, 1)),
             numpy.asarray(P0).reshape((1, 1)),
             A=numpy.asarray(A).reshape((1, 1)),

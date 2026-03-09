@@ -18,7 +18,7 @@ class Model(nlg.NonlinearGaussianInitialGaussian):
 
     def __init__(self, P0, Q, R):
         x0 = numpy.zeros((1, 1))
-        super(Model, self).__init__(
+        super().__init__(
             x0=x0,
             Px0=numpy.asarray(P0).reshape((1, 1)),
             Q=numpy.asarray(Q).reshape((1, 1)),

@@ -77,7 +77,7 @@ def lognormpdf_scalar(err, S):
     return -0.5 * (l2pi + math.log(S[0, 0]) + (err.ravel() ** 2) / S[0, 0])
 
 
-class KalmanFilter(object):
+class KalmanFilter:
     """
     A Kalman filter class, does filtering for systems of the type:
     z_{k+1} = A*z_{k}+f_k + v_k

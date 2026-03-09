@@ -84,7 +84,7 @@ class ParticleAPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         self.Qes = numpy.copy(Qes)
         self.Qeb = numpy.copy(Qeb)
 
-        super(ParticleAPF, self).__init__(xi0=xi0, z0=z0, Pz0=P0, R=R, Qz=Qz, Az=Az)
+        super().__init__(xi0=xi0, z0=z0, Pz0=P0, R=R, Qz=Qz, Az=Az)
 
     def get_nonlin_pred_dynamics(self, particles, u, t):
         tmp = numpy.vstack(particles)[:, numpy.newaxis, :]

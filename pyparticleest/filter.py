@@ -24,7 +24,7 @@ def sample(w, n):
     return numpy.searchsorted(wc, u)
 
 
-class ParticleFilter(object):
+class ParticleFilter:
     """
     Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
@@ -195,7 +195,7 @@ class ParticleFilter(object):
         return pa
 
 
-class SIR(object):
+class SIR:
     """
     Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
@@ -388,8 +388,8 @@ class CSIRAS(SIR):
         ancestors[:-1] = sample(tmp, N - 1)
 
         # select ancestor for conditional trajectory
-        pind = numpy.arange(N, dtype=numpy.int)
-        find = numpy.zeros((N,), dtype=numpy.int)
+        pind = numpy.arange(N, dtype=int)
+        find = numpy.zeros((N,), dtype=int)
 
         wtrans = self.model.logp_xnext(
             particles=traj[cur_ind].pa.part,
@@ -436,7 +436,7 @@ class CSIRAS(SIR):
         return (pa, resampled, ancestors)
 
 
-class FFPropY(object):
+class FFPropY:
     """
     Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
@@ -674,8 +674,8 @@ class CPFAS(CPF):
         ancestors[:-1] = sample(tmp, N - 1)
 
         # select ancestor for conditional trajectory
-        pind = numpy.arange(N, dtype=numpy.int)
-        find = numpy.zeros((N,), dtype=numpy.int)
+        pind = numpy.arange(N, dtype=int)
+        find = numpy.zeros((N,), dtype=int)
 
         wtrans = self.model.logp_xnext_singlestep(
             part=traj[cur_ind].pa.part[pind],
@@ -827,8 +827,8 @@ class CPFYAS(CPFAS):
         ancestors[:-1] = sample(tmp, self.N - 1)
 
         # select ancestor for conditional trajectory
-        pind = numpy.arange(self.N, dtype=numpy.int)
-        find = numpy.zeros((self.N,), dtype=numpy.int)
+        pind = numpy.arange(self.N, dtype=int)
+        find = numpy.zeros((self.N,), dtype=int)
 
         wtrans = self.model.logp_xnext_singlestep(
             part=traj[cur_ind].pa.part[pind],
@@ -902,7 +902,7 @@ class CPFYAS(CPFAS):
         return pa
 
 
-class TrajectoryStep(object):
+class TrajectoryStep:
     """
     Store particle approximation, input, output and timestamp for
     a single time index in a trajectory
@@ -922,7 +922,7 @@ class TrajectoryStep(object):
         self.ancestors = ancestors
 
 
-class ParticleTrajectory(object):
+class ParticleTrajectory:
     """
     Store particle trajectories, each time instance is saved
     as a TrajectoryStep object
@@ -966,7 +966,7 @@ class ParticleTrajectory(object):
         else:
             self.uvec = numpy.empty(1, dtype=utype)
             self.yvec = numpy.empty(1, dtype=ytype)
-            self.tvec = numpy.empty(1, dtype=numpy.float)
+            self.tvec = numpy.empty(1, dtype=float)
             self.T = 0
         # TODO, this isn't correctly used in the code, assumed = 0
         assert t0 == 0
@@ -1171,7 +1171,7 @@ class ParticleTrajectory(object):
         return SmoothTrajectory(self, M=M, method=method, options=options)
 
 
-class ParticleApproximation(object):
+class ParticleApproximation:
     """
     Contains collection of particles approximating a pdf
 
@@ -1239,7 +1239,7 @@ class ParticleApproximation(object):
         new_ind = sample(numpy.exp(tmp), N)
         new_part = model.copy_ind(self.part, new_ind)
 
-        self.w = numpy.log(numpy.ones(N, dtype=numpy.float) / N)
+        self.w = numpy.log(numpy.ones(N, dtype=float) / N)
         self.part = new_part
         self.num = N
         self.w_offset = 0.0

@@ -45,7 +45,7 @@ class Model(
         self.Q = numpy.copy(Q)
         self.R = numpy.copy(R)
         self.logxn_max = kalman.lognormpdf_scalar(numpy.zeros((1,)), self.Q)
-        super(Model, self).__init__()
+        super().__init__()
 
     def create_initial_estimate(self, N):
         return numpy.random.normal(0.0, numpy.sqrt(self.P0).ravel(), (N,))
@@ -127,7 +127,7 @@ class Model(
 
 
 def callback(params, Q, cur_iter):
-    print("params = {}".format(numpy.exp(params)))
+    print(f"params = {numpy.exp(params)}")
 
 
 def callback_sim(estimator):
