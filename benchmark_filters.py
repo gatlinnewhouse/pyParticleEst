@@ -22,7 +22,6 @@ Metrics reported per filter:
 """
 
 import time
-from pathlib import Path
 from typing import Any
 
 import latextable

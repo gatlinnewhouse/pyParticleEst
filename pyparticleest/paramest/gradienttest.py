@@ -4,8 +4,6 @@ Created on Mar 27, 2015
 @author: ajn
 """
 
-from typing import Any
-
 import matplotlib.pyplot as plt
 import numpy as np
 
