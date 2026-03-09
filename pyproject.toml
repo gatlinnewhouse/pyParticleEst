@@ -1,14 +1,125 @@
 [project]
 name = "pyParticleEst"
 version = "0.0.1"
-dependencies = ["numpy==1.17.3", "scipy", "matplotlib"]
-requires-python = ">=3.8"
+dependencies = ["numpy>=2.1.2", "scipy>=1.14.1", "matplotlib>=3.9.2"]
+requires-python = ">=3.13"
 dynamic = ["description", "license", "authors"]
 
 [build-system]
-requires = ["setuptools>=42", "wheel", "numpy>=1.17.3", "cython"]
+requires = ["setuptools>=61.0", "wheel", "numpy>=2.1.2"]
 build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
-cython = ["cython"]
-docs = ["numpydoc"]
+docs = ["numpydoc>=1.7.0"]
+
+[tool.ruff.lint]
+select = [
+  # NumPy
+  "NPY001", # Type alias np.{type_name} is deprecated, replace with builtin type
+  "NPY002", # Replace legacy np.random.{method_name} call with np.random.Generator
+  "NPY003", # np.{existing} is deprecated; use np.{replacement} instead
+  "NPY201", # np.{existing} will be removed in NumPy 2.0. {migration_guide}
+  # Perflint
+  "PERF101", # Do not cast an iterable to list before iterating over it
+  "PERF102", # When using only the {subset} of a dict use the {subset}() method
+  "PERF203", # try-except within a loop incurs performance overhead
+  "PERF401", # Use {message_str} to create a transformed list
+  "PERF402", # Use list or list.copy to create a copy of a list
+  "PERF403", # Use a dictionary comprehension instead of {modifier} for-loop
+  # Pandas
+  "PD002", # inplace=True should be avoided; it has inconsistent behavior
+  "PD003", # .isna is preferred to .isnull; functionality is equivalent
+  "PD004", # .notna is preferred to .notnull; functionality is equivalent
+  "PD007", # .ix is deprecated; use more explicit .loc or .iloc
+  "PD008", # Use .loc instead of .at. If speed is important, use NumPy.
+  "PD009", # Use .iloc instead of .iat. If speed is important, use NumPy.
+  "PD010", # .pivot_table is preferred to .pivot or .unstack; provides same functionality
+  "PD011", # Use .to_numpy() instead of .values
+  "PD012", # Use .read_csv instead of .read_table to read CSV files
+  "PD013", # .melt is preferred to .stack; provides same functionality
+  "PD015", # Use .merge method instead of pd.merge function. They have equivalent functionality.
+  "PD101", # Using series.nunique() for checking that a series is constant is inefficient
+  # pyupgrade
+  "UP001", # __metaclass__ = type is implied
+  "UP003", # Use {} instead of type(...)
+  "UP004", # Class {name} inherits from object
+  "UP005", # {alias} is deprecated, use {target}
+  "UP006", # Use {to} instead of {from} for type annotation
+  "UP007", # Use X | Y for type annotations
+  "UP008", # Use super() instead of super(__class__, self)
+  "UP009", # UTF-8 encoding declaration is unnecessary
+  "UP010", # Unnecessary __future__ import {import} for target Python version
+  "UP011", # Unnecessary parentheses to functools.lru_cache
+  "UP012", # Unnecessary call to encode as UTF-8
+  "UP013", # Convert {name} from TypedDict functional to class syntax
+  "UP014", # Convert {name} from NamedTuple functional to class syntax
+  "UP015", # Unnecessary mode argument
+  "UP017", # Use datetime.UTC alias
+  "UP018", # Unnecessary {literal_type} call (rewrite as a literal)
+  "UP019", # {}.Text is deprecated, use str
+  "UP020", # Use builtin open
+  "UP021", # universal_newlines is deprecated, use text
+  "UP022", # Prefer capture_output over sending stdout and stderr to PIPE
+  "UP023", # cElementTree is deprecated, use ElementTree
+  "UP024", # Replace aliased errors with OSError
+  "UP025", # Remove unicode literals from strings
+  "UP026", # mock is deprecated, use unittest.mock
+  "UP028", # Replace yield over for loop with yield from
+  "UP029", # Unnecessary builtin import: {import}
+  "UP030", # Use implicit references for positional format fields
+  "UP031", # Use format specifiers instead of percent format
+  "UP032", # Use f-string instead of format call
+  "UP033", # Use @functools.cache instead of @functools.lru_cache(maxsize=None)
+  "UP034", # Avoid extraneous parentheses
+  "UP035", # Import from {target} instead: {names}
+  "UP036", # Version block is outdated for minimum Python version
+  "UP037", # Remove quotes from type annotation
+  "UP039", # Unnecessary parentheses after class definition
+  "UP040", # Type alias {name} uses {type_alias_method} instead of the type keyword
+  "UP041", # Replace aliased errors with TimeoutError
+  "UP042", # Class {name} inherits from both str and enum.Enum
+  "UP043", # Unnecessary default type arguments
+  "UP044", # Use * for unpacking
+  "UP045", # Use X | None for type annotations
+  "UP046", # Generic class {name} uses Generic subclass instead of type parameters
+  "UP047", # Generic function {name} should use type parameters
+  "UP049", # Generic {} uses private type parameters
+  "UP050", # Class {name} uses metaclass=type, which is redundant
+  # refurb
+  "FURB101", # Path.open() followed by read() can be replaced by {filename}.{suggestion}
+  "FURB103", # Path.open() followed by write() can be replaced by {filename}.{suggestion}
+  "FURB105", # Unnecessary empty string passed to print
+  "FURB110", # Replace ternary if expression with or operator
+  "FURB113", # Use {suggestion} instead of repeatedly calling {name}.append()
+  "FURB116", # Replace {function_name} call with {display}
+  "FURB118", # Use operator.{operator} instead of defining a {target}
+  "FURB122", # Use of {}.write in a for loop
+  "FURB129", # Instead of calling readlines(), iterate over file object directly
+  "FURB131", # Prefer clear over deleting a full slice
+  "FURB132", # Use {suggestion} instead of check and remove
+  "FURB136", # Replace if expression with {min_max} call
+  "FURB140", # Use itertools.starmap instead of the generator
+  "FURB142", # Use of set.{}() in a for loop
+  "FURB145", # Prefer copy method over slicing
+  "FURB148", # enumerate value is unused, use for x in range(len(y)) instead
+  "FURB152", # Replace {literal} with math.{constant}
+  "FURB154", # Use of repeated consecutive {}
+  "FURB156", # Use of hardcoded string charset
+  "FURB157", # Verbose expression in Decimal constructor
+  "FURB161", # Use of bin({existing}).count('1')
+  "FURB162", # Unnecessary timezone replacement with zero offset
+  "FURB163", # Prefer math.{log_function}({arg}) over math.log with a redundant base
+  "FURB164", # Verbose method {method_name} in {constructor} construction
+  "FURB166", # Use of int with explicit base={base} after removing prefix
+  "FURB167", # Use of regular expression alias re.{}
+  "FURB168", # Prefer is operator over isinstance to check if an object is None
+  "FURB169", # When checking against None, use {} instead of comparison with type(None)
+  "FURB171", # Membership test against single-item container
+  "FURB177", # Prefer Path.cwd() over Path().resolve() for current-directory lookups
+  "FURB180", # Use of metaclass=abc.ABCMeta to define abstract base class
+  "FURB181", # Use of hashlib's .digest().hex()
+  "FURB187", # Use of assignment of reversed on list {name}
+  "FURB188", # Prefer str.removeprefix() over conditionally replacing with slice.
+  "FURB189", # Subclassing {subclass} can be error prone, use collections.{replacement} instead
+  "FURB192", # Prefer min over sorted() to compute the minimum value in a sequence
+]
