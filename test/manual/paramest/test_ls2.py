@@ -178,10 +178,20 @@ class ParticleLS2(
             (
                 np.zeros((4, 3))[np.newaxis],
                 np.asarray(
-                    ((1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
+                    (
+                        (1.0, 0.0, 0.0),
+                        (0.0, 0.0, 0.0),
+                        (0.0, 0.0, 0.0),
+                        (0.0, 0.0, 0.0),
+                    ),
                 )[np.newaxis],
                 np.asarray(
-                    ((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
+                    (
+                        (0.0, 0.0, 0.0),
+                        (0.0, 1.0, 0.0),
+                        (0.0, 0.0, 0.0),
+                        (0.0, 0.0, 0.0),
+                    ),
                 )[np.newaxis],
                 np.asarray(
                     (
@@ -250,7 +260,6 @@ if __name__ == "__main__":
             # Create reference
             (y, e, z) = generate_dataset(theta_true, steps)
             # Store values for last time-step aswell
-
 
             plt.figure(fig1.number)
             plt.clf()
@@ -357,7 +366,6 @@ if __name__ == "__main__":
 
             plt.draw()
 
-
             estimate[:, k] = param
 
         #        plt.figure(fig2.number)
@@ -447,7 +455,9 @@ if __name__ == "__main__":
         param_steps = 101
         tval = theta_true[param_id]
         param_vals = np.linspace(
-            tval - math.fabs(tval), tval + math.fabs(tval), param_steps,
+            tval - math.fabs(tval),
+            tval + math.fabs(tval),
+            param_steps,
         )
         gt.test(param_id, param_vals, nums=nums)
 

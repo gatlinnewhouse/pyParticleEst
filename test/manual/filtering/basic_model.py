@@ -50,7 +50,16 @@ class Model(interfaces.ParticleFiltering):
         return logyprob
 
     def logp_xnext_full(
-        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind,
+        self,
+        part,
+        past_trajs,
+        pind,
+        future_trajs,
+        find,
+        ut,
+        yt,
+        tt,
+        cur_ind,
     ):
 
         diff = future_trajs[0].pa.part[find] - part
@@ -58,7 +67,8 @@ class Model(interfaces.ParticleFiltering):
         logpxnext = np.empty(len(diff), dtype=float)
         for k in range(len(logpxnext)):
             logpxnext[k] = kalman.lognormpdf(
-                diff[k].reshape(-1, 1), np.asarray(self.Q).reshape(1, 1),
+                diff[k].reshape(-1, 1),
+                np.asarray(self.Q).reshape(1, 1),
             )
         return logpxnext
 

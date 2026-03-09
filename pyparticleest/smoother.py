@@ -125,7 +125,16 @@ def bsi_rs(
     # already calculated to avoid double work, or will that
     # take more time than simply evaulating them all again?
     res[todo] = bsi_full(
-        model, pa, ptraj, pind, future_trajs, todo, ut=ut, yt=yt, tt=tt, cur_ind=cur_ind,
+        model,
+        pa,
+        ptraj,
+        pind,
+        future_trajs,
+        todo,
+        ut=ut,
+        yt=yt,
+        tt=tt,
+        cur_ind=cur_ind,
     )
     return res
 
@@ -219,7 +228,16 @@ def bsi_rsas(
             break
 
     res[todo] = bsi_full(
-        model, pa, ptraj, pind, future_trajs, todo, ut=ut, yt=yt, tt=tt, cur_ind=cur_ind,
+        model,
+        pa,
+        ptraj,
+        pind,
+        future_trajs,
+        todo,
+        ut=ut,
+        yt=yt,
+        tt=tt,
+        cur_ind=cur_ind,
     )
     return res
 
@@ -390,7 +408,8 @@ class SmoothTrajectory:
 
         traj = np.empty((len(pt),), dtype=object)
         traj[T - 1] = TrajectoryStep(
-            ParticleApproximation(last_part), np.arange(M, dtype=int),
+            ParticleApproximation(last_part),
+            np.arange(M, dtype=int),
         )
 
         for t in reversed(range(T - 1)):
@@ -434,7 +453,11 @@ class SmoothTrajectory:
         return self.calculate_ancestors(pt, ind)
 
     def perform_bsi(
-        self, pt: Any, M: int, method: str, options: dict[str, Any],
+        self,
+        pt: Any,
+        M: int,
+        method: str,
+        options: dict[str, Any],
     ) -> None:
         """
         Create smoothed trajectories using Backward Simulation
@@ -466,10 +489,16 @@ class SmoothTrajectory:
         )
         self.traj = np.empty((len(pt),), dtype=object)
         self.traj[-1] = TrajectoryStep(
-            ParticleApproximation(last_part), np.arange(M, dtype=int),
+            ParticleApproximation(last_part),
+            np.arange(M, dtype=int),
         )
 
-        if method == "full" or method == "mcmc" or method == "ancestor" or method == "mhips":
+        if (
+            method == "full"
+            or method == "mcmc"
+            or method == "ancestor"
+            or method == "mhips"
+        ):
             pass
         elif method == "rs":
             max_iter = options["R"]
@@ -572,7 +601,8 @@ class SmoothTrajectory:
                 cur_ind=cur_ind,
             )
             self.traj[cur_ind] = TrajectoryStep(
-                ParticleApproximation(tmp), np.arange(M, dtype=int),
+                ParticleApproximation(tmp),
+                np.arange(M, dtype=int),
             )
 
     #        if hasattr(self.model, 'post_smoothing'):
@@ -612,7 +642,7 @@ class SmoothTrajectory:
 
         for t in reversed(range(T)):
             # Initialise from filtered estimate
-            ft = straj[t + 1:] if t < T - 1 else None
+            ft = straj[t + 1 :] if t < T - 1 else None
 
             # Initialize with filterted estimates
             pnew = pt[t].pa.part[cind]
@@ -669,7 +699,9 @@ class SmoothTrajectory:
             self.traj = self.model.post_smoothing(self)
 
     def perform_mhips_pass(
-        self, options: dict[str, Any] | None, reduced: bool = False,
+        self,
+        options: dict[str, Any] | None,
+        reduced: bool = False,
     ) -> np.ndarray:
         """
         Runs MHIPS with the proposal density q as p(x_{t+1}|x_t)
@@ -865,7 +897,10 @@ def mc_step(
     if reduced:
         if ptraj is not None:
             noise = model.sample_process_noise_full(
-                ptraj=ptraj, ancestors=pind_prop, ut=ut[:cur_ind], tt=tt[:cur_ind],
+                ptraj=ptraj,
+                ancestors=pind_prop,
+                ut=ut[:cur_ind],
+                tt=tt[:cur_ind],
             )
 
             xprop = np.copy(ptraj[-1].pa.part[pind_prop])

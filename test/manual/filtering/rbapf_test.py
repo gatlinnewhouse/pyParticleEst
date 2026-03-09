@@ -38,15 +38,12 @@ def generate_dataset(length, Qz, R, Qes, Qeb):
             pxi * e
             + (1 - a) * z
             + np.random.multivariate_normal(
-                np.zeros((1,)), a * Qes + (1 - a) * Qeb,
+                np.zeros((1,)),
+                a * Qes + (1 - a) * Qeb,
             )
         )
 
-        wz = (
-            np.random.multivariate_normal(np.zeros((1,)), Qz)
-            .ravel()
-            .reshape((-1, 1))
-        )
+        wz = np.random.multivariate_normal(np.zeros((1,)), Qz).ravel().reshape((-1, 1))
 
         z = pz * z + wz
         t = t + 1
@@ -93,7 +90,9 @@ class ParticleAPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         Axi = (1.0 - a) * np.ones((len(particles), 1, 1))
         fxi = pxi * xi[:, np.newaxis, :]
         Qxi = np.repeat(
-            (a * self.Qes + (1 - a) * self.Qeb)[np.newaxis], len(particles), axis=0,
+            (a * self.Qes + (1 - a) * self.Qeb)[np.newaxis],
+            len(particles),
+            axis=0,
         )
         return (Axi, fxi, Qxi)
 
@@ -133,7 +132,9 @@ class ParticleAPF_EKF(ParticleAPF):
         Az = pz
 
         Qxi = np.repeat(
-            (a * self.Qes + (1 - a) * self.Qeb)[np.newaxis], len(particles), axis=0,
+            (a * self.Qes + (1 - a) * self.Qeb)[np.newaxis],
+            len(particles),
+            axis=0,
         )
 
         # for next time (at measurement)
@@ -169,7 +170,9 @@ class ParticleAPF_UKF(ParticleAPF):
         # xin = self.pred_xi(part, u, t)
 
         (Axi, fxi, Qxi, _, _, _) = self.get_nonlin_pred_dynamics_int(
-            particles=particles, u=u, t=t,
+            particles=particles,
+            u=u,
+            t=t,
         )
         (_xil, zl, Pl) = self.get_states(particles)
 
@@ -233,7 +236,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "apf_compare":
             mode = sys.argv[2]
-
 
             sims = 1000
             # (5, 10, 15, 20, 25, 30, 50, 75, 100, 150, 200, 300, 500)
@@ -350,7 +352,11 @@ if __name__ == "__main__":
 
         for j in range(num):
             plt.plot(
-                range(steps + 1), vals[:, j, 0], ".", markersize=1.0, color="#000000",
+                range(steps + 1),
+                vals[:, j, 0],
+                ".",
+                markersize=1.0,
+                color="#000000",
             )
             plt.plot(
                 range(steps + 1),
@@ -360,7 +366,11 @@ if __name__ == "__main__":
                 color="#00FF00",
             )
         plt.plot(
-            range(steps + 1), vals_mean[:, 0], "--", markersize=1.0, color="#0000FF",
+            range(steps + 1),
+            vals_mean[:, 0],
+            "--",
+            markersize=1.0,
+            color="#0000FF",
         )
         plt.plot(x, e.T, "k--", markersize=1.0)
         plt.show()
@@ -368,13 +378,25 @@ if __name__ == "__main__":
         plt.figure()
         for j in range(num):
             plt.plot(
-                range(steps + 1), vals[:, j, 1], ".", markersize=1.0, color="#000000",
+                range(steps + 1),
+                vals[:, j, 1],
+                ".",
+                markersize=1.0,
+                color="#000000",
             )
             plt.plot(
-                range(steps + 1), svals_mean[:, 1], "-", markersize=1.0, color="#00FF00",
+                range(steps + 1),
+                svals_mean[:, 1],
+                "-",
+                markersize=1.0,
+                color="#00FF00",
             )
         plt.plot(
-            range(steps + 1), vals_mean[:, 1], "--", markersize=1.0, color="#0000FF",
+            range(steps + 1),
+            vals_mean[:, 1],
+            "--",
+            markersize=1.0,
+            color="#0000FF",
         )
         plt.plot(x, z.ravel(), "k--", markersize=1.0)
         plt.show()

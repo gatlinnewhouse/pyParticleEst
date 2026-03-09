@@ -23,10 +23,12 @@ def generate_dataset(steps, z0, P0, Q, R):
         )
 
         x[k + 1] = A.dot(x[k]) + np.random.multivariate_normal(
-            (0.0, 0.0), Q,
+            (0.0, 0.0),
+            Q,
         ).reshape((-1, 1))
         y[k + 1] = C.dot(x[k + 1]) + np.random.multivariate_normal(
-            (0.0, 0.0), R,
+            (0.0, 0.0),
+            R,
         ).reshape((-1, 1))
 
     return (x, y)

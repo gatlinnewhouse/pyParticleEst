@@ -1,7 +1,6 @@
 """Particle filtering for a trivial model
 Also illustrates that the"""
 
-
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
@@ -64,7 +63,8 @@ class Model(interfaces.SIR):
                 + P.dot(C.T).dot(scipy.linalg.solve(S, err[i].reshape((-1, 1)))).ravel()
             )
             logpq[i] = kalman.lognormpdf(
-                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)), Pn,
+                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)),
+                Pn,
             ).ravel()
 
         return logpq
@@ -73,7 +73,8 @@ class Model(interfaces.SIR):
         logpxn = np.empty(len(particles), dtype=float)
         for k in range(len(particles)):
             logpxn[k] = kalman.lognormpdf(
-                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1), self.Q,
+                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1),
+                self.Q,
             )
         return logpxn
 

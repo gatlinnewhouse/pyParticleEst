@@ -122,7 +122,9 @@ class Model(
         M = sest.shape[1]
         yp = 0.05 * sest**2
         diff = yp - np.repeat(
-            np.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
+            np.asarray(yt, dtype=float).reshape((-1, 1, 1)),
+            repeats=M,
+            axis=1,
         )
         return np.sum(kalman.lognormpdf_scalar(diff.ravel(), self.R)) / M
 

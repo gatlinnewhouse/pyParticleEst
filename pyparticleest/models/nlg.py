@@ -15,7 +15,9 @@ import pyparticleest.utils.kalman as kalman
 
 
 class NonlinearGaussian(
-    interfaces.ParticleFiltering, interfaces.FFBSiRS, abc.ABC,
+    interfaces.ParticleFiltering,
+    interfaces.FFBSiRS,
+    abc.ABC,
 ):
     """
     Base class for particles of the type mixed linear/non-linear with
@@ -40,7 +42,10 @@ class NonlinearGaussian(
     """
 
     def calc_f(
-        self, particles: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray | None:
         """
         Calucate f
@@ -57,7 +62,10 @@ class NonlinearGaussian(
         return None
 
     def calc_Q(
-        self, particles: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray | None:
         """
         Calucate Q
@@ -139,7 +147,10 @@ class NonlinearGaussian(
         self.Rcholtri = numpy.triu(self.Rchol[0])
 
     def sample_process_noise(
-        self, particles: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray:
         """
         Sample process noise
@@ -167,7 +178,11 @@ class NonlinearGaussian(
         return noise.T
 
     def update(
-        self, particles: numpy.ndarray, u: Any, t: float, noise: numpy.ndarray,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        t: float,
+        noise: numpy.ndarray,
     ) -> numpy.ndarray:
         """Propagate estimate forward in time
 
@@ -228,7 +243,11 @@ class NonlinearGaussian(
         return lpy
 
     def eval_1st_stage_weights(
-        self, particles: numpy.ndarray, u: Any, y: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        y: Any,
+        t: float,
     ) -> numpy.ndarray:
         """
         Evaluate "first stage weights" for the auxiliary particle filter.
@@ -281,7 +300,11 @@ class NonlinearGaussian(
         return numpy.max(pmax)
 
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        next_part: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
@@ -352,7 +375,9 @@ class NonlinearGaussian(
         if ptraj is not None:
             prop_part = numpy.copy(ptraj[-1].pa.part[anc])
             noise = self.sample_process_noise(
-                prop_part, ut[cur_ind - 1], tt[cur_ind - 1],
+                prop_part,
+                ut[cur_ind - 1],
+                tt[cur_ind - 1],
             )
             prop_part = self.update(prop_part, ut[cur_ind - 1], tt[cur_ind - 1], noise)
         else:
@@ -394,7 +419,10 @@ class NonlinearGaussian(
         """
         if ptraj is not None:
             return self.logp_xnext(
-                ptraj[-1].pa.part[anc], prop_part, ut[cur_ind - 1], tt[cur_ind - 1],
+                ptraj[-1].pa.part[anc],
+                prop_part,
+                ut[cur_ind - 1],
+                tt[cur_ind - 1],
             )
         return self.eval_logp_x0(prop_part, t=tt[0])
 
@@ -427,7 +455,11 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
     """
 
     def __init__(
-        self, x0: Any = None, Px0: Any = None, lxi: int | None = None, **kwargs: Any,
+        self,
+        x0: Any = None,
+        Px0: Any = None,
+        lxi: int | None = None,
+        **kwargs: Any,
     ) -> None:
         if x0 is not None:
             self.x0 = numpy.copy(x0).reshape((-1, 1))
@@ -486,7 +518,8 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
             Pchol = scipy.linalg.cho_factor(self.Px0, check_finite=False)
             for i in range(N):
                 res[i] = kalman.lognormpdf_cho(
-                    particles[i].ravel() - self.x0.ravel(), Pchol,
+                    particles[i].ravel() - self.x0.ravel(),
+                    Pchol,
                 )
 
         return res

@@ -52,7 +52,8 @@ class Test(unittest.TestCase):
         (nzl, nPl) = self.model.get_states(nextp)
         npt.assert_array_equal(np.asarray(nzl), self.A * np.asarray(zl) + self.f)
         npt.assert_array_equal(
-            np.asarray(nPl), (self.A**2) * np.asarray(Pl) + self.Q,
+            np.asarray(nPl),
+            (self.A**2) * np.asarray(Pl) + self.Q,
         )
 
     def testMeasure(self) -> None:

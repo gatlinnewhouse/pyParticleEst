@@ -24,7 +24,8 @@ def generate_dataset(steps, P0_xi, P0_z, Q_xi, Q_z, R_xi, R_z):
             ),
         )
         z[:, k] = Ak.dot(z[:, k - 1]) + np.random.multivariate_normal(
-            np.zeros((2,)), Q_z,
+            np.zeros((2,)),
+            Q_z,
         )
         C = np.asarray((math.cos(xi[:, k - 1]), math.sin(xi[:, k - 1])))
         y[k - 1, 0] = xi[:, k] + np.random.normal(0.0, math.sqrt(R_xi))
@@ -85,7 +86,9 @@ class Model(HierarchicalRSBase):
         self.pn_count = self.pn_count + len(particles)
         xi = particles[:, : self.lxi]
         return scipy.stats.norm.logpdf(
-            (next_xi - xi).ravel(), 0.0, math.sqrt(self.Q_xi),
+            (next_xi - xi).ravel(),
+            0.0,
+            math.sqrt(self.Q_xi),
         )
 
     def logp_xnext_xi_max(self, particles, u, t):

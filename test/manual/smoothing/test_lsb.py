@@ -75,11 +75,7 @@ def generate_dataset(length):
 
         e = fe + Ae.dot(z) + np.random.multivariate_normal(np.zeros((1,)), Qe)
 
-        wz = (
-            np.random.multivariate_normal(np.zeros((4,)), Qz)
-            .ravel()
-            .reshape((-1, 1))
-        )
+        wz = np.random.multivariate_normal(np.zeros((4,)), Qz).ravel().reshape((-1, 1))
 
         z = Az.dot(z) + wz
         t = t + 1
@@ -238,7 +234,11 @@ if __name__ == "__main__":
 
         for j in range(num):
             plt.plot(
-                range(steps + 1), est[:, j, 0], ".", markersize=3.0, color="#BBBBBB",
+                range(steps + 1),
+                est[:, j, 0],
+                ".",
+                markersize=3.0,
+                color="#BBBBBB",
             )
         plt.plot(x, e.T, "k-", markersize=1.0)
         for j in range(nums):
@@ -256,7 +256,11 @@ if __name__ == "__main__":
         plt.figure()
         for j in range(num):
             plt.plot(
-                range(steps + 1), ftheta[:, j], ".", markersize=3.0, color="#BBBBBB",
+                range(steps + 1),
+                ftheta[:, j],
+                ".",
+                markersize=3.0,
+                color="#BBBBBB",
             )
         plt.plot(x, (25.0 + C_theta.dot(z)).ravel(), "k-", markersize=1.0)
         for j in range(nums):

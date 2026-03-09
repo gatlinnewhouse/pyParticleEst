@@ -265,7 +265,9 @@ class ParamEstimationPSAEM(Simulator):
         weights = None
 
         def default_callback(
-            params: np.ndarray, Q: float, cur_iter: int,
+            params: np.ndarray,
+            Q: float,
+            cur_iter: int,
         ) -> bool | None:
             if cur_iter >= max_iter:
                 return True
@@ -452,7 +454,9 @@ class ParamEstimationPSAEM2(Simulator):
             datalen -= zerolen
             weights[:datalen] /= np.sum(weights[:datalen])
             params_local = self.model.maximize_weighted(
-                self.straj, alltrajs[:, :datalen], weights[:datalen],
+                self.straj,
+                alltrajs[:, :datalen],
+                weights[:datalen],
             )
             #            params_local = self.model.maximize_weighted(self.straj, alltrajs[:, -1:], numpy.asarray((1.0,)))
 

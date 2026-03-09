@@ -104,7 +104,11 @@ class Simulator:
         # Initialise a particle filter with our particle approximation of the initial state,
         # set the resampling threshold to 0.67 (effective particles / total particles )
         self.pt = ParticleTrajectory(
-            self.model, num_part, res, filter=filter, filter_options=filter_options,
+            self.model,
+            num_part,
+            res,
+            filter=filter,
+            filter_options=filter_options,
         )
 
         offset = 0
@@ -120,7 +124,9 @@ class Simulator:
         # Use the filtered estimates above to created smoothed estimates
         if smoother is not None and num_traj > 0:
             self.straj = self.pt.perform_smoothing(
-                num_traj, method=smoother, smoother_options=smoother_options,
+                num_traj,
+                method=smoother,
+                smoother_options=smoother_options,
             )
         return resamplings
 

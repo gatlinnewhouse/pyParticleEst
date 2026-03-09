@@ -58,14 +58,23 @@ class HierarchicalBase(RBPSBase, abc.ABC):
         lyz = np.empty_like(lyxi)
         for i in range(len(zl)):
             lyz[i] = self.kf.measure_full(
-                np.asarray(y).reshape((-1, 1)), zl[i], Pl[i], Cz[i], hz[i], Rz[i],
+                np.asarray(y).reshape((-1, 1)),
+                zl[i],
+                Pl[i],
+                Cz[i],
+                hz[i],
+                Rz[i],
             )
 
         self.set_states(particles, xil, zl, Pl)
         return lyxi + lyz
 
     def calc_cond_dynamics(
-        self, particles: np.ndarray, xi_next: np.ndarray, u: Any, t: float,
+        self,
+        particles: np.ndarray,
+        xi_next: np.ndarray,
+        u: Any,
+        t: float,
     ) -> tuple[Any, Any, Any]:
         """
         Calculates the linear dynamics for each particle
@@ -88,14 +97,22 @@ class HierarchicalBase(RBPSBase, abc.ABC):
         return (Az, fz, Qz)
 
     def meas_xi_next(
-        self, particles: np.ndarray, xi_next: np.ndarray, u: Any, t: float,
+        self,
+        particles: np.ndarray,
+        xi_next: np.ndarray,
+        u: Any,
+        t: float,
     ) -> np.ndarray:
         # There is no information in the next nonlinear state about the
         # current linear states for this class of models
         return particles
 
     def logp_xnext(
-        self, particles: np.ndarray, next_part: np.ndarray, u: Any, t: float,
+        self,
+        particles: np.ndarray,
+        next_part: np.ndarray,
+        u: Any,
+        t: float,
     ) -> np.ndarray:
         """
         Return the log-pdf value for the possible future state 'next_part' given
@@ -184,7 +201,9 @@ class HierarchicalBase(RBPSBase, abc.ABC):
             )
             if future_trajs is not None:
                 (A, f, Q, _, _, _) = self.get_lin_pred_dynamics_int(
-                    partj, ut[cur_ind], tt[cur_ind],
+                    partj,
+                    ut[cur_ind],
+                    tt[cur_ind],
                 )
                 # Measure the sampled next state,
                 self.kf.measure_full(
@@ -208,7 +227,11 @@ class HierarchicalBase(RBPSBase, abc.ABC):
 
     @abc.abstractmethod
     def logp_xnext_xi(
-        self, particles: np.ndarray, next_xi: np.ndarray, u: Any, t: float,
+        self,
+        particles: np.ndarray,
+        next_xi: np.ndarray,
+        u: Any,
+        t: float,
     ) -> np.ndarray:
         """
         Evaluate the log-probability of the next nonlinear state
@@ -228,7 +251,11 @@ class HierarchicalBase(RBPSBase, abc.ABC):
 
     @abc.abstractmethod
     def calc_xi_next(
-        self, particles: np.ndarray, u: Any, t: float, noise: np.ndarray,
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+        noise: np.ndarray,
     ) -> np.ndarray:
         """
         Calculate the next nonlinear state given the input and noise
@@ -248,7 +275,10 @@ class HierarchicalBase(RBPSBase, abc.ABC):
 
     @abc.abstractmethod
     def measure_nonlin(
-        self, particles: np.ndarray, y: Any, t: float,
+        self,
+        particles: np.ndarray,
+        y: Any,
+        t: float,
     ) -> np.ndarray:
         """
         Measurement probability for the nonlinear parts of the measurement
@@ -300,7 +330,10 @@ class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
 
     @abc.abstractmethod
     def logp_xnext_xi_max(
-        self, particles: np.ndarray, u: Any, t: float,
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
     ) -> np.ndarray:
         """
         Maximum for nonlinear part of the logp_xnext, called from

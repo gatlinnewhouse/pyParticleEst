@@ -34,7 +34,9 @@ def wmean(logw, val):
 
 
 class Model(
-    interfaces.ParticleFiltering, interfaces.FFBSiRS, pestint.ParamEstInterface,
+    interfaces.ParticleFiltering,
+    interfaces.FFBSiRS,
+    pestint.ParamEstInterface,
 ):
     """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
@@ -117,7 +119,9 @@ class Model(
         M = straj.shape[1]
         yp = 0.05 * straj**2
         diff = yp - np.repeat(
-            np.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
+            np.asarray(yt, dtype=float).reshape((-1, 1, 1)),
+            repeats=M,
+            axis=1,
         )
         return np.sum(kalman.lognormpdf_scalar(diff.ravel(), self.R)) / M
 
@@ -149,7 +153,9 @@ class Model(
 
         yp = 0.05 * alltrajs**2
         diff = yp - np.repeat(
-            np.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
+            np.asarray(yt, dtype=float).reshape((-1, 1, 1)),
+            repeats=M,
+            axis=1,
         )
 
         werr = np.empty((len(alltrajs), M))
@@ -171,10 +177,14 @@ class Model(
             log_px0 = 0.0
             for i in range(len(weights)):
                 log_py += weights[i] * self.eval_logp_y_fulltraj(
-                    alltrajs[:, i : i + 1], straj.y, straj.t,
+                    alltrajs[:, i : i + 1],
+                    straj.y,
+                    straj.t,
                 )
                 log_pxnext += weights[i] * self.eval_logp_xnext_fulltraj(
-                    alltrajs[:, i : i + 1], straj.u, straj.t,
+                    alltrajs[:, i : i + 1],
+                    straj.u,
+                    straj.t,
                 )
                 tmp = self.eval_logp_x0(alltrajs[0, i : i + 1], straj.t[0])
                 log_px0 += weights[i] * np.mean(tmp)
