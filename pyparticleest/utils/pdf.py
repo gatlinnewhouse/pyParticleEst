@@ -2,7 +2,7 @@
 Utilities for evalutating probability density functions
 """
 
-from typing import Sequence
+from collections.abc import Sequence
 
 
 class unifsum:
