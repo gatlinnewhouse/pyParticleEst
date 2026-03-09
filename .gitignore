@@ -10,3 +10,5 @@ docs/_build/
 *.profile
 *.so
 *.egg-info
+plots/*.png
+plots/*.tex

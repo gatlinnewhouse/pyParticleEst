@@ -189,13 +189,18 @@ def run_filter(model, filter_name, ys, us, N, resample=2.0 / 3.0):
         ytype=float,
     )
     resample_count = 0
+    log_ml = 0.0  # log marginal likelihood, aka model evidence
     t0 = time.perf_counter()
     for t, y in enumerate(ys):
         resampled = straj.forward(u=float(t), y=float(y))
         if resampled:
             resample_count += 1
+        # Accumulate log p(y_t | y_{1:t-1}) ≈ log(sum(w_unnorm)) - log(N)
+        pa = straj.traj[-1].pa
+        w = pa.w - numpy.max(pa.w)
+        log_ml += pa.w_offset + numpy.log(numpy.sum(numpy.exp(w)))
     wall = time.perf_counter() - t0
-    return straj, wall, resample_count
+    return straj, wall, resample_count, log_ml
 
 
 def extract_state(straj, rbpf=False):
@@ -242,15 +247,15 @@ markers = {
 }
 
 
-def plot_estimated_state(results, STEPS, xs, ys):
+def plot_individual_estimates(results, STEPS, xs, ys):
+    """One figure per algorithm, each with ground truth overlaid."""
     t_axis = numpy.arange(STEPS + 1)
     plt.style.use("ggplot")
-    plt.rcParams["figure.figsize"] = [11, 8.5]
-    plt.grid(True, alpha=0.3)
-    fig, ax = plt.subplots()
-    plt.plot(t_axis, xs, "k-", lw=1.5, label="Ground truth", zorder=5)
+
     for name, r in results.items():
-        plt.plot(
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.plot(t_axis, xs, "k-", lw=1.5, label="Ground truth", zorder=5)
+        ax.plot(
             t_axis,
             r["estimates"],
             "--",
@@ -258,21 +263,95 @@ def plot_estimated_state(results, STEPS, xs, ys):
             color=colors[name],
             marker=markers[name],
             label=name,
-            markersize=5.0,
+            markersize=4.0,
+            markevery=5,  # reduce marker clutter
         )
-    plt.scatter(
-        t_axis[1:], ys, s=8, color="gray", alpha=0.4, label="Observations", zorder=10
-    )
-    plt.title("State estimates vs ground truth")
-    plt.xlabel("Time step")
-    plt.ylabel("x_t")
-    plt.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncol=6)
-    # plt.tight_layout()
-    plt.savefig("plots/benchmark_filters_estimates.png", dpi=150)
-    print("\nPlot saved to plots/benchmark_filters_estimates.png")
-    tikzplotlib.clean_figure()
-    tikzplotlib.save("plots/benchmark_filters_estimates.tex")
-    plt.show()
+        ax.scatter(
+            t_axis[1:],
+            ys,
+            s=6,
+            color="gray",
+            alpha=0.3,
+            label="Observations",
+            zorder=1,
+        )
+        ax.set_title(f"{name}: State estimate vs ground truth")
+        ax.set_xlabel("Time step $t$")
+        ax.set_ylabel("$x_t$")
+        ax.legend(loc="best", fontsize=9)
+        ax.grid(True, alpha=0.3)
+        fig.tight_layout()
+
+        safe_name = name.lower().replace(" ", "_").replace("(", "").replace(")", "")
+        fig.savefig(f"plots/estimate_{safe_name}.png", dpi=150)
+        tikzplotlib.save(f"plots/estimate_{safe_name}.tex")
+        plt.close(fig)
+
+
+def plot_combined_estimates(results, STEPS, xs, ys):
+    """All algorithms on one figure for comparison."""
+    t_axis = numpy.arange(STEPS + 1)
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(t_axis, xs, "k-", lw=1.5, label="Ground truth", zorder=5)
+    for name, r in results.items():
+        ax.plot(
+            t_axis,
+            r["estimates"],
+            "--",
+            lw=1,
+            color=colors[name],
+            label=name,
+            markevery=10,
+        )
+    ax.set_xlabel("Time step $t$")
+    ax.set_ylabel("$x_t$")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=4, fontsize=9)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig("plots/benchmark_filters_combined.png", dpi=150)
+    tikzplotlib.save("plots/benchmark_filters_combined.tex")
+    plt.close(fig)
+
+
+def plot_neff(results, strajs, STEPS):
+    """Neff over time for all filters."""
+    t_axis = numpy.arange(STEPS + 1)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for name, straj in strajs:
+        neffs = [step.pa.calc_Neff() / step.pa.num for step in straj.traj]
+        ax.plot(t_axis, neffs, label=name, color=colors[name], lw=1)
+    ax.axhline(2.0 / 3.0, color="k", ls=":", lw=1, label="Resample threshold")
+    ax.set_title("Normalised effective sample size ($N_{\\mathrm{eff}} / N$)")
+    ax.set_xlabel("Time step $t$")
+    ax.set_ylabel("$N_{\\mathrm{eff}} / N$")
+    ax.legend(fontsize=9)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig("plots/benchmark_neff.png", dpi=150)
+    tikzplotlib.save("plots/benchmark_neff.tex")
+    plt.close(fig)
+
+
+def plot_rmse_over_time(results, xs, STEPS):
+    """Cumulative RMSE over time for each filter."""
+    t_axis = numpy.arange(1, STEPS + 1)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    for name, r in results.items():
+        est = r["estimates"]
+        cum_rmse = numpy.sqrt(
+            numpy.cumsum((est[1 : STEPS + 1] - xs[1 : STEPS + 1]) ** 2)
+            / numpy.arange(1, STEPS + 1)
+        )
+        ax.plot(t_axis, cum_rmse, label=name, color=colors[name], lw=1)
+    ax.set_title("Cumulative RMSE over time")
+    ax.set_xlabel("Time step $t$")
+    ax.set_ylabel("RMSE")
+    ax.legend(fontsize=9)
+    ax.grid(True, alpha=0.3)
+    fig.tight_layout()
+    fig.savefig("plots/benchmark_rmse_time.png", dpi=150)
+    tikzplotlib.save("plots/benchmark_rmse_time.tex")
+    plt.close(fig)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -289,7 +368,7 @@ def main():
 
     # ── Pure SIS ─────────────────────────────────────────────────────────────
     sis_model = NLGSSModel()
-    straj_sis, t_sis, res_sis = run_filter(
+    straj_sis, t_sis, res_sis, log_sis = run_filter(
         sis_model, "pf", ys, us=None, N=N, resample=0
     )
     est_sis = extract_state(straj_sis)
@@ -299,11 +378,12 @@ def main():
         "time_s": t_sis,
         "resamples": res_sis,
         "estimates": est_sis,
+        "log_ml": log_sis,
     }
 
     # ── Bootstrap PF (SIR) ───────────────────────────────────────────────────
     pf_model = NLGSSModel()
-    straj_pf, t_pf, res_pf = run_filter(pf_model, "pf", ys, us=None, N=N)
+    straj_pf, t_pf, res_pf, log_pf = run_filter(pf_model, "pf", ys, us=None, N=N)
     est_pf = extract_state(straj_pf)
     results["SIR (Bootstrap PF)"] = {
         "rmse": rmse(est_pf, xs),
@@ -311,11 +391,12 @@ def main():
         "time_s": t_pf,
         "resamples": res_pf,
         "estimates": est_pf,
+        "log_ml": log_pf,
     }
 
     # ── APF ──────────────────────────────────────────────────────────────────
     apf_model = NLGSSModel()
-    straj_apf, t_apf, res_apf = run_filter(apf_model, "apf", ys, us=None, N=N)
+    straj_apf, t_apf, res_apf, log_apf = run_filter(apf_model, "apf", ys, us=None, N=N)
     est_apf = extract_state(straj_apf)
     results["APF"] = {
         "rmse": rmse(est_apf, xs),
@@ -323,11 +404,12 @@ def main():
         "time_s": t_apf,
         "resamples": res_apf,
         "estimates": est_apf,
+        "log_ml": log_apf,
     }
 
     # ── RBPF ─────────────────────────────────────────────────────────────────
     rb_model = RBPFModel(N)
-    straj_rb, t_rb, res_rb = run_filter(rb_model, "pf", ys, us=None, N=N)
+    straj_rb, t_rb, res_rb, log_rbpf = run_filter(rb_model, "pf", ys, us=None, N=N)
     est_rb = extract_state(straj_rb, rbpf=True)
     results["RBPF"] = {
         "rmse": rmse(est_rb, xs),
@@ -335,13 +417,17 @@ def main():
         "time_s": t_rb,
         "resamples": res_rb,
         "estimates": est_rb,
+        "log_ml": log_rbpf,
     }
 
     # ── Print metrics table ───────────────────────────────────────────────────
     print_metrics(results)
 
     # ── Plot ──────────────────────────────────────────────────────────────────
-    plot_estimated_state(results, STEPS, xs, ys)
+    plot_individual_estimates(results, STEPS, xs, ys)
+    plot_combined_estimates(results, STEPS, xs, ys)
+    # plot_neff(results,)
+    plot_rmse_over_time(results, xs, STEPS)
     exit()
 
     # Neff over time per filter
