@@ -16,7 +16,9 @@ def lognormpdf(err, S):
     """
     tmp = err.reshape(-1, 1)
     return -0.5 * (
-        S.shape[0] * l2pi + np.linalg.slogdet(S)[1] + np.linalg.solve(S, tmp).T.dot(tmp)
+        S.shape[0] * l2pi
+        + np.linalg.slogdet(S)[1]
+        + np.linalg.solve(S, tmp).T.dot(tmp).item()
     )
 
 
@@ -29,7 +31,7 @@ def lognormpdf_cho(err, Schol):
     return -0.5 * (
         dim * l2pi
         + ld
-        + scipy.linalg.cho_solve(Schol, err, check_finite=False).T.dot(err)
+        + scipy.linalg.cho_solve(Schol, err, check_finite=False).T.dot(err).item()
     )
 
 
@@ -43,9 +45,12 @@ def lognormpdf_cho_vec(err, Schol):
     ld = np.sum(np.log(np.diag(Schol[0]))) * 2
     res = np.ones((N,)) * (-0.5 * (dim * l2pi + ld))
     for i in range(N):
-        res[i] += -0.5 * scipy.linalg.cho_solve(
-            Schol, err[i], check_finite=False
-        ).T.dot(err[i])
+        res[i] += (
+            -0.5
+            * scipy.linalg.cho_solve(Schol, err[i], check_finite=False)
+            .T.dot(err[i])
+            .item()
+        )
     return res
 
 
@@ -62,7 +67,7 @@ def lognormpdf_vec(err, Sl):
         res[i] = -0.5 * (
             S.shape[0] * l2pi
             + np.linalg.slogdet(S)[1]
-            + np.linalg.solve(S, err[i]).T.dot(err[i])
+            + np.linalg.solve(S, err[i]).T.dot(err[i]).item()
         )
     return res
 
@@ -190,7 +195,7 @@ class KalmanFilter:
         # Return the probability of the received measurement
         dim = len(y)
         ld = np.sum(np.log(np.diag(Schol[0]))) * 2
-        return -0.5 * (dim * l2pi + ld + err.T.dot(Sinv_err))
+        return -0.5 * (dim * l2pi + ld + err.T.dot(Sinv_err).item())
 
     def measure_full_scalar(self, y, z, P, C, h_k, R):
         """
