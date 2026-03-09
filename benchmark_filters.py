@@ -158,7 +158,9 @@ class NLGSSModel(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFilte
         x_pred = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * numpy.cos(1.2 * t)
         y_hat = x_pred**2 / 20.0
         return scipy.stats.norm.logpdf(
-            float(y), loc=y_hat, scale=numpy.sqrt(R + Q * (x_pred / 10.0) ** 2),
+            float(y),
+            loc=y_hat,
+            scale=numpy.sqrt(R + Q * (x_pred / 10.0) ** 2),
         )
 
 
@@ -521,7 +523,11 @@ def plot_neff(results, strajs, STEPS, output_prefix="benchmark"):
 
 
 def plot_rmse_over_time(
-    results, xs, STEPS, output_prefix="benchmark", est_key="estimates",
+    results,
+    xs,
+    STEPS,
+    output_prefix="benchmark",
+    est_key="estimates",
 ):
     """Cumulative RMSE over time for each filter."""
     t_axis = numpy.arange(1, STEPS + 1)
@@ -560,7 +566,12 @@ def run_mlnlg_benchmark():
     # ── SIS ────────────────────────────────────────
     pf_model = MLNLGModelPF()
     straj_sis, t_sis, res_sis, log_sis = run_filter(
-        pf_model, "pf", ys, us=None, N=N, resample=0,
+        pf_model,
+        "pf",
+        ys,
+        us=None,
+        N=N,
+        resample=0,
     )
     est_xi_sis = weighted_means(straj_sis, state_index=0)
     est_z1_sis = weighted_means(straj_sis, state_index=1)
@@ -736,10 +747,18 @@ def run_mlnlg_benchmark():
     plot_neff(results, mlnlg_strajs, STEPS, output_prefix="mlnlg")
     plot_rmse_over_time(results, xis, STEPS, output_prefix="mlnlg", est_key="est_xi")
     plot_rmse_over_time(
-        results, zs[:, 0], STEPS, output_prefix="mlnlg", est_key="est_z1",
+        results,
+        zs[:, 0],
+        STEPS,
+        output_prefix="mlnlg",
+        est_key="est_z1",
     )
     plot_rmse_over_time(
-        results, zs[:, 1], STEPS, output_prefix="mlnlg", est_key="est_z2",
+        results,
+        zs[:, 1],
+        STEPS,
+        output_prefix="mlnlg",
+        est_key="est_z2",
     )
 
 
@@ -758,7 +777,12 @@ def main():
     # ── Pure SIS ─────────────────────────────────────────────────────────────
     sis_model = NLGSSModel()
     straj_sis, t_sis, res_sis, log_sis = run_filter(
-        sis_model, "pf", ys, us=None, N=N, resample=0,
+        sis_model,
+        "pf",
+        ys,
+        us=None,
+        N=N,
+        resample=0,
     )
     est_sis = extract_state(straj_sis)
     results["SIS"] = {
