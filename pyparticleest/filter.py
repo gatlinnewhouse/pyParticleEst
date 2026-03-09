@@ -6,6 +6,7 @@
 import copy
 import math
 from typing import Any
+
 import numba as nb
 import numpy
 

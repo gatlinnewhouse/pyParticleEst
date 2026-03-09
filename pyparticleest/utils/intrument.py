@@ -28,7 +28,7 @@ class OpCount:
             **{
                 field: getattr(self, field) + getattr(other, field)
                 for field in self.__annotations__
-            }
+            },
         )
 
 

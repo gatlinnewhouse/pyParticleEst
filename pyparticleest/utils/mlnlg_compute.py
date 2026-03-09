@@ -3,8 +3,8 @@ Helper functions for computing some of the heavy parts when using MLNLG and LTV
 models
 """
 
-import numpy as np
 import numba as nb
+import numpy as np
 import scipy.linalg as lalg
 
 
