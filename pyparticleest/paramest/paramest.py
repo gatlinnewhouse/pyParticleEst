@@ -59,9 +59,7 @@ class ParamEstimation(Simulator):
         """
 
         params_local = np.copy(param0)
-        Q = -np.inf
         for i in range(max_iter):
-            Q_old = Q
             self.set_params(params_local)
             if np.isscalar(num_part):
                 nump = num_part

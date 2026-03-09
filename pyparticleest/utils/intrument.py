@@ -63,7 +63,7 @@ class Instrumenter:
         pass
 
     def print_total_ops(self) -> None:
-        total = (
+        (
             self.oc.cnt_sample
             + self.oc.cnt_update
             + self.oc.cnt_measure

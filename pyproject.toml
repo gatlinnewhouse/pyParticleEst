@@ -50,7 +50,6 @@ select = [
   "INT",   # flake8-gettext
   "ISC",   # flake8-implicit-str-concat
   "ICN",   # flake8-import-conventions
-  "T20",   # flake8-print
   "RET",   # flake8-return
   "SLF",   # flake8-self
   "SIM",   # flake8-simplify
