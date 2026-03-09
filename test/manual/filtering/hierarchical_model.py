@@ -1,12 +1,13 @@
-import numpy
 import math
-from pyparticleest.models.hierarchial import HierarchicalRSBase
-import pyparticleest.simulator
-import pyparticleest.utils.kalman as kalman
+from builtins import range
+
 import matplotlib.pyplot as plt
+import numpy
 import scipy.stats
 
-from builtins import range
+import pyparticleest.simulator
+import pyparticleest.utils.kalman as kalman
+from pyparticleest.models.hierarchial import HierarchicalRSBase
 
 
 def generate_dataset(steps, P0_xi, P0_z, Q_xi, Q_z, R_xi, R_z):
@@ -21,10 +22,10 @@ def generate_dataset(steps, P0_xi, P0_z, Q_xi, Q_z, R_xi, R_z):
             (
                 (math.cos(xi[:, k - 1]), math.sin(xi[:, k - 1])),
                 (-math.sin(xi[:, k - 1]), math.cos(xi[:, k - 1])),
-            )
+            ),
         )
         z[:, k] = Ak.dot(z[:, k - 1]) + numpy.random.multivariate_normal(
-            numpy.zeros((2,)), Q_z
+            numpy.zeros((2,)), Q_z,
         )
         C = numpy.asarray((math.cos(xi[:, k - 1]), math.sin(xi[:, k - 1])))
         y[k - 1, 0] = xi[:, k] + numpy.random.normal(0.0, math.sqrt(R_xi))
@@ -85,12 +86,12 @@ class Model(HierarchicalRSBase):
         self.pn_count = self.pn_count + len(particles)
         xi = particles[:, : self.lxi]
         return scipy.stats.norm.logpdf(
-            (next_xi - xi).ravel(), 0.0, math.sqrt(self.Q_xi)
+            (next_xi - xi).ravel(), 0.0, math.sqrt(self.Q_xi),
         )
 
     def logp_xnext_xi_max(self, particles, u, t):
         return numpy.asarray(
-            (scipy.stats.norm.logpdf(0.0, 0.0, math.sqrt(self.Q_xi)),) * len(particles)
+            (scipy.stats.norm.logpdf(0.0, 0.0, math.sqrt(self.Q_xi)),) * len(particles),
         )
 
     def measure_nonlin(self, particles, y, t):
@@ -118,7 +119,7 @@ class Model(HierarchicalRSBase):
                 (
                     (math.cos(particles[i][0]), math.sin(particles[i][0])),
                     (-math.sin(particles[i][0]), math.cos(particles[i][0])),
-                )
+                ),
             )
         return (Az, None, None)
 
@@ -127,7 +128,7 @@ class Model(HierarchicalRSBase):
         Cz = numpy.empty((N, 1, 2))
         for i in range(N):
             Cz[i] = numpy.asarray(
-                ((math.cos(particles[i][0]), math.sin(particles[i][0])),)
+                ((math.cos(particles[i][0]), math.sin(particles[i][0])),),
             )
 
         return (y[1], Cz, None, None)

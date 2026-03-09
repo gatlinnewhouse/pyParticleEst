@@ -4,27 +4,27 @@ Created on Nov 11, 2013
 @author: Jerker Nordh
 """
 
-import numpy
 import math
-import matplotlib.pyplot as plt
-import pyparticleest.paramest.paramest as param_est
-import pyparticleest.paramest.interfaces as pestinf
-import pyparticleest.paramest.gradienttest as gradienttest
 import sys
 
+import matplotlib.pyplot as plt
+import numpy
+
 import pyparticleest.models.mlnlg as mlnlg
+import pyparticleest.paramest.gradienttest as gradienttest
+import pyparticleest.paramest.interfaces as pestinf
+import pyparticleest.paramest.paramest as param_est
 
 
 def sign(x):
     if x < 0.0:
         return -1.0
-    else:
-        return 1.0
+    return 1.0
 
 
 def calc_h(eta):
     return numpy.asarray(((0.1 * eta[0, 0] * math.fabs(eta[0, 0])), 0.0)).reshape(
-        (-1, 1)
+        (-1, 1),
     )
 
 
@@ -35,7 +35,7 @@ def generate_dataset(params, length):
             (1.0, params[2], 0.0),
             (0.0, params[3] * math.cos(params[4]), -params[3] * math.sin(params[4])),
             (0.0, params[3] * math.sin(params[4]), params[3] * math.cos(params[4])),
-        )
+        ),
     )
 
     C = numpy.array([[0.0, 0.0, 0.0], [1.0, -1.0, 1.0]])
@@ -94,14 +94,14 @@ class ParticleLS2(
                     -params[3] * math.sin(params[4]),
                 ),
                 (0.0, params[3] * math.sin(params[4]), params[3] * math.cos(params[4])),
-            )
+            ),
         )
 
         C = numpy.array([[0.0, 0.0, 0.0], [1.0, -1.0, 1.0]])
         Qxi = numpy.diag(
             [
                 0.01,
-            ]
+            ],
         )
         Qz = numpy.diag([0.01, 0.01, 0.01])
         R = numpy.diag([0.1, 0.1])
@@ -171,17 +171,17 @@ class ParticleLS2(
                     -params[3] * math.sin(params[4]),
                 ),
                 (0.0, params[3] * math.sin(params[4]), params[3] * math.cos(params[4])),
-            )
+            ),
         )
 
         self.A_grad = numpy.vstack(
             (
                 numpy.zeros((4, 3))[numpy.newaxis],
                 numpy.asarray(
-                    ((1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+                    ((1.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
                 )[numpy.newaxis],
                 numpy.asarray(
-                    ((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0))
+                    ((0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 0.0)),
                 )[numpy.newaxis],
                 numpy.asarray(
                     (
@@ -189,7 +189,7 @@ class ParticleLS2(
                         (0.0, 0.0, 0.0),
                         (0.0, math.cos(params[4]), -math.sin(params[4])),
                         (0.0, math.sin(params[4]), math.cos(params[4])),
-                    )
+                    ),
                 )[numpy.newaxis],
                 numpy.asarray(
                     (
@@ -205,9 +205,9 @@ class ParticleLS2(
                             params[3] * math.cos(params[4]),
                             -params[3] * math.sin(params[4]),
                         ),
-                    )
+                    ),
                 )[numpy.newaxis],
-            )
+            ),
         )
         self.set_dynamics(Axi=Axi, Az=Az)
 
@@ -243,7 +243,7 @@ if __name__ == "__main__":
                     numpy.random.uniform(0.0, 0.6),
                     numpy.random.uniform(0.0, 1.0),
                     numpy.random.uniform(0.0, math.pi / 2.0),
-                )
+                ),
             )
 
             # theta_guess = numpy.copy(theta_true)
@@ -400,7 +400,7 @@ if __name__ == "__main__":
                     numpy.random.uniform(0.0, 0.6),
                     numpy.random.uniform(0.0, 1.0),
                     numpy.random.uniform(0.0, math.pi / 2.0),
-                )
+                ),
             )
 
             # Create reference
@@ -452,7 +452,7 @@ if __name__ == "__main__":
         param_steps = 101
         tval = theta_true[param_id]
         param_vals = numpy.linspace(
-            tval - math.fabs(tval), tval + math.fabs(tval), param_steps
+            tval - math.fabs(tval), tval + math.fabs(tval), param_steps,
         )
         gt.test(param_id, param_vals, nums=nums)
 

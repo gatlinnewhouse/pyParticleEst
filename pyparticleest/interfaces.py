@@ -5,8 +5,9 @@ classes of algorithms present in the framework
 """
 
 import abc
-import numpy
 from typing import Any
+
+import numpy
 
 
 class SIR(metaclass=abc.ABCMeta):
@@ -16,7 +17,7 @@ class SIR(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def qsample(
-        self, particles: numpy.ndarray, u: Any, y: Any, t: float
+        self, particles: numpy.ndarray, u: Any, y: Any, t: float,
     ) -> numpy.ndarray:
         pass
 
@@ -33,7 +34,7 @@ class SIR(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float,
     ) -> numpy.ndarray:
         pass
 
@@ -50,7 +51,7 @@ class SIR(metaclass=abc.ABCMeta):
         pass
 
     def copy_ind(
-        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None
+        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None,
     ) -> numpy.ndarray:
         """
         Copy select particles, can be overriden for models that require
@@ -67,8 +68,7 @@ class SIR(metaclass=abc.ABCMeta):
         """
         if new_ind is not None:
             return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+        return numpy.copy(particles)
 
     def sample_smooth(
         self,
@@ -181,7 +181,7 @@ class ParticleFilteringNonMarkov(metaclass=abc.ABCMeta):
         pass
 
     def copy_ind(
-        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None
+        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None,
     ) -> numpy.ndarray:
         """
         Copy select particles, can be overriden for models that require
@@ -198,8 +198,7 @@ class ParticleFilteringNonMarkov(metaclass=abc.ABCMeta):
         """
         if new_ind is not None:
             return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+        return numpy.copy(particles)
 
     def sample_smooth(
         self,
@@ -315,7 +314,7 @@ class ParticleFiltering(ParticleFilteringNonMarkov, metaclass=abc.ABCMeta):
         tt: numpy.ndarray,
     ) -> numpy.ndarray:
         return self.sample_process_noise(
-            particles=ptraj[-1].pa.part[ancestors], u=ut[-1], t=tt[-1]
+            particles=ptraj[-1].pa.part[ancestors], u=ut[-1], t=tt[-1],
         )
 
     def update_full(
@@ -343,13 +342,13 @@ class ParticleFiltering(ParticleFilteringNonMarkov, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def sample_process_noise(
-        self, particles: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, u: Any, t: float,
     ) -> numpy.ndarray:
         pass
 
     @abc.abstractmethod
     def update(
-        self, particles: numpy.ndarray, u: Any, t: float, noise: numpy.ndarray
+        self, particles: numpy.ndarray, u: Any, t: float, noise: numpy.ndarray,
     ) -> numpy.ndarray:
         """Propagate estimate forward in time
 
@@ -392,7 +391,7 @@ class AuxiliaryParticleFiltering(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def eval_1st_stage_weights(
-        self, particles: numpy.ndarray, u: Any, y: Any, t: float
+        self, particles: numpy.ndarray, u: Any, y: Any, t: float,
     ) -> numpy.ndarray:
         """
         Evaluate "first stage weights" for the auxiliary particle filter.
@@ -543,12 +542,12 @@ class FFBSi(FFBSiNonMarkov, metaclass=abc.ABCMeta):
 
         # Default implemenation for markovian models, just look at the next state
         return self.logp_xnext(
-            particles=part, next_part=future_parts[find], u=ut[cur_ind], t=tt[cur_ind]
+            particles=part, next_part=future_parts[find], u=ut[cur_ind], t=tt[cur_ind],
         )
 
     @abc.abstractmethod
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float,
     ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
@@ -612,7 +611,7 @@ class FFBSiRS(FFBSi, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def logp_xnext_max(
-        self, particles: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, u: Any, t: float,
     ) -> numpy.ndarray:
         """
         Return the max log-pdf value for all possible future states'

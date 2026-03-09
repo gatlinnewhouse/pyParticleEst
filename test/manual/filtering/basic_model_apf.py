@@ -1,11 +1,12 @@
 """Particle filtering for a trivial model
 Also illustrates that the"""
 
-import numpy
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
 import matplotlib.pyplot as plt
+import numpy
+
+import pyparticleest.interfaces as interfaces
 import pyparticleest.simulator as simulator
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):

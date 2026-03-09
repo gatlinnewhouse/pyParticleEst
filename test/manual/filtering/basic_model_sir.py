@@ -1,14 +1,15 @@
 """Particle filtering for a trivial model
 Also illustrates that the"""
 
-import numpy
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
+from builtins import range
+
 import matplotlib.pyplot as plt
-import pyparticleest.simulator as simulator
+import numpy
 import scipy.linalg
 
-from builtins import range
+import pyparticleest.interfaces as interfaces
+import pyparticleest.simulator as simulator
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -64,7 +65,7 @@ class Model(interfaces.SIR):
                 + P.dot(C.T).dot(scipy.linalg.solve(S, err[i].reshape((-1, 1)))).ravel()
             )
             logpq[i] = kalman.lognormpdf(
-                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)), Pn
+                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)), Pn,
             ).ravel()
 
         return logpq
@@ -73,7 +74,7 @@ class Model(interfaces.SIR):
         logpxn = numpy.empty(len(particles), dtype=float)
         for k in range(len(particles)):
             logpxn[k] = kalman.lognormpdf(
-                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1), self.Q
+                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1), self.Q,
             )
         return logpxn
 

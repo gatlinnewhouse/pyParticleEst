@@ -1,10 +1,11 @@
-import numpy
 import math
+from builtins import range
+
+import matplotlib.pyplot as plt
+import numpy
+
 import pyparticleest.models.nlg
 import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
-
-from builtins import range
 
 
 def generate_dataset(steps, P0, Q, R):

@@ -1,11 +1,12 @@
 """Particle filtering for a trivial model
 Also illustrates that the"""
 
-import numpy
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
 import matplotlib.pyplot as plt
+import numpy
+
+import pyparticleest.interfaces as interfaces
 import pyparticleest.simulator as simulator
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -49,7 +50,7 @@ class Model(interfaces.ParticleFiltering):
         return logyprob
 
     def logp_xnext_full(
-        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
+        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind,
     ):
 
         diff = future_trajs[0].pa.part[find] - part
@@ -57,7 +58,7 @@ class Model(interfaces.ParticleFiltering):
         logpxnext = numpy.empty(len(diff), dtype=float)
         for k in range(len(logpxnext)):
             logpxnext[k] = kalman.lognormpdf(
-                diff[k].reshape(-1, 1), numpy.asarray(self.Q).reshape(1, 1)
+                diff[k].reshape(-1, 1), numpy.asarray(self.Q).reshape(1, 1),
             )
         return logpxnext
 

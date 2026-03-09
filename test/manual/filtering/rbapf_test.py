@@ -4,15 +4,16 @@ Created on Nov 11, 2013
 @author: Jerker Nordh
 """
 
-import numpy
 import math
+import sys
+from builtins import range
+
 import matplotlib.pyplot as plt
+import numpy
+import scipy.linalg
+
 import pyparticleest.models.mlnlg as mlnlg
 import pyparticleest.simulator as simulator
-import scipy.linalg
-import sys
-
-from builtins import range
 
 pxi = 0.85
 pz = 0.9
@@ -38,7 +39,7 @@ def generate_dataset(length, Qz, R, Qes, Qeb):
             pxi * e
             + (1 - a) * z
             + numpy.random.multivariate_normal(
-                numpy.zeros((1,)), a * Qes + (1 - a) * Qeb
+                numpy.zeros((1,)), a * Qes + (1 - a) * Qeb,
             )
         )
 
@@ -70,12 +71,12 @@ class ParticleAPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         xi0 = numpy.array(
             [
                 [0.0],
-            ]
+            ],
         )
         z0 = numpy.array(
             [
                 [0.0],
-            ]
+            ],
         )
         P0 = 1.0 * numpy.eye(1)
 
@@ -93,7 +94,7 @@ class ParticleAPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         Axi = (1.0 - a) * numpy.ones((len(particles), 1, 1))
         fxi = pxi * xi[:, numpy.newaxis, :]
         Qxi = numpy.repeat(
-            (a * self.Qes + (1 - a) * self.Qeb)[numpy.newaxis], len(particles), axis=0
+            (a * self.Qes + (1 - a) * self.Qeb)[numpy.newaxis], len(particles), axis=0,
         )
         return (Axi, fxi, Qxi)
 
@@ -133,7 +134,7 @@ class ParticleAPF_EKF(ParticleAPF):
         Az = pz
 
         Qxi = numpy.repeat(
-            (a * self.Qes + (1 - a) * self.Qeb)[numpy.newaxis], len(particles), axis=0
+            (a * self.Qes + (1 - a) * self.Qeb)[numpy.newaxis], len(particles), axis=0,
         )
 
         # for next time (at measurement)
@@ -169,7 +170,7 @@ class ParticleAPF_UKF(ParticleAPF):
         # xin = self.pred_xi(part, u, t)
 
         (Axi, fxi, Qxi, _, _, _) = self.get_nonlin_pred_dynamics_int(
-            particles=particles, u=u, t=t
+            particles=particles, u=u, t=t,
         )
         (_xil, zl, Pl) = self.get_states(particles)
 
@@ -328,7 +329,7 @@ if __name__ == "__main__":
                         numpy.mean(rmse_eta[~divind, ind]),
                         numpy.mean(rmse_theta[~divind, ind]),
                         divcnt,
-                    )
+                    ),
                 )
     else:
         num = 50
@@ -360,7 +361,7 @@ if __name__ == "__main__":
 
         for j in range(num):
             plt.plot(
-                range(steps + 1), vals[:, j, 0], ".", markersize=1.0, color="#000000"
+                range(steps + 1), vals[:, j, 0], ".", markersize=1.0, color="#000000",
             )
             plt.plot(
                 range(steps + 1),
@@ -370,7 +371,7 @@ if __name__ == "__main__":
                 color="#00FF00",
             )
         plt.plot(
-            range(steps + 1), vals_mean[:, 0], "--", markersize=1.0, color="#0000FF"
+            range(steps + 1), vals_mean[:, 0], "--", markersize=1.0, color="#0000FF",
         )
         plt.plot(x, e.T, "k--", markersize=1.0)
         plt.show()
@@ -378,13 +379,13 @@ if __name__ == "__main__":
         plt.figure()
         for j in range(num):
             plt.plot(
-                range(steps + 1), vals[:, j, 1], ".", markersize=1.0, color="#000000"
+                range(steps + 1), vals[:, j, 1], ".", markersize=1.0, color="#000000",
             )
             plt.plot(
-                range(steps + 1), svals_mean[:, 1], "-", markersize=1.0, color="#00FF00"
+                range(steps + 1), svals_mean[:, 1], "-", markersize=1.0, color="#00FF00",
             )
         plt.plot(
-            range(steps + 1), vals_mean[:, 1], "--", markersize=1.0, color="#0000FF"
+            range(steps + 1), vals_mean[:, 1], "--", markersize=1.0, color="#0000FF",
         )
         plt.plot(x, z.ravel(), "k--", markersize=1.0)
         plt.show()

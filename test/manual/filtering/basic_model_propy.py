@@ -1,11 +1,12 @@
 """Particle filtering for a trivial model
 Also illustrates that the"""
 
-import numpy
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
 import matplotlib.pyplot as plt
+import numpy
+
+import pyparticleest.interfaces as interfaces
 import pyparticleest.simulator as simulator
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -34,7 +35,7 @@ class Model(interfaces.FFProposeFromMeasure, interfaces.FFBSi):
 
     def create_initial_estimate(self, N):
         return numpy.random.normal(0.0, numpy.sqrt(self.P0).ravel(), (N,)).reshape(
-            (-1, 1)
+            (-1, 1),
         )
 
     def logp_xnext(self, particles, next_part, u, t):
@@ -66,8 +67,7 @@ class Model(interfaces.FFProposeFromMeasure, interfaces.FFBSi):
 
         if new_ind is not None:
             return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+        return numpy.copy(particles)
 
 
 if __name__ == "__main__":

@@ -52,7 +52,7 @@ class LTV(FFBSi, ParticleFiltering):
         if f is None:
             f = numpy.zeros_like(self.z0)
         self.kf = kalman.KalmanSmoother(
-            lz=len(self.z0), A=A, C=C, Q=Q, R=R, f_k=f, h_k=h
+            lz=len(self.z0), A=A, C=C, Q=Q, R=R, f_k=f, h_k=h,
         )
         super().__init__(**kwargs)
 
@@ -103,7 +103,7 @@ class LTV(FFBSi, ParticleFiltering):
             particles[i, lz:lzP] = P_list[i].ravel()
 
     def get_states(
-        self, particles: numpy.ndarray
+        self, particles: numpy.ndarray,
     ) -> tuple[list[numpy.ndarray], list[numpy.ndarray]]:
         """
         Return the estimates contained in the particles array
@@ -150,7 +150,7 @@ class LTV(FFBSi, ParticleFiltering):
         return (None, None, None)
 
     def update(
-        self, particles: numpy.ndarray, u: Any, t: float, noise: Any
+        self, particles: numpy.ndarray, u: Any, t: float, noise: Any,
     ) -> numpy.ndarray:
         """Propagate estimate forward in time
 
@@ -227,7 +227,7 @@ class LTV(FFBSi, ParticleFiltering):
         return lyz
 
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: Any, u: Any, t: float
+        self, particles: numpy.ndarray, next_part: Any, u: Any, t: float,
     ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
@@ -265,7 +265,7 @@ class LTV(FFBSi, ParticleFiltering):
         Returns:
          None
         """
-        return None
+        return
 
     def sample_smooth(
         self,
@@ -312,7 +312,7 @@ class LTV(FFBSi, ParticleFiltering):
                 (A, f, Q) = self.get_pred_dynamics(u=ut[0], t=tt[0])
                 self.kf.set_dynamics(A=A, Q=Q, f_k=f)
                 (zs, Ps, Ms) = self.kf.smooth(
-                    zl[0], Pl[0], zn, Pn, self.kf.A, self.kf.f_k, self.kf.Q
+                    zl[0], Pl[0], zn, Pn, self.kf.A, self.kf.f_k, self.kf.Q,
                 )
             else:
                 zs = zl[j]
@@ -357,7 +357,7 @@ class LTV(FFBSi, ParticleFiltering):
         return lpz0
 
     def eval_logp_x0_val_grad(
-        self, particles: numpy.ndarray, t: float
+        self, particles: numpy.ndarray, t: float,
     ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate gradient of sum log p(x_0)
@@ -381,18 +381,18 @@ class LTV(FFBSi, ParticleFiltering):
             ld = numpy.sum(numpy.log(numpy.diagonal(P0cho[0]))) * 2
             for i in range(N):
                 (l1, l1_grad) = self.calc_l1_grad(
-                    zl[i], Pl[i], self.z0, self.P0, z0_grad
+                    zl[i], Pl[i], self.z0, self.P0, z0_grad,
                 )
                 tmp = scipy.linalg.cho_solve(P0cho, l1)
                 lpz0 += -0.5 * (ld + numpy.trace(tmp))
                 for j in range(len(self.params)):
                     lpz0_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        P0cho, P0_grad[j], l1, l1_grad[j]
+                        P0cho, P0_grad[j], l1, l1_grad[j],
                     )
         return (lpz0, lpz0_grad)
 
     def eval_logp_xnext(
-        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float,
     ) -> numpy.ndarray:
         """
         Evaluate log p(x_{t+1}|x_t)
@@ -419,7 +419,7 @@ class LTV(FFBSi, ParticleFiltering):
             lzP = lz + lz * lz
             Mz = particles[k][lzP:].reshape((lz, lz))
             (l2, _A, _M_ext, _predict_err) = self.calc_l2(
-                zn[k], Pn[k], zl[k], Pl[k], self.kf.A, self.kf.f_k, Mz
+                zn[k], Pn[k], zl[k], Pl[k], self.kf.A, self.kf.f_k, Mz,
             )
             (_tmp, ld) = numpy.linalg.slogdet(self.kf.Q)
             tmp = numpy.linalg.solve(self.kf.Q, l2)
@@ -428,7 +428,7 @@ class LTV(FFBSi, ParticleFiltering):
         return lpxn
 
     def eval_logp_xnext_val_grad(
-        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float,
     ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate value and gradient of log p(x_{t+1}|x_t)
@@ -480,7 +480,7 @@ class LTV(FFBSi, ParticleFiltering):
 
                 for j in range(len(self.params)):
                     lpxn_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        Qcho, Q_grad[j], l2, l2_grad[j]
+                        Qcho, Q_grad[j], l2, l2_grad[j],
                     )
 
         return (lpxn, lpxn_grad)
@@ -513,7 +513,7 @@ class LTV(FFBSi, ParticleFiltering):
         return logpy
 
     def eval_logp_y_val_grad(
-        self, particles: numpy.ndarray, y: Any, t: float
+        self, particles: numpy.ndarray, y: Any, t: float,
     ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate value and gradient of log p(y_t|x_t)
@@ -551,7 +551,7 @@ class LTV(FFBSi, ParticleFiltering):
 
                 for j in range(len(self.params)):
                     logpy_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        Rcho, R_grad[j], l3, l3_grad[j]
+                        Rcho, R_grad[j], l3, l3_grad[j],
                     )
 
         return (logpy, logpy_grad)
@@ -609,7 +609,7 @@ class LTV(FFBSi, ParticleFiltering):
         )
 
     def calc_l1(
-        self, z: numpy.ndarray, P: numpy.ndarray, z0: numpy.ndarray, P0: numpy.ndarray
+        self, z: numpy.ndarray, P: numpy.ndarray, z0: numpy.ndarray, P0: numpy.ndarray,
     ) -> numpy.ndarray:
         """internal helper function"""
         z0_diff = z - z0
@@ -686,11 +686,11 @@ class LTV(FFBSi, ParticleFiltering):
         return (l2, l2_grad)
 
     def calc_l3(
-        self, y: numpy.ndarray, z: numpy.ndarray, P: numpy.ndarray
+        self, y: numpy.ndarray, z: numpy.ndarray, P: numpy.ndarray,
     ) -> numpy.ndarray:
         """internal helper function"""
         meas_diff = self.kf.measurement_diff(
-            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k
+            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k,
         )
         l3 = meas_diff.dot(meas_diff.T)
         l3 += self.kf.C.dot(P).dot(self.kf.C.T)
@@ -707,7 +707,7 @@ class LTV(FFBSi, ParticleFiltering):
         """internal helper function"""
         lparam = len(self.params)
         meas_diff = self.kf.measurement_diff(
-            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k
+            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k,
         )
         l3 = meas_diff.dot(meas_diff.T)
         l3 += self.kf.C.dot(P).dot(self.kf.C.T)

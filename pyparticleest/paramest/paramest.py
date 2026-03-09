@@ -3,10 +3,12 @@
 @author: Jerker Nordh
 """
 
-from pyparticleest.simulator import Simulator
-import numpy
-from typing import Any
 from collections.abc import Callable
+from typing import Any
+
+import numpy
+
+from pyparticleest.simulator import Simulator
 
 
 class ParamEstimation(Simulator):
@@ -108,8 +110,7 @@ def alpha_gen(it: int) -> float:
     offset = 100
     if it <= offset:
         return 1
-    else:
-        return (it - offset) ** (-0.51)
+    return (it - offset) ** (-0.51)
 
 
 class ParamEstimationSAEM(Simulator):
@@ -276,7 +277,7 @@ class ParamEstimationPSAEM(Simulator):
         weights = None
 
         def default_callback(
-            params: numpy.ndarray, Q: float, cur_iter: int
+            params: numpy.ndarray, Q: float, cur_iter: int,
         ) -> bool | None:
             if cur_iter >= max_iter:
                 return True
@@ -451,7 +452,7 @@ class ParamEstimationPSAEM2(Simulator):
             # Discard at max the lowest 'discard_percentile' of the weights
             tmp = numpy.percentile(weights[:datalen], discard_percentile)
             wlow = numpy.max(
-                numpy.hstack((weights[:datalen][weights[:datalen] < tmp], 0.0))
+                numpy.hstack((weights[:datalen][weights[:datalen] < tmp], 0.0)),
             )
             threshold = min(discard_eps, wlow)
 
@@ -462,7 +463,7 @@ class ParamEstimationPSAEM2(Simulator):
             datalen -= zerolen
             weights[:datalen] /= numpy.sum(weights[:datalen])
             params_local = self.model.maximize_weighted(
-                self.straj, alltrajs[:, :datalen], weights[:datalen]
+                self.straj, alltrajs[:, :datalen], weights[:datalen],
             )
             #            params_local = self.model.maximize_weighted(self.straj, alltrajs[:, -1:], numpy.asarray((1.0,)))
 

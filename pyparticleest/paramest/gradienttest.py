@@ -4,15 +4,17 @@ Created on Mar 27, 2015
 @author: ajn
 """
 
-import numpy
-import matplotlib.pyplot as plt
-from pyparticleest.paramest.paramest import ParamEstimation
 from typing import Any
+
+import matplotlib.pyplot as plt
+import numpy
+
+from pyparticleest.paramest.paramest import ParamEstimation
 
 
 class GradPlot:
     def __init__(
-        self, params: numpy.ndarray, vals: numpy.ndarray, diff: numpy.ndarray | None
+        self, params: numpy.ndarray, vals: numpy.ndarray, diff: numpy.ndarray | None,
     ) -> None:
         self.params = params
         self.vals = vals
@@ -59,23 +61,23 @@ class GradientTest(ParamEstimation):
             tmp[param_id] = param_vals[k]
             self.set_params(tmp)
             logpy[k] = self.model.eval_logp_y_fulltraj(
-                self.straj, self.straj.y, self.straj.t
+                self.straj, self.straj.y, self.straj.t,
             )
             logpxn[k] = self.model.eval_logp_xnext_fulltraj(
-                self.straj, self.straj.u, self.straj.t
+                self.straj, self.straj.u, self.straj.t,
             )
             tmp = self.model.eval_logp_x0(self.straj.traj[0].pa.part, self.straj.t[0])
             logpx0[k] = numpy.mean(tmp)
 
             if analytic_grad:
                 (_, grad_logp_y) = self.model.eval_logp_y_val_grad_fulltraj(
-                    self.straj, self.straj.y, self.straj.t
+                    self.straj, self.straj.y, self.straj.t,
                 )
                 (_, grad_logp_xnext) = self.model.eval_logp_xnext_val_grad_fulltraj(
-                    self.straj, self.straj.u, self.straj.t
+                    self.straj, self.straj.u, self.straj.t,
                 )
                 (tmp1, tmp2) = self.model.eval_logp_x0_val_grad(
-                    self.straj.traj[0].pa.part, self.straj.t[0]
+                    self.straj.traj[0].pa.part, self.straj.t[0],
                 )
                 (_, grad_logp_x0) = (numpy.mean(tmp1), numpy.mean(tmp2))
 

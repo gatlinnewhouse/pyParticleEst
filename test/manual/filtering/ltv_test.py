@@ -1,10 +1,11 @@
-import numpy
 import math
-import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
-from pyparticleest.models.ltv import LTV
-
 from builtins import range
+
+import matplotlib.pyplot as plt
+import numpy
+
+import pyparticleest.simulator as simulator
+from pyparticleest.models.ltv import LTV
 
 
 def generate_dataset(steps, z0, P0, Q, R):
@@ -14,19 +15,19 @@ def generate_dataset(steps, z0, P0, Q, R):
     C = numpy.asarray(((1.0, 0.0), (0.0, 0.0)))
     x[0] = numpy.random.multivariate_normal(z0, P0).reshape((-1, 1))
     y[0] = C.dot(x[0]) + numpy.random.multivariate_normal((0.0, 0.0), R).reshape(
-        (-1, 1)
+        (-1, 1),
     )
 
     for k in range(0, steps):
         C = numpy.asarray(((math.cos(k + 1), 0.0), (math.sin(k + 1), 0.0))).reshape(
-            (2, -1)
+            (2, -1),
         )
 
         x[k + 1] = A.dot(x[k]) + numpy.random.multivariate_normal(
-            (0.0, 0.0), Q
+            (0.0, 0.0), Q,
         ).reshape((-1, 1))
         y[k + 1] = C.dot(x[k + 1]) + numpy.random.multivariate_normal(
-            (0.0, 0.0), R
+            (0.0, 0.0), R,
         ).reshape((-1, 1))
 
     return (x, y)

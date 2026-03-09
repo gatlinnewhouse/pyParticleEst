@@ -1,7 +1,8 @@
+import matplotlib.pyplot as plt
 import numpy
+
 import pyparticleest.models.mlnlg as mlnlg
 import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
 
 
 def generate_dataset(steps, P0_xi, P0_z, Qxi, Qz, Qxiz, R):

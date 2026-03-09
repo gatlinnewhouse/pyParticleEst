@@ -3,10 +3,11 @@
 A module with operations useful for Kalman filtering.
 """
 
-import numpy as np
 import math
-import scipy.linalg
 from typing import Any
+
+import numpy as np
+import scipy.linalg
 
 l2pi = math.log(2 * math.pi)
 
@@ -228,7 +229,7 @@ class KalmanFilter:
             Sinv_err = scipy.linalg.cho_solve(Schol, err, check_finite=False)
             z[:] = z + P.dot(C.T).dot(Sinv_err)
             P[:, :] = P - P.dot(C.T).dot(
-                scipy.linalg.cho_solve(Schol, C.dot(P), check_finite=False)
+                scipy.linalg.cho_solve(Schol, C.dot(P), check_finite=False),
             )
         else:
             if h_k is not None:

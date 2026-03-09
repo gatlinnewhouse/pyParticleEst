@@ -4,11 +4,13 @@ Created on Jul 23, 2015
 @author: ajn
 """
 
+import math
 import unittest
-import pyparticleest.models.nlg as nlg
+
 import numpy
 import numpy.testing as npt
-import math
+
+import pyparticleest.models.nlg as nlg
 
 
 class Model(nlg.NonlinearGaussianInitialGaussian):

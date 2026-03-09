@@ -1,8 +1,10 @@
-import numpy
 import math
+
+import matplotlib.pyplot as plt
+import numpy
+
 import pyparticleest.models.nlg as nlg
 import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -81,7 +83,7 @@ if __name__ == "__main__":
 
         tmp = 0.0
         plt.plot(
-            (0,) * N, est_filt[0, :, 0].ravel(), "k.", markersize=0.5, label="Particles"
+            (0,) * N, est_filt[0, :, 0].ravel(), "k.", markersize=0.5, label="Particles",
         )
         for t in range(1, T + 1):
             plt.plot((t,) * N, est_filt[t, :, 0].ravel(), "k.", markersize=0.5)
@@ -101,10 +103,10 @@ if __name__ == "__main__":
             rmse2_smooth += numpy.sqrt(tmp / T)
         plt.ioff()
         plt.plot(
-            range(T + 1), mean_filt[:, 0], "g--", linewidth=2.0, label="Filter mean"
+            range(T + 1), mean_filt[:, 0], "g--", linewidth=2.0, label="Filter mean",
         )
         plt.plot(
-            range(T + 1), mean_smooth[:, 0], "b--", linewidth=2.0, label="Smoother mean"
+            range(T + 1), mean_smooth[:, 0], "b--", linewidth=2.0, label="Smoother mean",
         )
         plt.legend(loc=4, fontsize=24)
         plt.draw()

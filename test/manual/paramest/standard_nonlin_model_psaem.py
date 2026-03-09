@@ -1,11 +1,13 @@
-import numpy
 import math
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
-import pyparticleest.paramest.paramest as param_est
-import pyparticleest.paramest.interfaces as pestint
+
 import matplotlib.pyplot as plt
+import numpy
 import scipy.optimize
+
+import pyparticleest.interfaces as interfaces
+import pyparticleest.paramest.interfaces as pestint
+import pyparticleest.paramest.paramest as param_est
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -32,7 +34,7 @@ def wmean(logw, val):
 
 
 class Model(
-    interfaces.ParticleFiltering, interfaces.FFBSiRS, pestint.ParamEstInterface
+    interfaces.ParticleFiltering, interfaces.FFBSiRS, pestint.ParamEstInterface,
 ):
     """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
@@ -96,8 +98,7 @@ class Model(
     def copy_ind(self, particles, new_ind=None):
         if new_ind is not None:
             return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+        return numpy.copy(particles)
 
     def eval_logp_xnext_fulltraj(self, straj, ut, tt):
         M = straj.shape[1]
@@ -116,7 +117,7 @@ class Model(
         M = straj.shape[1]
         yp = 0.05 * straj**2
         diff = yp - numpy.repeat(
-            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1
+            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
         )
         return numpy.sum(kalman.lognormpdf_scalar(diff.ravel(), self.R)) / M
 
@@ -148,7 +149,7 @@ class Model(
 
         yp = 0.05 * alltrajs**2
         diff = yp - numpy.repeat(
-            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1
+            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
         )
 
         werr = numpy.empty((len(alltrajs), M))
@@ -171,10 +172,10 @@ class Model(
             log_px0 = 0.0
             for i in range(len(weights)):
                 log_py += weights[i] * self.eval_logp_y_fulltraj(
-                    alltrajs[:, i : i + 1], straj.y, straj.t
+                    alltrajs[:, i : i + 1], straj.y, straj.t,
                 )
                 log_pxnext += weights[i] * self.eval_logp_xnext_fulltraj(
-                    alltrajs[:, i : i + 1], straj.u, straj.t
+                    alltrajs[:, i : i + 1], straj.u, straj.t,
                 )
                 tmp = self.eval_logp_x0(alltrajs[0, i : i + 1], straj.t[0])
                 log_px0 += weights[i] * numpy.mean(tmp)

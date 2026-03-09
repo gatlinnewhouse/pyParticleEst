@@ -1,10 +1,12 @@
-import numpy
 import math
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
-import pyparticleest.paramest.paramest as param_est
-import pyparticleest.paramest.interfaces as pestint
+
 import matplotlib.pyplot as plt
+import numpy
+
+import pyparticleest.interfaces as interfaces
+import pyparticleest.paramest.interfaces as pestint
+import pyparticleest.paramest.paramest as param_est
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -100,8 +102,7 @@ class Model(
     def copy_ind(self, particles, new_ind=None):
         if new_ind is not None:
             return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+        return numpy.copy(particles)
 
     def eval_logp_xnext_fulltraj(self, straj, ut, tt):
         part = straj.get_smoothed_estimates()
@@ -121,7 +122,7 @@ class Model(
         M = sest.shape[1]
         yp = 0.05 * sest**2
         diff = yp - numpy.repeat(
-            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1
+            numpy.asarray(yt, dtype=float).reshape((-1, 1, 1)), repeats=M, axis=1,
         )
         return numpy.sum(kalman.lognormpdf_scalar(diff.ravel(), self.R)) / M
 

@@ -3,12 +3,12 @@ Helper functions for computing some of the heavy parts when using MLNLG and LTV
 models
 """
 
-import scipy.linalg as lalg
 import numpy as np
+import scipy.linalg as lalg
 
 
 def compute_logprod_derivative(
-    Alup: tuple[np.ndarray, bool], dA: np.ndarray, B: np.ndarray, dB: np.ndarray
+    Alup: tuple[np.ndarray, bool], dA: np.ndarray, B: np.ndarray, dB: np.ndarray,
 ) -> float:
     """I = logdet(A)+Tr(inv(A)*B)
     dI/dx = Tr(inv(A)*(dA - dA*inv(A)*B + dB)"""

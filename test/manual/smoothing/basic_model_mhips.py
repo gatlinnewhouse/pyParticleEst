@@ -1,8 +1,10 @@
+import time
+
+import matplotlib.pyplot as plt
 import numpy
+
 import pyparticleest.models.nlg as nlg
 import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
-import time
 
 
 def generate_dataset(steps, P0, Q, R):

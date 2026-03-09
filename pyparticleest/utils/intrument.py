@@ -4,8 +4,9 @@ Created on Jun 25, 2014
 @author: Jerker Nordh
 """
 
-import numpy
 from typing import Any
+
+import numpy
 
 
 class OpCount:
@@ -126,7 +127,7 @@ class Instrumenter:
         """Update estimate using 'data' as input"""
         self.oc.cnt_update += len(particles)
         return self.model.update_full(
-            particles, traj, uvec, yvec, tvec, ancestors, noise
+            particles, traj, uvec, yvec, tvec, ancestors, noise,
         )
 
     def measure_full(
@@ -143,12 +144,12 @@ class Instrumenter:
         return self.model.measure_full(particles, traj, uvec, yvec, tvec, ancestors)
 
     def copy_ind(
-        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None
+        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None,
     ) -> numpy.ndarray:
         return self.model.copy_ind(particles, new_ind)
 
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float
+        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float,
     ) -> numpy.ndarray:
         """Return the log-pdf value for the possible future state 'next' given input u"""
         self.oc.cnt_pdfxn += max(len(particles), len(next_part))
@@ -167,7 +168,7 @@ class Instrumenter:
         """Return the log-pdf value for the possible future state 'next' given input u"""
         self.oc.cnt_pdfxnmax += len(part)
         return self.model.logp_xnext_max_full(
-            part, past_trajs, pind, uvec, yvec, tvec, cur_ind
+            part, past_trajs, pind, uvec, yvec, tvec, cur_ind,
         )
 
     def sample_smooth(
@@ -184,7 +185,7 @@ class Instrumenter:
     ) -> numpy.ndarray:
         """Update ev. Rao-Blackwellized states conditioned on "next_part" """
         return self.model.sample_smooth(
-            part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind
+            part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind,
         )
 
     def propose_smooth(
@@ -205,7 +206,7 @@ class Instrumenter:
             N = len(find)
         self.oc.cnt_propsmooth += N
         return self.model.propose_smooth(
-            ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind
+            ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind,
         )
 
     def logp_proposal(
@@ -223,7 +224,7 @@ class Instrumenter:
         """Eval log q(x_t | x_{t-1}, x_{t+1}, y_t)"""
         self.oc.cnt_pdfsmooth += len(prop_part)
         return self.model.logp_proposal(
-            prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind
+            prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind,
         )
 
     def logp_xnext_full(
@@ -240,7 +241,7 @@ class Instrumenter:
     ) -> numpy.ndarray:
         self.oc.cnt_pdfxn += max(len(part), len(find))
         return self.model.logp_xnext_full(
-            part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
+            part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind,
         )
 
     def logp_xnext_singlestep(
@@ -257,11 +258,11 @@ class Instrumenter:
     ) -> numpy.ndarray:
         self.oc.cnt_pdfxn += max(len(part), len(find))
         return self.model.logp_xnext_singlestep(
-            part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
+            part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind,
         )
 
     def eval_1st_stage_weights(
-        self, particles: numpy.ndarray, u: Any, y: Any, t: float
+        self, particles: numpy.ndarray, u: Any, y: Any, t: float,
     ) -> numpy.ndarray:
         self.oc.cnt_eval1st += len(particles)
         return self.model.eval_1st_stage_weights(particles, u, y, t)
@@ -289,7 +290,7 @@ class Instrumenter:
         cur_ind: int,
     ) -> numpy.ndarray:
         return self.model.cond_predict_single_step(
-            part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
+            part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind,
         )
 
     def cond_sampled_initial(self, part: numpy.ndarray, t: float) -> numpy.ndarray:

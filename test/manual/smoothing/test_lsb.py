@@ -4,17 +4,19 @@ Created on Nov 11, 2013
 @author: Jerker Nordh
 """
 
-import numpy
 import math
+import sys
+
 import matplotlib.pyplot as plt
+import numpy
+
 import pyparticleest.models.mlnlg as mlnlg
 import pyparticleest.simulator as simulator
-import sys
 
 C_theta = numpy.array(
     [
         [0.0, 0.04, 0.044, 0.008],
-    ]
+    ],
 )
 
 
@@ -35,7 +37,7 @@ def generate_dataset(length):
             [2.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 0.5, 0.0],
-        ]
+        ],
     )
 
     C = numpy.array([[0.0, 0.0, 0.0, 0.0]])
@@ -45,7 +47,7 @@ def generate_dataset(length):
     R = numpy.diag(
         [
             0.1,
-        ]
+        ],
     )
 
     e_vec = numpy.zeros((1, length + 1))
@@ -55,8 +57,8 @@ def generate_dataset(length):
         [
             [
                 0.0,
-            ]
-        ]
+            ],
+        ],
     )
     z = numpy.zeros((4, 1))
 
@@ -101,7 +103,7 @@ class ParticleLSB(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
         xi0 = numpy.array(
             [
                 [0.0],
-            ]
+            ],
         )
         z0 = numpy.array([[0.0], [0.0], [0.0], [0.0]])
         P0 = 0.0 * numpy.eye(4)
@@ -112,7 +114,7 @@ class ParticleLSB(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
                 [2.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.5, 0.0],
-            ]
+            ],
         )
 
         Qxi = numpy.diag([0.005])
@@ -120,7 +122,7 @@ class ParticleLSB(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
         R = numpy.diag(
             [
                 0.1,
-            ]
+            ],
         )
 
         super().__init__(
@@ -145,10 +147,9 @@ class ParticleLSB(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
     def get_meas_dynamics(self, particles, y, t):
         if y is None:
             return (y, None, None, None)
-        else:
-            tmp = numpy.vstack(particles)
-            h = 0.05 * tmp[:, 0] ** 2
-            h = h[:, numpy.newaxis, numpy.newaxis]
+        tmp = numpy.vstack(particles)
+        h = 0.05 * tmp[:, 0] ** 2
+        h = h[:, numpy.newaxis, numpy.newaxis]
 
         return (numpy.asarray(y).reshape((-1, 1)), None, h, None)
 
@@ -186,7 +187,7 @@ if __name__ == "__main__":
                 rmse_eta = numpy.sqrt(numpy.mean(sqr_err_eta[k, :]))
                 rmse_theta = numpy.sqrt(numpy.mean(sqr_err_theta[k, :]))
                 print(
-                    f"{k} {numpy.mean(rmse_eta)} {numpy.mean(rmse_theta)}"
+                    f"{k} {numpy.mean(rmse_eta)} {numpy.mean(rmse_theta)}",
                 )
 
     else:
@@ -240,7 +241,7 @@ if __name__ == "__main__":
 
         for j in range(num):
             plt.plot(
-                range(steps + 1), est[:, j, 0], ".", markersize=3.0, color="#BBBBBB"
+                range(steps + 1), est[:, j, 0], ".", markersize=3.0, color="#BBBBBB",
             )
         plt.plot(x, e.T, "k-", markersize=1.0)
         for j in range(nums):
@@ -258,7 +259,7 @@ if __name__ == "__main__":
         plt.figure()
         for j in range(num):
             plt.plot(
-                range(steps + 1), ftheta[:, j], ".", markersize=3.0, color="#BBBBBB"
+                range(steps + 1), ftheta[:, j], ".", markersize=3.0, color="#BBBBBB",
             )
         plt.plot(x, (25.0 + C_theta.dot(z)).ravel(), "k-", markersize=1.0)
         for j in range(nums):

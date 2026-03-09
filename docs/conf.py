@@ -13,6 +13,7 @@
 
 import sys
 from unittest.mock import Mock as MagicMock
+
 # from unittest.mock import MagicMock
 
 
@@ -252,7 +253,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ("index", "pyparticleest", "pyParticleEst Documentation", ["Jerker Nordh"], 1)
+    ("index", "pyparticleest", "pyParticleEst Documentation", ["Jerker Nordh"], 1),
 ]
 
 # If true, show URL addresses after external links.

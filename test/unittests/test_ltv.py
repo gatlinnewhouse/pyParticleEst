@@ -5,9 +5,11 @@ Created on Jul 23, 2015
 """
 
 import unittest
-import pyparticleest.models.ltv as ltv
+
 import numpy
 import numpy.testing as npt
+
+import pyparticleest.models.ltv as ltv
 
 
 class Model(ltv.LTV):
@@ -50,7 +52,7 @@ class Test(unittest.TestCase):
         (nzl, nPl) = self.model.get_states(nextp)
         npt.assert_array_equal(numpy.asarray(nzl), self.A * numpy.asarray(zl) + self.f)
         npt.assert_array_equal(
-            numpy.asarray(nPl), (self.A**2) * numpy.asarray(Pl) + self.Q
+            numpy.asarray(nPl), (self.A**2) * numpy.asarray(Pl) + self.Q,
         )
 
     def testMeasure(self):

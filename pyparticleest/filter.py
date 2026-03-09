@@ -3,10 +3,11 @@
 @author: Jerker Nordh
 """
 
-import numpy
-import math
 import copy
+import math
 from typing import Any
+
+import numpy
 
 
 def sample(w: numpy.ndarray, n: int) -> numpy.ndarray:
@@ -288,7 +289,7 @@ class SIR:
             ancestors = numpy.arange(pa.num, dtype=int)
 
         pnext = self.model.qsample(
-            particles=pa.part, u=uvec[cur_ind], y=yvec[cur_ind + 1], t=tvec[cur_ind]
+            particles=pa.part, u=uvec[cur_ind], y=yvec[cur_ind + 1], t=tvec[cur_ind],
         )
 
         qw = self.model.logp_q(
@@ -299,11 +300,11 @@ class SIR:
             t=tvec[cur_ind],
         )
         nw = self.model.logp_xnext(
-            particles=pa.part, next_part=pnext, u=uvec[cur_ind], t=tvec[cur_ind]
+            particles=pa.part, next_part=pnext, u=uvec[cur_ind], t=tvec[cur_ind],
         )
 
         yw = self.model.measure(
-            particles=pnext, y=yvec[cur_ind + 1], t=tvec[cur_ind + 1]
+            particles=pnext, y=yvec[cur_ind + 1], t=tvec[cur_ind + 1],
         )
 
         new_weights = yw + nw - qw
@@ -468,7 +469,7 @@ class CSIRAS(SIR):
         pa = ParticleApproximation(self.model.copy_ind(traj[-1].pa.part, ancestors))
 
         pnext = self.model.qsample(
-            particles=pa.part, u=uvec[cur_ind], y=yvec[cur_ind + 1], t=tvec[cur_ind]
+            particles=pa.part, u=uvec[cur_ind], y=yvec[cur_ind + 1], t=tvec[cur_ind],
         )
 
         pnext[-1] = self.ctraj[cur_ind + 1].pa.part[0]
@@ -481,11 +482,11 @@ class CSIRAS(SIR):
             t=tvec[cur_ind],
         )
         nw = self.model.logp_xnext(
-            particles=pa.part, next_part=pnext, u=uvec[cur_ind], t=tvec[cur_ind]
+            particles=pa.part, next_part=pnext, u=uvec[cur_ind], t=tvec[cur_ind],
         )
 
         yw = self.model.measure(
-            particles=pnext, y=yvec[cur_ind + 1], t=tvec[cur_ind + 1]
+            particles=pnext, y=yvec[cur_ind + 1], t=tvec[cur_ind + 1],
         )
 
         pa.w = yw + nw - qw
@@ -853,7 +854,7 @@ class AuxiliaryParticleFilter(ParticleFilter):
         if yvec is not None and yvec[cur_ind + 1] is not None:
             # TODO Generalize to non-Markovian
             l1w = self.model.eval_1st_stage_weights(
-                pa.part, uvec[cur_ind], yvec[cur_ind + 1], tvec[cur_ind]
+                pa.part, uvec[cur_ind], yvec[cur_ind + 1], tvec[cur_ind],
             )
             pa.w += l1w
             pa.w -= numpy.max(pa.w)
@@ -948,7 +949,7 @@ class CPFYAS(CPFAS):
         resampled = True
 
         partn = self.model.propose_from_y(
-            self.N, y=yvec[cur_ind + 1], t=tvec[cur_ind + 1]
+            self.N, y=yvec[cur_ind + 1], t=tvec[cur_ind + 1],
         )
         partn[-1] = self.ctraj[cur_ind + 1].pa.part
 
@@ -1024,7 +1025,7 @@ class TrajectoryStep:
     """
 
     def __init__(
-        self, pa: "ParticleApproximation", ancestors: numpy.ndarray | None = None
+        self, pa: "ParticleApproximation", ancestors: numpy.ndarray | None = None,
     ) -> None:
         self.pa = pa
         self.ancestors = ancestors
@@ -1142,7 +1143,7 @@ class ParticleTrajectory:
         self.ind += 1
 
         (pa_nxt, resampled, ancestors) = self.pf.forward(
-            traj=self.traj, yvec=self.yvec, uvec=self.uvec, tvec=self.tvec, cur_ind=ind
+            traj=self.traj, yvec=self.yvec, uvec=self.uvec, tvec=self.tvec, cur_ind=ind,
         )
         self.traj.append(TrajectoryStep(pa_nxt, ancestors=ancestors))
 
