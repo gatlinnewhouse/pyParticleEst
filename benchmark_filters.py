@@ -123,9 +123,7 @@ def weighted_means(
 
 
 def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
-    neffs = []
-    for step in straj.traj:
-        neffs.append(step.pa.calc_Neff() / step.pa.num)
+    neffs = [step.pa.calc_Neff() / step.pa.num for step in straj.traj]
     return float(np.mean(neffs))
 
 
