@@ -9,19 +9,17 @@ from typing import Any
 import matplotlib
 
 matplotlib.use("Agg")
+import latextable
+import matplot2tikz
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as sla
 import scipy.stats
-
-import latextable
 from texttable import Texttable
-import matplot2tikz
 
 import pyparticleest.filter as pfilter
 from pyparticleest import interfaces
 from pyparticleest.models import mlnlg
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Model parameters
@@ -169,7 +167,7 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
 # Helpers
 # ══════════════════════════════════════════════════════════════════════════════
 def weighted_means(
-    straj: pfilter.ParticleTrajectory, state_index: int = 0
+    straj: pfilter.ParticleTrajectory, state_index: int = 0,
 ) -> np.ndarray:
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
@@ -182,7 +180,7 @@ def weighted_means(
 
 
 def weighted_means_z(
-    straj: pfilter.ParticleTrajectory, lxi: int, z_index: int
+    straj: pfilter.ParticleTrajectory, lxi: int, z_index: int,
 ) -> np.ndarray:
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
@@ -200,7 +198,7 @@ def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
 
 
 def run_filter(
-    model, filter_name: str, ys: np.ndarray, N: int, resample: float = 2.0 / 3.0
+    model, filter_name: str, ys: np.ndarray, N: int, resample: float = 2.0 / 3.0,
 ) -> tuple:
     straj = pfilter.ParticleTrajectory(
         model=model,
@@ -264,7 +262,7 @@ def save_latex_table(results: dict[str, dict[str, Any]], n_taps: int) -> None:
                 f"{r['time_s']:.4f}",
                 str(r["resamples"]),
                 f"{r['log_ml']:.4f}",
-            ]
+            ],
         )
         table.add_row(row)
 
@@ -428,7 +426,7 @@ def plot_z_component_estimate(results, STEPS, zs, z_idx: int, component_name: st
 
 
 def plot_z_component_estimate_individual(
-    name, r, STEPS, zs, z_idx: int, component_name: str
+    name, r, STEPS, zs, z_idx: int, component_name: str,
 ):
     """Plot an individual filter's single z state component against ground truth."""
     t_axis = np.arange(STEPS + 1)
@@ -486,7 +484,7 @@ def main() -> None:
     for name, model, filter_type, resample in filters_to_run:
         print(f"Running {name}...")
         straj, t_wall, resamples, log_ml = run_filter(
-            model, filter_type, ys, N, resample=resample
+            model, filter_type, ys, N, resample=resample,
         )
 
         est_xi = weighted_means(straj, state_index=0)
@@ -498,7 +496,7 @@ def main() -> None:
 
         per_tap_rmse = [
             rmse_aggregate(
-                [est_z[2 * t], est_z[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]]
+                [est_z[2 * t], est_z[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]],
             )
             for t in range(L // 2)
         ]
@@ -522,13 +520,13 @@ def main() -> None:
         f" {'RMSE(tap' + str(i + 1) + ')':>12}" for i in range(n_taps)
     )
     print(
-        f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers} {'Neff':>8} {'Time(s)':>8} {'Resamp':>7} {'Log ML':>12}"
+        f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers} {'Neff':>8} {'Time(s)':>8} {'Resamp':>7} {'Log ML':>12}",
     )
     print("-" * (68 + 13 * n_taps))
     for name, r in results.items():
         tap_vals = "".join(f" {t:>12.4f}" for t in r["rmse_tap"])
         print(
-            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d} {r['log_ml']:>12.4f}"
+            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d} {r['log_ml']:>12.4f}",
         )
 
     # ── Save Outputs ─────────────────────────────────────────────────────────
@@ -540,7 +538,7 @@ def main() -> None:
     plot_z_component_estimate(results, STEPS, zs, z_idx=0, component_name="Tap 1")
     for name, r in results.items():
         plot_z_component_estimate_individual(
-            name, r, STEPS, zs, z_idx=0, component_name="Tap 1 (Real)"
+            name, r, STEPS, zs, z_idx=0, component_name="Tap 1 (Real)",
         )
 
     for tap_idx in range(n_taps):
@@ -549,7 +547,7 @@ def main() -> None:
     plot_neff(results, strajs, STEPS)
 
     plot_z_rmse_over_time(results, zs, STEPS)
-    print(f"\nPlots saved to plots/")
+    print("\nPlots saved to plots/")
 
 
 if __name__ == "__main__":
