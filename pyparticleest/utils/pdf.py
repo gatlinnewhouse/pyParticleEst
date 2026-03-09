@@ -2,6 +2,8 @@
 Utilities for evalutating probability density functions
 """
 
+from typing import Sequence
+
 
 class unifsum:
     """
@@ -12,7 +14,7 @@ class unifsum:
      a: upper limits (1st, 2nd)
     """
 
-    def __init__(self, a, b):
+    def __init__(self, a: Sequence[float], b: Sequence[float]) -> None:
         # a1 = numpy.min(a)
         # b1 = numpy.max(a)
         if a[0] < a[1]:
@@ -47,7 +49,7 @@ class unifsum:
         self.h = self.c + w
         self.t = 1.0 / (self.w_min + self.w_diff)
 
-    def __call__(self, p):
+    def __call__(self, p: float) -> float:
         """
         Evaluate density a point p
 

@@ -7,7 +7,9 @@ import scipy.linalg as lalg
 import numpy as np
 
 
-def compute_logprod_derivative(Alup, dA, B, dB):
+def compute_logprod_derivative(
+    Alup: tuple[np.ndarray, bool], dA: np.ndarray, B: np.ndarray, dB: np.ndarray
+) -> float:
     """I = logdet(A)+Tr(inv(A)*B)
     dI/dx = Tr(inv(A)*(dA - dA*inv(A)*B + dB)"""
 
@@ -26,7 +28,15 @@ def compute_logprod_derivative(Alup, dA, B, dB):
 #    out += diff_l2
 
 
-def compute_l2_grad_f(N, lenp, dim, out, perr, f_grad, tmp):
+def compute_l2_grad_f(
+    N: int,
+    lenp: int,
+    dim: int,
+    out: np.ndarray,
+    perr: np.ndarray,
+    f_grad: np.ndarray,
+    tmp: np.ndarray,
+) -> None:
 
     for i in range(N):
         for j in range(lenp):
@@ -41,8 +51,21 @@ def compute_l2_grad_f(N, lenp, dim, out, perr, f_grad, tmp):
 
 
 def compute_l2_grad_A(
-    N, lenp, dim, out, perr, lxi, Pn, zl, Pl, M, A, A_grad, tmp1, tmp2
-):
+    N: int,
+    lenp: int,
+    dim: int,
+    out: np.ndarray,
+    perr: np.ndarray,
+    lxi: int,
+    Pn: np.ndarray,
+    zl: np.ndarray,
+    Pl: np.ndarray,
+    M: np.ndarray,
+    A: np.ndarray,
+    A_grad: np.ndarray,
+    tmp1: np.ndarray,
+    tmp2: np.ndarray,
+) -> None:
     # tmp1 ~ (dim, dim)
     # tmp2 ~(dim, dim-lxi)
 
@@ -105,12 +128,30 @@ def compute_l2_grad_A(
 #                    out[i,j,<unsigned int>(lxi+k),<unsigned int>(lxi+l)] += Pn[i,k,l]
 
 
-def compute_pred_err(N, dim, xn, f, A, zl, out):
+def compute_pred_err(
+    N: int,
+    dim: int,
+    xn: np.ndarray,
+    f: np.ndarray,
+    A: np.ndarray,
+    zl: np.ndarray,
+    out: np.ndarray,
+) -> None:
     for i in range(N):
         out[i] = xn[i] - f[i] - A[i].dot(zl[i])
 
 
-def compute_l2(N, lxi, dim, perr, Pn, A, Pl, M, out):
+def compute_l2(
+    N: int,
+    lxi: int,
+    dim: int,
+    perr: np.ndarray,
+    Pn: np.ndarray,
+    A: np.ndarray,
+    Pl: np.ndarray,
+    M: np.ndarray,
+    out: np.ndarray,
+) -> None:
     for i in range(N):
         out[i] = perr[i].dot(perr[i].T) + A[i].dot(Pl[i]).dot(A[i].T)
 

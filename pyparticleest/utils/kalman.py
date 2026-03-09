@@ -6,11 +6,12 @@ A module with operations useful for Kalman filtering.
 import numpy as np
 import math
 import scipy.linalg
+from typing import Any
 
 l2pi = math.log(2 * math.pi)
 
 
-def lognormpdf(err, S):
+def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
     """
     Calculate gaussian probability density of err, when err ~ N(0,sigma)
     """
@@ -22,7 +23,7 @@ def lognormpdf(err, S):
     )
 
 
-def lognormpdf_cho(err, Schol):
+def lognormpdf_cho(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> float:
     """
     Calculate gaussian probability density of err, when err ~ N(0,Schol*Scholt^T)
     """
@@ -35,7 +36,7 @@ def lognormpdf_cho(err, Schol):
     )
 
 
-def lognormpdf_cho_vec(err, Schol):
+def lognormpdf_cho_vec(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> np.ndarray:
     """
     Calculate gaussian probability density of for all elements in the vector err
     , when err[i] ~ N(0,Schol*Scholt^T)
@@ -54,7 +55,7 @@ def lognormpdf_cho_vec(err, Schol):
     return res
 
 
-def lognormpdf_vec(err, Sl):
+def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.ndarray:
     """
     Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,Sl[i])
@@ -72,7 +73,7 @@ def lognormpdf_vec(err, Sl):
     return res
 
 
-def lognormpdf_scalar(err, S):
+def lognormpdf_scalar(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
     """
     Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,S) and each element in err is a scalar
@@ -91,7 +92,16 @@ class KalmanFilter:
     e_k ~ N(0,R)
     """
 
-    def __init__(self, lz, A=None, C=None, Q=None, R=None, f_k=None, h_k=None):
+    def __init__(
+        self,
+        lz: int,
+        A: Any = None,
+        C: Any = None,
+        Q: Any = None,
+        R: Any = None,
+        f_k: Any = None,
+        h_k: Any = None,
+    ) -> None:
 
         self.A = None
         self.C = None
@@ -103,7 +113,15 @@ class KalmanFilter:
         self.lz = lz
         self.set_dynamics(A, C, Q, R, f_k, h_k)
 
-    def set_dynamics(self, A=None, C=None, Q=None, R=None, f_k=None, h_k=None):
+    def set_dynamics(
+        self,
+        A: Any = None,
+        C: Any = None,
+        Q: Any = None,
+        R: Any = None,
+        f_k: Any = None,
+        h_k: Any = None,
+    ) -> None:
         if A is not None:
             self.A = A
         if C is not None:
@@ -117,7 +135,7 @@ class KalmanFilter:
         if h_k is not None:
             self.h_k = h_k
 
-    def time_update(self):
+    def time_update(self) -> None:
         """
         Do a time update, i.e. predict one step forward in time using the dynamics
         """
@@ -125,14 +143,21 @@ class KalmanFilter:
         # Calculate next state
         (self.z, self.P) = self.predict_full(A=self.A, f_k=self.f_k, Q=self.Q)
 
-    def predict(self, z, P):
+    def predict(self, z: np.ndarray, P: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculate next state estimate without actually updating
         the internal variables
         """
         return self.predict_full(z, P, A=self.A, f_k=self.f_k, Q=self.Q)
 
-    def predict_full_inplace(self, z, P, A, f_k, Q):
+    def predict_full_inplace(
+        self,
+        z: np.ndarray,
+        P: np.ndarray,
+        A: np.ndarray,
+        f_k: np.ndarray,
+        Q: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Update the estimates to time t+1, using the supplied matrices as the dynamics
         """
@@ -140,7 +165,14 @@ class KalmanFilter:
         P[:, :] = A.dot(P).dot(A.T) + Q  # Calculate the estimated variance
         return (z, P)
 
-    def predict_full(self, z, P, A, f_k, Q):
+    def predict_full(
+        self,
+        z: np.ndarray,
+        P: np.ndarray,
+        A: np.ndarray,
+        f_k: np.ndarray,
+        Q: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculate next state estimate without actually updating
         the internal variables, using the supplied matrices as the dynamics
@@ -149,7 +181,13 @@ class KalmanFilter:
         P = A.dot(P).dot(A.T) + Q  # Calculate the estimated variance
         return (z, P)
 
-    def measurement_diff(self, y, z, C, h_k=None):
+    def measurement_diff(
+        self,
+        y: np.ndarray,
+        z: np.ndarray,
+        C: np.ndarray | None,
+        h_k: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Calculate different between measurement and predicted measurement
         """
@@ -160,7 +198,7 @@ class KalmanFilter:
             yhat += h_k
         return y - yhat
 
-    def measure(self, y, z, P):
+    def measure(self, y: np.ndarray, z: np.ndarray, P: np.ndarray) -> float:
         """
         Do a measurement update, i.e correct the current estimate
         with information from a new measurement
@@ -168,7 +206,15 @@ class KalmanFilter:
 
         return self.measure_full(y, z, P, C=self.C, h_k=self.h_k, R=self.R)
 
-    def measure_full(self, y, z, P, C, h_k, R):
+    def measure_full(
+        self,
+        y: np.ndarray,
+        z: np.ndarray,
+        P: np.ndarray,
+        C: np.ndarray | None,
+        h_k: np.ndarray | None,
+        R: np.ndarray | None,
+    ) -> float:
         """
         Do a measurement update, i.e correct the current estimate
         with information from a new measurement
@@ -197,7 +243,15 @@ class KalmanFilter:
         ld = np.sum(np.log(np.diag(Schol[0]))) * 2
         return -0.5 * (dim * l2pi + ld + err.T.dot(Sinv_err).item())
 
-    def measure_full_scalar(self, y, z, P, C, h_k, R):
+    def measure_full_scalar(
+        self,
+        y: np.ndarray,
+        z: np.ndarray,
+        P: np.ndarray,
+        C: np.ndarray | None,
+        h_k: np.ndarray | None,
+        R: np.ndarray | None,
+    ) -> float | np.ndarray:
         """
         Do a measurement update, i.e correct the current estimate
         with information from a new measurement.
@@ -231,7 +285,16 @@ class KalmanSmoother(KalmanFilter):
     backwards in time
     """
 
-    def smooth(self, z, P, z_next, P_next, A, f, Q):
+    def smooth(
+        self,
+        z: np.ndarray,
+        P: np.ndarray,
+        z_next: np.ndarray,
+        P_next: np.ndarray,
+        A: np.ndarray,
+        f: np.ndarray,
+        Q: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Create smoothed estimate using knowledge about x_{k+1} and P_{k+1} and
         the relation x_{k+1} = A*x_k + f_k +v_k, v_k ~ (0,Q)
