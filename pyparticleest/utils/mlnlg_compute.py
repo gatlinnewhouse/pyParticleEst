@@ -4,11 +4,15 @@ models
 """
 
 import numpy as np
+import numba as nb
 import scipy.linalg as lalg
 
 
 def compute_logprod_derivative(
-    Alup: tuple[np.ndarray, bool], dA: np.ndarray, B: np.ndarray, dB: np.ndarray,
+    Alup: tuple[np.ndarray, bool],
+    dA: np.ndarray,
+    B: np.ndarray,
+    dB: np.ndarray,
 ) -> float:
     """I = logdet(A)+Tr(inv(A)*B)
     dI/dx = Tr(inv(A)*(dA - dA*inv(A)*B + dB)"""
@@ -28,6 +32,7 @@ def compute_logprod_derivative(
 #    out += diff_l2
 
 
+@nb.njit(cache=True)
 def compute_l2_grad_f(
     N: int,
     lenp: int,
@@ -50,6 +55,7 @@ def compute_l2_grad_f(
                     out[i, j, k, l] += -tmp[k, l] - tmp[l, k]
 
 
+@nb.njit(cache=True)
 def compute_l2_grad_A(
     N: int,
     lenp: int,
@@ -128,6 +134,7 @@ def compute_l2_grad_A(
 #                    out[i,j,<unsigned int>(lxi+k),<unsigned int>(lxi+l)] += Pn[i,k,l]
 
 
+@nb.njit(cache=True)
 def compute_pred_err(
     N: int,
     dim: int,
@@ -138,9 +145,10 @@ def compute_pred_err(
     out: np.ndarray,
 ) -> None:
     for i in range(N):
-        out[i] = xn[i] - f[i] - A[i].dot(zl[i])
+        out[i] = xn[i] - f[i] - np.dot(A[i], zl[i])
 
 
+@nb.njit(cache=True)
 def compute_l2(
     N: int,
     lxi: int,
@@ -153,7 +161,7 @@ def compute_l2(
     out: np.ndarray,
 ) -> None:
     for i in range(N):
-        out[i] = perr[i].dot(perr[i].T) + A[i].dot(Pl[i]).dot(A[i].T)
+        out[i] = np.dot(perr[i], perr[i].T) + np.dot(A[i], np.dot(Pl[i], A[i].T))
 
         # Axi = A[i][:lxi]
         # Az = A[i][lxi:]
@@ -161,7 +169,7 @@ def compute_l2(
         # tmp = -Axi.dot(M[i])
         # out[i,lxi:,:lxi] += tmp.T
         # out[i,:lxi,lxi:] += tmp
-        tmp = -A[i].dot(M[i])
+        tmp = -np.dot(A[i], M[i])
         out[i, :, lxi:] += tmp
         out[i, lxi:, :] += tmp.T
 
