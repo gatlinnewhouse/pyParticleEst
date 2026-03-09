@@ -9,12 +9,12 @@ from typing import Any
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.subplots
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as sla
 import scipy.stats
 
-# Added for table and tikz exports
 import latextable
 from texttable import Texttable
 import matplot2tikz
@@ -245,23 +245,28 @@ def rmse_aggregate(est_list: list[np.ndarray], truth_list: list[np.ndarray]) -> 
 # Output Formatting
 # ══════════════════════════════════════════════════════════════════════════════
 def save_latex_table(results: dict[str, dict[str, Any]], n_taps: int) -> None:
-    """Generate and save a LaTeX table using texttable and latextable."""
     filepath = "plots/benchmark_results_table.tex"
 
     table = Texttable()
     table.set_deco(Texttable.HEADER)
 
-    # Define headers dynamically
     headers = ["Filter", "RMSE($\\xi$)", "RMSE($z$)"]
     headers.extend([f"RMSE(Tap {i + 1})" for i in range(n_taps)])
-    headers.extend(["$N_{\\mathrm{eff}}$", "Time (s)", "Resamples"])
+    headers.extend(["$N_{\\mathrm{eff}}$", "Time (s)", "Resamples", "Log ML"])
 
     table.header(headers)
 
     for name, r in results.items():
         row = [name, f"{r['rmse_xi']:.4f}", f"{r['rmse_z_agg']:.4f}"]
         row.extend([f"{t:.4f}" for t in r["rmse_tap"]])
-        row.extend([f"{r['neff']:.4f}", f"{r['time_s']:.4f}", str(r["resamples"])])
+        row.extend(
+            [
+                f"{r['neff']:.4f}",
+                f"{r['time_s']:.4f}",
+                str(r["resamples"]),
+                f"{r['log_ml']:.4f}",
+            ]
+        )
         table.add_row(row)
 
     latex_output = latextable.draw_latex(
@@ -284,7 +289,6 @@ MARKERS = {"SIS": "P", "SIR": "*", "APF": "D", "RBPF": "X"}
 
 
 def setup_plot(ax, title, xlabel, ylabel):
-    """Helper for consistent, accessible plot styling."""
     ax.set_title(title, fontsize=14, weight="bold")
     ax.set_xlabel(xlabel, fontsize=12)
     ax.set_ylabel(ylabel, fontsize=12)
@@ -294,8 +298,6 @@ def setup_plot(ax, title, xlabel, ylabel):
 
 
 def finalize_plot(fig, ax, filename):
-    """Adds right-aligned legend and saves both PNG and TikZ/LaTeX formats."""
-    # Place legend outside to the right
     ax.legend(
         loc="center left",
         bbox_to_anchor=(1.04, 0.5),
@@ -305,11 +307,9 @@ def finalize_plot(fig, ax, filename):
         edgecolor="black",
     )
 
-    # Save standard PNG with bounding box adjustments
     png_path = f"plots/{filename}.png"
     fig.savefig(png_path, dpi=150, bbox_inches="tight", facecolor="white")
 
-    # Save to TikZ via tikzplotlib
     tex_path = f"plots/{filename}.tex"
     matplot2tikz.save(tex_path, strict=True)
 
@@ -335,9 +335,36 @@ def plot_xi_estimates(results, STEPS, xis):
         )
 
     setup_plot(
-        ax, r"MLNLG: $\xi$ Estimate vs Ground Truth", "Time step $t$", r"$\xi_t$"
+        ax, r"MLNLG: $\xi$ Estimate vs Ground Truth (All)", "Time step $t$", r"$\xi_t$"
     )
-    finalize_plot(fig, ax, "mlnlg_xi")
+    finalize_plot(fig, ax, "mlnlg_xi_all")
+
+
+def plot_xi_estimate_individual(name, r, STEPS, xis):
+    """Plot an individual filter's ξ estimate against ground truth."""
+    t_axis = np.arange(STEPS + 1)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot(t_axis, xis, "k-", lw=2, label="Ground truth", zorder=5)
+
+    ax.plot(
+        t_axis,
+        r["est_xi"],
+        "--",
+        lw=1.5,
+        color=COLORS.get(name, "#1f77b4"),
+        marker=MARKERS.get(name, "o"),
+        markersize=6,
+        markevery=5,
+        label=name,
+    )
+
+    setup_plot(
+        ax,
+        f"MLNLG: {name} $\\xi$ Estimate vs Ground Truth",
+        "Time step $t$",
+        r"$\xi_t$",
+    )
+    finalize_plot(fig, ax, f"mlnlg_xi_{name.lower()}")
 
 
 def plot_tap_magnitude(results, STEPS, zs, tap_idx: int):
@@ -469,22 +496,26 @@ def main() -> None:
         f" {'RMSE(tap' + str(i + 1) + ')':>12}" for i in range(n_taps)
     )
     print(
-        f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers} {'Neff':>8} {'Time(s)':>8} {'Resamp':>7}"
+        f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers} {'Neff':>8} {'Time(s)':>8} {'Resamp':>7} {'Log ML':>12}"
     )
-    print("-" * (55 + 13 * n_taps))
+    print("-" * (68 + 13 * n_taps))
     for name, r in results.items():
         tap_vals = "".join(f" {t:>12.4f}" for t in r["rmse_tap"])
         print(
-            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d}"
+            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d} {r['log_ml']:>12.4f}"
         )
 
     # ── Save Outputs ─────────────────────────────────────────────────────────
-    # Ensure default styles for white background plotting
     plt.style.use("default")
 
     save_latex_table(results, n_taps)
 
     plot_xi_estimates(results, STEPS, xis)
+
+    # Plot individual specific filter estimations against the ground truth
+    for name, r in results.items():
+        plot_xi_estimate_individual(name, r, STEPS, xis)
+
     for tap_idx in range(n_taps):
         plot_tap_magnitude(results, STEPS, zs, tap_idx)
     plot_neff(results, strajs, STEPS)
