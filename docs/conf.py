@@ -19,7 +19,7 @@ from unittest.mock import Mock as MagicMock
 
 class Mock(MagicMock):
     @classmethod
-    def __getattr__(cls, name):
+    def __getattr__(cls, name: str) -> "Mock":
         return Mock()
 
 
@@ -68,7 +68,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "pyParticleEst"
-copyright = "2014, Jerker Nordh"
+project_copyright = "2014, Jerker Nordh"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
