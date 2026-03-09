@@ -5,11 +5,148 @@
 from typing import Any
 
 import numpy
+import numba as nb
 import scipy.linalg
 
 import pyparticleest.utils.kalman as kalman
 import pyparticleest.utils.mlnlg_compute as mlnlg_compute
 from pyparticleest.interfaces import FFBSi, ParticleFiltering
+
+
+@nb.njit(cache=True)
+def _nb_calc_l1(z: numpy.ndarray, P: numpy.ndarray, z0: numpy.ndarray) -> numpy.ndarray:
+    z0_diff = z - z0
+    l1 = numpy.dot(z0_diff, z0_diff.T) + P
+    return l1
+
+
+@nb.njit(cache=True)
+def _nb_calc_l1_grad(
+    z: numpy.ndarray,
+    P: numpy.ndarray,
+    z0: numpy.ndarray,
+    z0_grad: numpy.ndarray | None,
+    lparams: int,
+    lz: int,
+) -> tuple[numpy.ndarray, numpy.ndarray]:
+    z0_diff = z - z0
+    l1 = numpy.dot(z0_diff, z0_diff.T) + P
+    l1_diff = numpy.zeros((lparams, lz, lz))
+
+    if z0_grad is not None:
+        for j in range(lparams):
+            tmp = -numpy.dot(z0_grad[j], z0_diff.T)
+            l1_diff[j] += tmp + tmp.T
+
+    return l1, l1_diff
+
+
+@nb.njit(cache=True)
+def _nb_calc_l2(
+    zn: numpy.ndarray,
+    Pn: numpy.ndarray,
+    z: numpy.ndarray,
+    P: numpy.ndarray,
+    A: numpy.ndarray,
+    f: numpy.ndarray,
+    M: numpy.ndarray,
+) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray]:
+    predict_err = zn - f - numpy.dot(A, z)
+    AM = numpy.dot(A, M)
+    l2 = numpy.dot(predict_err, predict_err.T)
+    l2 += Pn + numpy.dot(A, numpy.dot(P, A.T)) - AM.T - AM
+    return l2, A, M, predict_err
+
+
+@nb.njit(cache=True)
+def _nb_calc_l2_grad(
+    zn: numpy.ndarray,
+    Pn: numpy.ndarray,
+    z: numpy.ndarray,
+    P: numpy.ndarray,
+    A: numpy.ndarray,
+    f: numpy.ndarray,
+    M: numpy.ndarray,
+    A_grad: numpy.ndarray | None,
+    f_grad: numpy.ndarray | None,
+    lparam: int,
+    lz: int,
+) -> tuple[numpy.ndarray, numpy.ndarray]:
+    predict_err = zn - f - numpy.dot(A, z)
+    AM = numpy.dot(A, M)
+    l2 = numpy.dot(predict_err, predict_err.T)
+    l2 += Pn + numpy.dot(A, numpy.dot(P, A.T)) - AM.T - AM
+
+    l2_grad = numpy.zeros((lparam, lz, lz))
+    if f_grad is not None:
+        for j in range(lparam):
+            tmp = -numpy.dot(f_grad[j], predict_err.T)
+            l2_grad[j] += tmp + tmp.T
+
+    if A_grad is not None:
+        for j in range(lparam):
+            tmp = -numpy.dot(numpy.dot(A_grad[j], z), predict_err.T)
+            l2_grad[j] += tmp + tmp.T
+            tmp = numpy.dot(numpy.dot(A_grad[j], P), A.T)
+            l2_grad[j] += tmp + tmp.T
+            tmp = -numpy.dot(A_grad[j], M)
+            l2_grad[j] += tmp + tmp.T
+
+    return l2, l2_grad
+
+
+@nb.njit(cache=True)
+def _nb_calc_l3(
+    y: numpy.ndarray,
+    z: numpy.ndarray,
+    P: numpy.ndarray,
+    C: numpy.ndarray,
+    h_k: numpy.ndarray | None,
+) -> numpy.ndarray:
+    if h_k is not None:
+        meas_diff = y - (numpy.dot(C, z) + h_k)
+    else:
+        meas_diff = y - numpy.dot(C, z)
+
+    l3 = numpy.dot(meas_diff, meas_diff.T)
+    l3 += numpy.dot(C, numpy.dot(P, C.T))
+    return l3
+
+
+@nb.njit(cache=True)
+def _nb_calc_l3_grad(
+    y: numpy.ndarray,
+    z: numpy.ndarray,
+    P: numpy.ndarray,
+    C: numpy.ndarray,
+    h_k: numpy.ndarray | None,
+    C_grad: numpy.ndarray | None,
+    h_grad: numpy.ndarray | None,
+    lparam: int,
+    len_y: int,
+) -> tuple[numpy.ndarray, numpy.ndarray]:
+    if h_k is not None:
+        meas_diff = y - (numpy.dot(C, z) + h_k)
+    else:
+        meas_diff = y - numpy.dot(C, z)
+
+    l3 = numpy.dot(meas_diff, meas_diff.T)
+    l3 += numpy.dot(C, numpy.dot(P, C.T))
+    l3_grad = numpy.zeros((lparam, len_y, len_y))
+
+    if h_grad is not None:
+        for j in range(lparam):
+            tmp = -numpy.dot(h_grad[j], meas_diff)
+            l3_grad[j] += tmp + tmp.T
+
+    if C_grad is not None:
+        for j in range(lparam):
+            tmp = -numpy.dot(numpy.dot(C_grad[j], z), meas_diff)
+            l3_grad[j] += tmp + tmp.T
+            tmp = numpy.dot(numpy.dot(C_grad[j], P), C)
+            l3_grad[j] += tmp + tmp.T
+
+    return l3, l3_grad
 
 
 class LTV(FFBSi, ParticleFiltering):
@@ -52,7 +189,13 @@ class LTV(FFBSi, ParticleFiltering):
         if f is None:
             f = numpy.zeros_like(self.z0)
         self.kf = kalman.KalmanSmoother(
-            lz=len(self.z0), A=A, C=C, Q=Q, R=R, f_k=f, h_k=h,
+            lz=len(self.z0),
+            A=A,
+            C=C,
+            Q=Q,
+            R=R,
+            f_k=f,
+            h_k=h,
         )
         super().__init__(**kwargs)
 
@@ -103,7 +246,8 @@ class LTV(FFBSi, ParticleFiltering):
             particles[i, lz:lzP] = P_list[i].ravel()
 
     def get_states(
-        self, particles: numpy.ndarray,
+        self,
+        particles: numpy.ndarray,
     ) -> tuple[list[numpy.ndarray], list[numpy.ndarray]]:
         """
         Return the estimates contained in the particles array
@@ -150,7 +294,11 @@ class LTV(FFBSi, ParticleFiltering):
         return (None, None, None)
 
     def update(
-        self, particles: numpy.ndarray, u: Any, t: float, noise: Any,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        t: float,
+        noise: Any,
     ) -> numpy.ndarray:
         """Propagate estimate forward in time
 
@@ -227,7 +375,11 @@ class LTV(FFBSi, ParticleFiltering):
         return lyz
 
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: Any, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        next_part: Any,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
@@ -312,7 +464,13 @@ class LTV(FFBSi, ParticleFiltering):
                 (A, f, Q) = self.get_pred_dynamics(u=ut[0], t=tt[0])
                 self.kf.set_dynamics(A=A, Q=Q, f_k=f)
                 (zs, Ps, Ms) = self.kf.smooth(
-                    zl[0], Pl[0], zn, Pn, self.kf.A, self.kf.f_k, self.kf.Q,
+                    zl[0],
+                    Pl[0],
+                    zn,
+                    Pn,
+                    self.kf.A,
+                    self.kf.f_k,
+                    self.kf.Q,
                 )
             else:
                 zs = zl[j]
@@ -357,7 +515,9 @@ class LTV(FFBSi, ParticleFiltering):
         return lpz0
 
     def eval_logp_x0_val_grad(
-        self, particles: numpy.ndarray, t: float,
+        self,
+        particles: numpy.ndarray,
+        t: float,
     ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate gradient of sum log p(x_0)
@@ -381,18 +541,29 @@ class LTV(FFBSi, ParticleFiltering):
             ld = numpy.sum(numpy.log(numpy.diagonal(P0cho[0]))) * 2
             for i in range(N):
                 (l1, l1_grad) = self.calc_l1_grad(
-                    zl[i], Pl[i], self.z0, self.P0, z0_grad,
+                    zl[i],
+                    Pl[i],
+                    self.z0,
+                    self.P0,
+                    z0_grad,
                 )
                 tmp = scipy.linalg.cho_solve(P0cho, l1)
                 lpz0 += -0.5 * (ld + numpy.trace(tmp))
                 for j in range(len(self.params)):
                     lpz0_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        P0cho, P0_grad[j], l1, l1_grad[j],
+                        P0cho,
+                        P0_grad[j],
+                        l1,
+                        l1_grad[j],
                     )
         return (lpz0, lpz0_grad)
 
     def eval_logp_xnext(
-        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        x_next: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray:
         """
         Evaluate log p(x_{t+1}|x_t)
@@ -419,7 +590,13 @@ class LTV(FFBSi, ParticleFiltering):
             lzP = lz + lz * lz
             Mz = particles[k][lzP:].reshape((lz, lz))
             (l2, _A, _M_ext, _predict_err) = self.calc_l2(
-                zn[k], Pn[k], zl[k], Pl[k], self.kf.A, self.kf.f_k, Mz,
+                zn[k],
+                Pn[k],
+                zl[k],
+                Pl[k],
+                self.kf.A,
+                self.kf.f_k,
+                Mz,
             )
             (_tmp, ld) = numpy.linalg.slogdet(self.kf.Q)
             tmp = numpy.linalg.solve(self.kf.Q, l2)
@@ -428,7 +605,11 @@ class LTV(FFBSi, ParticleFiltering):
         return lpxn
 
     def eval_logp_xnext_val_grad(
-        self, particles: numpy.ndarray, x_next: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        x_next: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate value and gradient of log p(x_{t+1}|x_t)
@@ -480,7 +661,10 @@ class LTV(FFBSi, ParticleFiltering):
 
                 for j in range(len(self.params)):
                     lpxn_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        Qcho, Q_grad[j], l2, l2_grad[j],
+                        Qcho,
+                        Q_grad[j],
+                        l2,
+                        l2_grad[j],
                     )
 
         return (lpxn, lpxn_grad)
@@ -513,7 +697,10 @@ class LTV(FFBSi, ParticleFiltering):
         return logpy
 
     def eval_logp_y_val_grad(
-        self, particles: numpy.ndarray, y: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        y: Any,
+        t: float,
     ) -> tuple[float | numpy.ndarray, numpy.ndarray]:
         """
         Evaluate value and gradient of log p(y_t|x_t)
@@ -551,7 +738,10 @@ class LTV(FFBSi, ParticleFiltering):
 
                 for j in range(len(self.params)):
                     logpy_grad[j] -= 0.5 * mlnlg_compute.compute_logprod_derivative(
-                        Rcho, R_grad[j], l3, l3_grad[j],
+                        Rcho,
+                        R_grad[j],
+                        l3,
+                        l3_grad[j],
                     )
 
         return (logpy, logpy_grad)
@@ -609,12 +799,14 @@ class LTV(FFBSi, ParticleFiltering):
         )
 
     def calc_l1(
-        self, z: numpy.ndarray, P: numpy.ndarray, z0: numpy.ndarray, P0: numpy.ndarray,
+        self,
+        z: numpy.ndarray,
+        P: numpy.ndarray,
+        z0: numpy.ndarray,
+        P0: numpy.ndarray,
     ) -> numpy.ndarray:
         """internal helper function"""
-        z0_diff = z - z0
-        l1 = z0_diff.dot(z0_diff.T) + P
-        return l1
+        return _nb_calc_l1(z, P, z0)
 
     def calc_l1_grad(
         self,
@@ -625,15 +817,7 @@ class LTV(FFBSi, ParticleFiltering):
         z0_grad: numpy.ndarray | None,
     ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
-        lparams = len(self.params)
-        z0_diff = z - z0
-        l1 = z0_diff.dot(z0_diff.T) + P
-        l1_diff = numpy.zeros((lparams, self.kf.lz, self.kf.lz))
-        if z0_grad is not None:
-            for j in range(lparams):
-                tmp = -z0_grad[j].dot(z0_diff.T)
-                l1_diff[j] += tmp + tmp.T
-        return (l1, l1_diff)
+        return _nb_calc_l1_grad(z, P, z0, z0_grad, len(self.params), self.kf.lz)
 
     def calc_l2(
         self,
@@ -646,11 +830,7 @@ class LTV(FFBSi, ParticleFiltering):
         M: numpy.ndarray,
     ) -> tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
-        predict_err = zn - f - A.dot(z)
-        AM = A.dot(M)
-        l2 = predict_err.dot(predict_err.T)
-        l2 += Pn + A.dot(P).dot(A.T) - AM.T - AM
-        return (l2, A, M, predict_err)
+        return _nb_calc_l2(zn, Pn, z, P, A, f, M)
 
     def calc_l2_grad(
         self,
@@ -665,36 +845,18 @@ class LTV(FFBSi, ParticleFiltering):
         f_grad: numpy.ndarray | None,
     ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
-        lparam = len(self.params)
-        predict_err = zn - f - A.dot(z)
-        AM = A.dot(M)
-        l2 = predict_err.dot(predict_err.T)
-        l2 += Pn + A.dot(P).dot(A.T) - AM.T - AM
-        l2_grad = numpy.zeros((lparam, self.kf.lz, self.kf.lz))
-        if f_grad is not None:
-            for j in range(lparam):
-                tmp = -f_grad[j].dot(predict_err.T)
-                l2_grad[j] += tmp + tmp.T
-        if A_grad is not None:
-            for j in range(lparam):
-                tmp = -A_grad[j].dot(z).dot(predict_err.T)
-                l2_grad[j] += tmp + tmp.T
-                tmp = A_grad[j].dot(P).dot(A.T)
-                l2_grad[j] += tmp + tmp.T
-                tmp = -A_grad[j].dot(M)
-                l2_grad[j] += tmp + tmp.T
-        return (l2, l2_grad)
+        return _nb_calc_l2_grad(
+            zn, Pn, z, P, A, f, M, A_grad, f_grad, len(self.params), self.kf.lz
+        )
 
     def calc_l3(
-        self, y: numpy.ndarray, z: numpy.ndarray, P: numpy.ndarray,
+        self,
+        y: numpy.ndarray,
+        z: numpy.ndarray,
+        P: numpy.ndarray,
     ) -> numpy.ndarray:
         """internal helper function"""
-        meas_diff = self.kf.measurement_diff(
-            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k,
-        )
-        l3 = meas_diff.dot(meas_diff.T)
-        l3 += self.kf.C.dot(P).dot(self.kf.C.T)
-        return l3
+        return _nb_calc_l3(y.reshape((-1, 1)), z, P, self.kf.C, self.kf.h_k)
 
     def calc_l3_grad(
         self,
@@ -705,21 +867,14 @@ class LTV(FFBSi, ParticleFiltering):
         h_grad: numpy.ndarray | None,
     ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
-        lparam = len(self.params)
-        meas_diff = self.kf.measurement_diff(
-            y.reshape((-1, 1)), z, C=self.kf.C, h_k=self.kf.h_k,
+        return _nb_calc_l3_grad(
+            y.reshape((-1, 1)),
+            z,
+            P,
+            self.kf.C,
+            self.kf.h_k,
+            C_grad,
+            h_grad,
+            len(self.params),
+            len(y),
         )
-        l3 = meas_diff.dot(meas_diff.T)
-        l3 += self.kf.C.dot(P).dot(self.kf.C.T)
-        l3_grad = numpy.zeros((lparam, len(y), len(y)))
-        if h_grad is not None:
-            for j in range(lparam):
-                tmp = -h_grad[j].dot(meas_diff)
-                l3_grad[j] += tmp + tmp.T
-        if C_grad is not None:
-            for j in range(lparam):
-                tmp = -C_grad[j].dot(z).dot(meas_diff)
-                l3_grad[j] += tmp + tmp.T
-                tmp = C_grad[j].dot(P).dot(self.kf.C)
-                l3_grad[j] += tmp + tmp.T
-        return (l3, l3_grad)
