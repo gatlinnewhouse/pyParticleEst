@@ -22,11 +22,13 @@ Metrics reported per filter:
 """
 
 import time
+from pathlib import Path
+from typing import Any
 
 import latextable
 import matplot2tikz
 import matplotlib.pyplot as plt
-import numpy
+import numpy as np
 import scipy.stats
 from texttable import Texttable
 
@@ -42,83 +44,87 @@ x0_var = 5.0
 
 
 # ── Ground-truth simulator ────────────────────────────────────────────────────
-def simulate(steps, seed=0):
-    rng = numpy.random.default_rng(seed)
-    xs = numpy.empty(steps + 1)
-    ys = numpy.empty(steps)
-    xs[0] = rng.normal(x0_mean, numpy.sqrt(x0_var))
+def simulate(steps: int, seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(seed)
+    xs = np.empty(steps + 1)
+    ys = np.empty(steps)
+    xs[0] = rng.normal(x0_mean, np.sqrt(x0_var))
     for t in range(steps):
         xs[t + 1] = (
             xs[t] / 2.0
             + 25.0 * xs[t] / (1.0 + xs[t] ** 2)
-            + 8.0 * numpy.cos(1.2 * t)
-            + rng.normal(0.0, numpy.sqrt(Q))
+            + 8.0 * np.cos(1.2 * t)
+            + rng.normal(0.0, np.sqrt(Q))
         )
-        ys[t] = xs[t + 1] ** 2 / 20.0 + rng.normal(0.0, numpy.sqrt(R))
+        ys[t] = xs[t + 1] ** 2 / 20.0 + rng.normal(0.0, np.sqrt(R))
     return xs, ys
 
 
 # ── MLNLG model parameters ───────────────────────────────────────────────────
 MLNLG_Q_XI = 10.0
-MLNLG_AZ = numpy.array([[0.9, 0.1], [-0.1, 0.85]])
-MLNLG_QZ = 0.5 * numpy.eye(2)
-MLNLG_C = numpy.array([[1.0, 1.0]])
+MLNLG_AZ = np.array([[0.9, 0.1], [-0.1, 0.85]])
+MLNLG_QZ = 0.5 * np.eye(2)
+MLNLG_C = np.array([[1.0, 1.0]])
 MLNLG_R = 1.0
 MLNLG_XI0_VAR = 5.0
-MLNLG_Z0_COV = 0.5 * numpy.eye(2)
+MLNLG_Z0_COV = 0.5 * np.eye(2)
 
 
-def simulate_mlnlg(steps, seed=0):
+def simulate_mlnlg(
+    steps: int, seed: int = 0
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Simulate a mixed linear/nonlinear Gaussian SSM.
 
     ξ_{t+1} = f_nl(ξ_t, t) + v_ξ       (nonlinear, same as Gordon–Salmond–Smith)
     z_{t+1} = Az·z_t + v_z              (2D linear, damped oscillator)
     y_t     = C·z_{t+1} + ξ_{t+1}²/20 + e_t
     """
-    rng = numpy.random.default_rng(seed)
+    rng = np.random.default_rng(seed)
 
-    xis = numpy.empty(steps + 1)
-    zs = numpy.empty((steps + 1, 2))
-    ys = numpy.empty(steps)
+    xis = np.empty(steps + 1)
+    zs = np.empty((steps + 1, 2))
+    ys = np.empty(steps)
 
-    xis[0] = rng.normal(0.0, numpy.sqrt(MLNLG_XI0_VAR))
+    xis[0] = rng.normal(0.0, np.sqrt(MLNLG_XI0_VAR))
     zs[0] = rng.multivariate_normal([0.0, 0.0], MLNLG_Z0_COV)
 
     for t in range(steps):
         xis[t + 1] = (
             xis[t] / 2.0
             + 25.0 * xis[t] / (1.0 + xis[t] ** 2)
-            + 8.0 * numpy.cos(1.2 * t)
-            + rng.normal(0.0, numpy.sqrt(MLNLG_Q_XI))
+            + 8.0 * np.cos(1.2 * t)
+            + rng.normal(0.0, np.sqrt(MLNLG_Q_XI))
         )
         zs[t + 1] = MLNLG_AZ @ zs[t] + rng.multivariate_normal([0.0, 0.0], MLNLG_QZ)
         ys[t] = (
             float(MLNLG_C @ zs[t + 1])
             + xis[t + 1] ** 2 / 20.0
-            + rng.normal(0.0, numpy.sqrt(MLNLG_R))
+            + rng.normal(0.0, np.sqrt(MLNLG_R))
         )
 
     return xis, zs, ys
 
 
 # ── Helper: extract weighted mean from a ParticleTrajectory ──────────────────
-def weighted_means(straj, state_index=0):
+def weighted_means(
+    straj: pfilter.ParticleTrajectory, state_index: int = 0
+) -> np.ndarray:
     """Return array of weighted-mean estimates for state_index across time."""
-    means = numpy.empty(len(straj))
+    means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
         pa = step.pa
-        w = pa.w - numpy.max(pa.w)
-        w = numpy.exp(w)
-        w /= numpy.sum(w)
-        means[k] = numpy.dot(w, pa.part[:, state_index])
+        w = pa.w - np.max(pa.w)
+        w = np.exp(w)
+        w /= np.sum(w)
+        means[k] = np.dot(w, pa.part[:, state_index])
     return means
 
 
-def mean_neff(straj):
+def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
     neffs = []
     for step in straj.traj:
         neffs.append(step.pa.calc_Neff() / step.pa.num)
-    return float(numpy.mean(neffs))
+    return float(np.mean(neffs))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -129,38 +135,42 @@ class NLGSSModel(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFilte
     """
     Non-linear Gaussian SSM for use with PF and APF.
 
-    Particle state: 1-D numpy array [x_t].
+    Particle state: 1-D np array [x_t].
     """
 
-    def create_initial_estimate(self, N):
-        return numpy.random.normal(x0_mean, numpy.sqrt(x0_var), size=(N, 1))
+    def create_initial_estimate(self, N: int) -> np.ndarray:
+        return np.random.normal(x0_mean, np.sqrt(x0_var), size=(N, 1))
 
-    def sample_process_noise(self, particles, u, t):
+    def sample_process_noise(
+        self, particles: np.ndarray, u: Any | None, t: int
+    ) -> np.ndarray:
         N = len(particles)
-        return numpy.random.normal(0.0, numpy.sqrt(Q), size=(N, 1))
+        return np.random.normal(0.0, np.sqrt(Q), size=(N, 1))
 
-    def update(self, particles, u, t, noise):
+    def update(
+        self, particles: np.ndarray, u: Any | None, t: int, noise: np.ndarray
+    ) -> np.ndarray:
         x = particles[:, 0]
-        x_next = (
-            x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * numpy.cos(1.2 * t) + noise[:, 0]
-        )
+        x_next = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * np.cos(1.2 * t) + noise[:, 0]
         particles[:, 0] = x_next
         return particles
 
-    def measure(self, particles, y, t):
+    def measure(self, particles: np.ndarray, y: float, t: int) -> np.ndarray:
         x = particles[:, 0]
         y_hat = x**2 / 20.0
-        return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=numpy.sqrt(R))
+        return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=np.sqrt(R))
 
     # ── APF first-stage weights: use propagated mean as predictor ────────────
-    def eval_1st_stage_weights(self, particles, u, y, t):
+    def eval_1st_stage_weights(
+        self, particles: np.ndarray, u: Any | None, y: float, t: int
+    ) -> np.ndarray:
         x = particles[:, 0]
-        x_pred = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * numpy.cos(1.2 * t)
+        x_pred = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * np.cos(1.2 * t)
         y_hat = x_pred**2 / 20.0
         return scipy.stats.norm.logpdf(
             float(y),
             loc=y_hat,
-            scale=numpy.sqrt(R + Q * (x_pred / 10.0) ** 2),
+            scale=np.sqrt(R + Q * (x_pred / 10.0) ** 2),
         )
 
 
@@ -171,40 +181,43 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
     The PF must sample all three state dimensions — no Rao-Blackwellization.
     """
 
-    def create_initial_estimate(self, N):
-        particles = numpy.empty((N, 3))
-        particles[:, 0] = numpy.random.normal(0.0, numpy.sqrt(MLNLG_XI0_VAR), N)
-        particles[:, 1:] = numpy.random.multivariate_normal([0.0, 0.0], MLNLG_Z0_COV, N)
+    def create_initial_estimate(self, N: int) -> np.ndarray:
+        particles = np.empty((N, 3))
+        particles[:, 0] = np.random.normal(0.0, np.sqrt(MLNLG_XI0_VAR), N)
+        particles[:, 1:] = np.random.multivariate_normal([0.0, 0.0], MLNLG_Z0_COV, N)
         return particles
 
-    def sample_process_noise(self, particles, u, t):
+    def sample_process_noise(
+        self, particles: np.ndarray, u: Any | None, t: int
+    ) -> np.ndarray:
         N = len(particles)
-        noise = numpy.empty((N, 3))
-        noise[:, 0] = numpy.random.normal(0.0, numpy.sqrt(MLNLG_Q_XI), N)
-        noise[:, 1:] = numpy.random.multivariate_normal([0.0, 0.0], MLNLG_QZ, N)
+        noise = np.empty((N, 3))
+        noise[:, 0] = np.random.normal(0.0, np.sqrt(MLNLG_Q_XI), N)
+        noise[:, 1:] = np.random.multivariate_normal([0.0, 0.0], MLNLG_QZ, N)
         return noise
 
-    def update(self, particles, u, t, noise):
+    def update(
+        self, particles: np.ndarray, u: Any | None, t: int, noise: np.ndarray
+    ) -> np.ndarray:
         xi = particles[:, 0]
         particles[:, 0] = (
-            xi / 2.0
-            + 25.0 * xi / (1.0 + xi**2)
-            + 8.0 * numpy.cos(1.2 * t)
-            + noise[:, 0]
+            xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * np.cos(1.2 * t) + noise[:, 0]
         )
         particles[:, 1:] = (MLNLG_AZ @ particles[:, 1:].T).T + noise[:, 1:]
         return particles
 
-    def measure(self, particles, y, t):
+    def measure(self, particles: np.ndarray, y: float, t: int) -> np.ndarray:
         xi = particles[:, 0]
         z = particles[:, 1:]  # (N, 2)
         y_hat = (MLNLG_C @ z.T).ravel() + xi**2 / 20.0
-        return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=numpy.sqrt(MLNLG_R))
+        return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=np.sqrt(MLNLG_R))
 
-    def eval_1st_stage_weights(self, particles, u, y, t):
+    def eval_1st_stage_weights(
+        self, particles: np.ndarray, u: Any | None, y: float, t: int
+    ) -> np.ndarray:
         xi = particles[:, 0]
         z = particles[:, 1:]
-        xi_pred = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * numpy.cos(1.2 * t)
+        xi_pred = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * np.cos(1.2 * t)
         z_pred = (MLNLG_AZ @ z.T).T
         y_hat = (MLNLG_C @ z_pred.T).ravel() + xi_pred**2 / 20.0
         # Predictive variance: R + C·Qz·Cᵀ + nonlinear ξ contribution
@@ -213,7 +226,7 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
             + float(MLNLG_C @ MLNLG_QZ @ MLNLG_C.T)
             + MLNLG_Q_XI * (xi_pred / 10.0) ** 2
         )
-        return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=numpy.sqrt(pred_var))
+        return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=np.sqrt(pred_var))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -232,17 +245,17 @@ class RBPFModel(mlnlg.MixedNLGaussianSampledInitialGaussian):
     `get_nonlin_pred_dynamics`, `get_meas_dynamics`).
     """
 
-    def __init__(self, N):
+    def __init__(self, N: int) -> None:
         # xi: non-linear scalar state (the actual x_t)
         # z:  linear scalar dummy = 0
-        xi0 = numpy.array([[x0_mean]])
-        z0 = numpy.array([[0.0]])
-        Pxi0 = numpy.array([[x0_var]])
-        Pz0 = numpy.array([[1e-6]])  # near-zero: z is deterministic
-        Qxi = numpy.array([[Q]])
-        Qz = numpy.array([[1e-10]])  # z does not evolve
-        Az = numpy.array([[1.0]])  # z_{t+1} = z_t (trivial)
-        C = numpy.array([[0.0]])  # measurement does not depend on z
+        xi0 = np.array([[x0_mean]])
+        z0 = np.array([[0.0]])
+        Pxi0 = np.array([[x0_var]])
+        Pz0 = np.array([[1e-6]])  # near-zero: z is deterministic
+        Qxi = np.array([[Q]])
+        Qz = np.array([[1e-10]])  # z does not evolve
+        Az = np.array([[1.0]])  # z_{t+1} = z_t (trivial)
+        C = np.array([[0.0]])  # measurement does not depend on z
         super().__init__(
             z0=z0,
             xi0=xi0,
@@ -252,40 +265,46 @@ class RBPFModel(mlnlg.MixedNLGaussianSampledInitialGaussian):
             C=C,
             Qxi=Qxi,
             Qz=Qz,
-            R=numpy.array([[R]]),
+            R=np.array([[R]]),
         )
 
     # xi_{t+1} = f(xi_t, t) + v_xi
-    def get_nonlin_pred_dynamics(self, particles, u, t):
+    def get_nonlin_pred_dynamics(
+        self, particles: np.ndarray, u: Any | None, t: int
+    ) -> tuple[np.ndarray, np.ndarray, Any | None]:
         xi = particles[:, 0]  # shape (N,)
         N = len(particles)
-        f = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * numpy.cos(1.2 * t)
+        f = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * np.cos(1.2 * t)
         # fxi shape must be (N, lxi, 1)
-        fxi = f[:, numpy.newaxis, numpy.newaxis]
+        fxi = f[:, np.newaxis, np.newaxis]
         # Axi=None means xi_{t+1} has no linear dependence on z
-        return (numpy.zeros((N, 1, 1)), fxi, None)
+        return (np.zeros((N, 1, 1)), fxi, None)
 
     # y_t = h(xi_t) + C*z_t + e_t  with C=0, h = xi^2/20
-    def get_meas_dynamics(self, y, particles, t):
+    def get_meas_dynamics(
+        self, y: float, particles: np.ndarray, t: int
+    ) -> tuple[np.ndarray, Any | None, np.ndarray, Any | None]:
         xi = particles[:, 0]
-        h = (xi**2 / 20.0)[:, numpy.newaxis, numpy.newaxis]
+        h = (xi**2 / 20.0)[:, np.newaxis, np.newaxis]
         # C=None reuses the stored C=[[0]]
-        return (numpy.asarray(y).reshape((-1, 1)), None, h, None)
+        return (np.asarray(y).reshape((-1, 1)), None, h, None)
 
 
-def weighted_means_z(straj, lxi, z_index):
+def weighted_means_z(
+    straj: pfilter.ParticleTrajectory, lxi: int, z_index: int
+) -> np.ndarray:
     """Return weighted-mean z estimates from RBPF trajectory.
 
     In the RBPF particle array: [ξ₀..ξ_{lxi-1}, z₀..z_{lz-1}, P_flat...].
     The Kalman-filtered z means start at index lxi.
     """
-    means = numpy.empty(len(straj))
+    means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
         pa = step.pa
-        w = pa.w - numpy.max(pa.w)
-        w = numpy.exp(w)
-        w /= numpy.sum(w)
-        means[k] = numpy.dot(w, pa.part[:, lxi + z_index])
+        w = pa.w - np.max(pa.w)
+        w = np.exp(w)
+        w /= np.sum(w)
+        means[k] = np.dot(w, pa.part[:, lxi + z_index])
     return means
 
 
@@ -297,40 +316,51 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
     The RBPF only needs to sample in 1D instead of 3D.
     """
 
-    def __init__(self, N):
+    def __init__(self, N: int) -> None:
         super().__init__(
-            xi0=numpy.array([[0.0]]),
-            z0=numpy.array([[0.0], [0.0]]),
-            Pxi0=numpy.array([[MLNLG_XI0_VAR]]),
-            Pz0=numpy.copy(MLNLG_Z0_COV),
-            Az=numpy.copy(MLNLG_AZ),
-            C=numpy.copy(MLNLG_C),
-            Qxi=numpy.array([[MLNLG_Q_XI]]),
-            Qz=numpy.copy(MLNLG_QZ),
-            R=numpy.array([[MLNLG_R]]),
+            xi0=np.array([[0.0]]),
+            z0=np.array([[0.0], [0.0]]),
+            Pxi0=np.array([[MLNLG_XI0_VAR]]),
+            Pz0=np.copy(MLNLG_Z0_COV),
+            Az=np.copy(MLNLG_AZ),
+            C=np.copy(MLNLG_C),
+            Qxi=np.array([[MLNLG_Q_XI]]),
+            Qz=np.copy(MLNLG_QZ),
+            R=np.array([[MLNLG_R]]),
         )
 
-    def get_nonlin_pred_dynamics(self, particles, u, t):
+    def get_nonlin_pred_dynamics(
+        self, particles: np.ndarray, u: Any | None, t: int
+    ) -> tuple[np.ndarray, np.ndarray, Any | None]:
         """ξ_{t+1} = f_nl(ξ_t, t) + v_ξ, no linear dependence on z."""
         xi = particles[:, 0]
         N = len(particles)
-        f = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * numpy.cos(1.2 * t)
-        fxi = f[:, numpy.newaxis, numpy.newaxis]  # (N, lxi=1, 1)
-        Axi = numpy.zeros((N, 1, 2))  # (N, lxi=1, lz=2) — ξ doesn't depend on z
+        f = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * np.cos(1.2 * t)
+        fxi = f[:, np.newaxis, np.newaxis]  # (N, lxi=1, 1)
+        Axi = np.zeros((N, 1, 2))  # (N, lxi=1, lz=2) — ξ doesn't depend on z
         return (Axi, fxi, None)  # Qxi=None → uses default
 
-    def get_meas_dynamics(self, y, particles, t):
+    def get_meas_dynamics(
+        self, y: float, particles: np.ndarray, t: int
+    ) -> tuple[np.ndarray, Any | None, np.ndarray, Any | None]:
         """y_t = C·z_t + ξ_t²/20 + e_t.  C is constant, h(ξ) varies."""
         xi = particles[:, 0]
-        h = (xi**2 / 20.0)[:, numpy.newaxis, numpy.newaxis]  # (N, 1, 1)
-        return (numpy.asarray(y).reshape((-1, 1)), None, h, None)
+        h = (xi**2 / 20.0)[:, np.newaxis, np.newaxis]  # (N, 1, 1)
+        return (np.asarray(y).reshape((-1, 1)), None, h, None)
         #       y preprocessed,                     C=default, h=per-particle, R=default
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Runner helpers
 # ══════════════════════════════════════════════════════════════════════════════
-def run_filter(model, filter_name, ys, us, N, resample=2.0 / 3.0):
+def run_filter(
+    model: Any,
+    filter_name: str,
+    ys: np.ndarray,
+    us: Any | None,
+    N: int,
+    resample: float = 2.0 / 3.0,
+) -> tuple[pfilter.ParticleTrajectory, float, int, float]:
     """Run a named filter and return (straj, wall_time, resample_count)."""
     straj = pfilter.ParticleTrajectory(
         model=model,
@@ -350,13 +380,13 @@ def run_filter(model, filter_name, ys, us, N, resample=2.0 / 3.0):
             resample_count += 1
         # Accumulate log p(y_t | y_{1:t-1}) ≈ log(sum(w_unnorm)) - log(N)
         pa = straj.traj[-1].pa
-        w = pa.w - numpy.max(pa.w)
-        log_ml += pa.w_offset + numpy.log(numpy.sum(numpy.exp(w)))
+        w = pa.w - np.max(pa.w)
+        log_ml += pa.w_offset + np.log(np.sum(np.exp(w)))
     wall = time.perf_counter() - t0
     return straj, wall, resample_count, log_ml
 
 
-def extract_state(straj, rbpf=False):
+def extract_state(straj: pfilter.ParticleTrajectory, rbpf: bool = False) -> np.ndarray:
     """Return (T,) array of weighted-mean state estimates."""
     if rbpf:
         # For RBPF, xi is the first element of the particle
@@ -364,17 +394,17 @@ def extract_state(straj, rbpf=False):
     return weighted_means(straj, state_index=0)
 
 
-def rmse(estimates, truth):
+def rmse(estimates: np.ndarray, truth: np.ndarray) -> float:
     # estimates has length T+1 (includes t=0), truth has length T+1
     # align: skip t=0 (prior), compare t=1..T
     n = min(len(estimates), len(truth)) - 1
-    return float(numpy.sqrt(numpy.mean((estimates[1 : n + 1] - truth[1 : n + 1]) ** 2)))
+    return float(np.sqrt(np.mean((estimates[1 : n + 1] - truth[1 : n + 1]) ** 2)))
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Metrics and plots
 # ══════════════════════════════════════════════════════════════════════════════
-def print_metrics(results):
+def print_metrics(results: dict[str, dict[str, Any]]) -> None:
     print(
         f"\n{'Filter':<20} {'RMSE':>8} {'Mean Neff':>10} {'Time (s)':>10} {'Resamples':>10}",
     )
@@ -386,7 +416,7 @@ def print_metrics(results):
         )
 
 
-def print_latex_table_standard(results):
+def print_latex_table_standard(results: dict[str, dict[str, Any]]) -> None:
     """Generate and print a LaTeX table for the standard benchmark results using latextable."""
     print("\n% --- LaTeX Table: Standard Benchmark ---")
     table = Texttable()
@@ -424,13 +454,13 @@ def print_latex_table_standard(results):
     )
 
 
-colors = {
+colors: dict[str, str] = {
     "SIS": "tab:blue",
     "SIR": "tab:orange",
     "APF": "tab:green",
     "RBPF": "tab:red",
 }
-markers = {
+markers: dict[str, str] = {
     "SIS": "P",
     "SIR": "*",
     "APF": "D",
@@ -438,9 +468,11 @@ markers = {
 }
 
 
-def plot_individual_estimates(results, STEPS, xs, ys):
+def plot_individual_estimates(
+    results: dict[str, dict[str, Any]], STEPS: int, xs: np.ndarray, ys: np.ndarray
+) -> None:
     """One figure per algorithm, each with ground truth overlaid."""
-    t_axis = numpy.arange(STEPS + 1)
+    t_axis = np.arange(STEPS + 1)
     plt.style.use("ggplot")
 
     for name, r in results.items():
@@ -476,9 +508,11 @@ def plot_individual_estimates(results, STEPS, xs, ys):
         plt.close(fig)
 
 
-def plot_combined_estimates(results, STEPS, xs, ys):
+def plot_combined_estimates(
+    results: dict[str, dict[str, Any]], STEPS: int, xs: np.ndarray, ys: np.ndarray
+) -> None:
     """All algorithms on one figure for comparison."""
-    t_axis = numpy.arange(STEPS + 1)
+    t_axis = np.arange(STEPS + 1)
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(t_axis, xs, "k-", lw=1.5, label="Ground truth", zorder=5)
     for name, r in results.items():
@@ -503,9 +537,14 @@ def plot_combined_estimates(results, STEPS, xs, ys):
     plt.close(fig)
 
 
-def plot_neff(results, strajs, STEPS, output_prefix="benchmark"):
+def plot_neff(
+    results: dict[str, dict[str, Any]],
+    strajs: list[tuple[str, pfilter.ParticleTrajectory]],
+    STEPS: int,
+    output_prefix: str = "benchmark",
+) -> None:
     """Neff over time for all filters."""
-    t_axis = numpy.arange(STEPS + 1)
+    t_axis = np.arange(STEPS + 1)
     fig, ax = plt.subplots(figsize=(8, 4))
     for name, straj in strajs:
         neffs = [step.pa.calc_Neff() / step.pa.num for step in straj.traj]
@@ -523,20 +562,20 @@ def plot_neff(results, strajs, STEPS, output_prefix="benchmark"):
 
 
 def plot_rmse_over_time(
-    results,
-    xs,
-    STEPS,
-    output_prefix="benchmark",
-    est_key="estimates",
-):
+    results: dict[str, dict[str, Any]],
+    xs: np.ndarray,
+    STEPS: int,
+    output_prefix: str = "benchmark",
+    est_key: str = "estimates",
+) -> None:
     """Cumulative RMSE over time for each filter."""
-    t_axis = numpy.arange(1, STEPS + 1)
+    t_axis = np.arange(1, STEPS + 1)
     fig, ax = plt.subplots(figsize=(8, 4))
     for name, r in results.items():
         est = r[est_key]
-        cum_rmse = numpy.sqrt(
-            numpy.cumsum((est[1 : STEPS + 1] - xs[1 : STEPS + 1]) ** 2)
-            / numpy.arange(1, STEPS + 1),
+        cum_rmse = np.sqrt(
+            np.cumsum((est[1 : STEPS + 1] - xs[1 : STEPS + 1]) ** 2)
+            / np.arange(1, STEPS + 1),
         )
         ax.plot(t_axis, cum_rmse, label=name, color=colors[name], lw=1)
     ax.set_title(f"Cumulative RMSE for {output_prefix} {est_key} over time")
@@ -553,9 +592,9 @@ def plot_rmse_over_time(
 # ══════════════════════════════════════════════════════════════════════════════
 # MLNLG Main
 # ══════════════════════════════════════════════════════════════════════════════
-def run_mlnlg_benchmark():
+def run_mlnlg_benchmark() -> None:
     """Run PF, APF, and RBPF on the MLNLG model and compare."""
-    numpy.random.seed(42)
+    np.random.seed(42)
     STEPS = 100
     N = 1000
 
@@ -701,7 +740,7 @@ def run_mlnlg_benchmark():
     )
 
     # ── Plot ξ estimates ─────────────────────────────────────────────────────
-    t_axis = numpy.arange(STEPS + 1)
+    t_axis = np.arange(STEPS + 1)
     plt.style.use("ggplot")
 
     for state_name, gt, key in [
@@ -711,7 +750,7 @@ def run_mlnlg_benchmark():
     ]:
         fig, ax = plt.subplots(figsize=(8, 4))
         # Pad z ground truth to length STEPS+1 for alignment
-        gt_padded = numpy.empty(STEPS + 1)
+        gt_padded = np.empty(STEPS + 1)
         gt_padded[: len(gt)] = gt[: STEPS + 1]
 
         ax.plot(t_axis, gt_padded, "k-", lw=1.5, label="Ground truth", zorder=5)
@@ -765,8 +804,8 @@ def run_mlnlg_benchmark():
 # ══════════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
-def main():
-    numpy.random.seed(42)
+def main() -> None:
+    np.random.seed(42)
     STEPS = 100
     N = 1000  # particles
 
