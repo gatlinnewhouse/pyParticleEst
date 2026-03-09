@@ -5,20 +5,16 @@
 """
 
 import abc
+from typing import Any
+
+import numpy as np
+
 import pyparticleest.interfaces as interfaces
+import pyparticleest.utils.kalman as kalman
 from pyparticleest.filter import ParticleApproximation, TrajectoryStep
 
-try:
-    import pyparticleest.utils.ckalman as kalman
-except ImportError:
-    print("Falling back to pure python implementaton, expect horrible performance")
-    import pyparticleest.utils.kalman as kalman
-import numpy
 
-from builtins import range
-
-
-class RBPFBase(interfaces.ParticleFiltering):
+class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
     """
     Base class for Rao-Blackwellized models
 
@@ -32,16 +28,29 @@ class RBPFBase(interfaces.ParticleFiltering):
      - hz (array-like): Affine measurement term for linear states (if constant)
     """
 
-    __metaclass__ = abc.ABCMeta
-
     def __init__(
-        self, lz, Az=None, fz=None, Qz=None, C=None, hz=None, R=None, **kwargs
-    ):
-
+        self,
+        lz: int,
+        Az: Any = None,
+        fz: Any = None,
+        Qz: Any = None,
+        C: Any = None,
+        hz: Any = None,
+        R: Any = None,
+        **kwargs: Any,
+    ) -> None:
         self.kf = kalman.KalmanSmoother(lz, A=Az, C=C, Q=Qz, R=R, f_k=fz, h_k=hz)
-        super(RBPFBase, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
-    def set_dynamics(self, Az=None, C=None, Qz=None, R=None, fz=None, hz=None):
+    def set_dynamics(
+        self,
+        Az: Any = None,
+        C: Any = None,
+        Qz: Any = None,
+        R: Any = None,
+        fz: Any = None,
+        hz: Any = None,
+    ) -> None:
         """
         Change the dynamics for linear subsystem
 
@@ -56,7 +65,12 @@ class RBPFBase(interfaces.ParticleFiltering):
         """
         return self.kf.set_dynamics(Az, C, Qz, R, fz, hz)
 
-    def get_nonlin_pred_dynamics(self, particles, u, t):
+    def get_nonlin_pred_dynamics(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> tuple[Any, Any, Any]:
         """
         Return matrices describing affine relation of next
         nonlinear state conditioned on current nonlinear state
@@ -77,7 +91,12 @@ class RBPFBase(interfaces.ParticleFiltering):
         """
         return (None, None, None)
 
-    def get_nonlin_pred_dynamics_int(self, particles, u, t):
+    def get_nonlin_pred_dynamics_int(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> tuple[Any, Any, Any, bool, bool, bool]:
         """
         Helper class for calculating dynamics for nonlinear state
 
@@ -113,7 +132,12 @@ class RBPFBase(interfaces.ParticleFiltering):
             Qxi_identical = True
         return (Axi, fxi, Qxi, Axi_identical, fxi_identical, Qxi_identical)
 
-    def get_lin_pred_dynamics(self, particles, u, t):
+    def get_lin_pred_dynamics(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> tuple[Any, Any, Any]:
         """
         Return matrices describing affine relation of next
         nonlinear state conditioned on current nonlinear state
@@ -134,7 +158,12 @@ class RBPFBase(interfaces.ParticleFiltering):
         """
         return (None, None, None)
 
-    def get_lin_pred_dynamics_int(self, particles, u, t):
+    def get_lin_pred_dynamics_int(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> tuple[Any, Any, Any, bool, bool, bool]:
         """
         Helper class for calculating dynamics for linear state
 
@@ -172,7 +201,12 @@ class RBPFBase(interfaces.ParticleFiltering):
 
         return (Az, fz, Qz, Az_identical, fz_identical, Qz_identical)
 
-    def get_meas_dynamics(self, particles, y, t):
+    def get_meas_dynamics(
+        self,
+        particles: np.ndarray,
+        y: Any,
+        t: float,
+    ) -> tuple[Any, Any, Any, Any]:
         """
         Return matrices describing affine relation of measurement and current
         state estimates
@@ -193,7 +227,12 @@ class RBPFBase(interfaces.ParticleFiltering):
         """
         return (y, None, None, None)
 
-    def get_meas_dynamics_int(self, particles, y, t):
+    def get_meas_dynamics_int(
+        self,
+        particles: np.ndarray,
+        y: Any,
+        t: float,
+    ) -> tuple[Any, Any, Any, Any, bool, bool, bool]:
         """
         Helper class for calculating measurement dynamics
 
@@ -219,7 +258,7 @@ class RBPFBase(interfaces.ParticleFiltering):
         Rz_identical = False
         if Cz is None:
             if self.kf.C is None and hz is not None:
-                Cz = N * (numpy.zeros((len(hz[0]), self.kf.lz)),)
+                Cz = N * (np.zeros((len(hz[0]), self.kf.lz)),)
             else:
                 Cz = N * (self.kf.C,)
             # Cz=N*(self.kf.C,)
@@ -236,7 +275,13 @@ class RBPFBase(interfaces.ParticleFiltering):
     #    def get_condlin_meas_dynamics(self, y, xi_next, particles):
     #        return (y, None, None, None)
 
-    def update(self, particles, u, t, noise):
+    def update(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+        noise: np.ndarray,
+    ) -> np.ndarray:
         """Propagate estimate forward in time
 
         Args:
@@ -259,8 +304,17 @@ class RBPFBase(interfaces.ParticleFiltering):
         return particles
 
     def cond_predict_single_step(
-        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
-    ):
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        future_parts: np.ndarray,
+        find: np.ndarray,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Calculate estimates of the next time step using particle 'part', conditioned
         on the non-linear parts of the first step of the future trajectory.
@@ -283,13 +337,22 @@ class RBPFBase(interfaces.ParticleFiltering):
          (array-like) with first dimension = N
         """
         xin = future_parts[find, : self.lxi]
-        particles = numpy.copy(part)
+        particles = np.copy(part)
         self.cond_predict(
-            particles=particles, xi_next=xin, u=ut[cur_ind], t=tt[cur_ind]
+            particles=particles,
+            xi_next=xin,
+            u=ut[cur_ind],
+            t=tt[cur_ind],
         )
         return particles
 
-    def cond_predict(self, particles, xi_next, u, t):
+    def cond_predict(
+        self,
+        particles: np.ndarray,
+        xi_next: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> None:
         """
         Calculate estimate of z_{t+1} given information of xi_{t+1}
 
@@ -304,24 +367,32 @@ class RBPFBase(interfaces.ParticleFiltering):
         self.meas_xi_next(particles=particles, xi_next=xi_next, u=u, t=t)
         # Compensate for noise correlation
         (Az, fz, Qz) = self.calc_cond_dynamics(
-            particles=particles, xi_next=xi_next, u=u, t=t
+            particles=particles,
+            xi_next=xi_next,
+            u=u,
+            t=t,
         )
         (_, zl, Pl) = self.get_states(particles)
         # Predict next states conditioned on xi_next
         for i in range(len(zl)):
             # Predict z_{t+1}
             (zl[i], Pl[i]) = self.kf.predict_full(
-                z=zl[i], P=Pl[i], A=Az[i], f_k=fz[i], Q=Qz[i]
+                z=zl[i],
+                P=Pl[i],
+                A=Az[i],
+                f_k=fz[i],
+                Q=Qz[i],
             )
 
         self.set_states(particles, xi_next, zl, Pl)
 
 
-class RBPSBase(RBPFBase, interfaces.FFBSiRS):
-    __metaclass__ = abc.ABCMeta
-
+class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
     @abc.abstractmethod
-    def get_rb_initial(self, xi_initial):
+    def get_rb_initial(
+        self,
+        xi_initial: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Calculate estimate of initial state for linear state condition on the
         nonlinear estimate
@@ -335,7 +406,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         """
         pass
 
-    def post_smoothing(self, st):
+    def post_smoothing(self, st: Any) -> np.ndarray:
         """
         Kalman smoothing of the linear states conditioned on the non-linear
         trajetory
@@ -354,25 +425,27 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         # Allocate extra space for Mz
         lx = lx_filt + self.kf.lz**2
 
-        straj = numpy.empty((T,), dtype=object)
+        straj = np.empty((T,), dtype=object)
 
         # Forward filtering
         ftraj = self.pre_mhips_pass(st)
 
-        particles = numpy.zeros((M, lx))
+        particles = np.zeros((M, lx))
         particles[:, :lx_filt] = ftraj[-1].pa.part
 
         straj[-1] = TrajectoryStep(
-            ParticleApproximation(particles), ftraj[-1].ancestors
+            ParticleApproximation(particles),
+            ftraj[-1].ancestors,
         )
 
         # Backward smoothing
         for i in reversed(range(T - 1)):
             (xin, zn, Pn) = self.get_states(straj[i + 1].pa.part)
-            particles = numpy.zeros((M, lx))
+            particles = np.zeros((M, lx))
             particles[:, :lx_filt] = ftraj[i].pa.part
             straj[i] = TrajectoryStep(
-                ParticleApproximation(particles), ftraj[i].ancestors
+                ParticleApproximation(particles),
+                ftraj[i].ancestors,
             )
 
             # Condition on future nonlinear state
@@ -382,19 +455,25 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
             # Update distribution for linear states
             for j in range(M):
                 (zs, Ps, Ms) = self.kf.smooth(
-                    z[j], P[j], zn[j], Pn[j], Al[j], fl[j], Ql[j]
+                    z[j],
+                    P[j],
+                    zn[j],
+                    Pn[j],
+                    Al[j],
+                    fl[j],
+                    Ql[j],
                 )
                 self.set_states(
                     straj[i].pa.part[j : j + 1, :],
                     xi[j],
-                    zs[numpy.newaxis],
-                    Ps[numpy.newaxis],
+                    zs[np.newaxis],
+                    Ps[np.newaxis],
                 )
-                self.set_Mz(straj[i].pa.part[j : j + 1, :], Ms[numpy.newaxis])
+                self.set_Mz(straj[i].pa.part[j : j + 1, :], Ms[np.newaxis])
 
         return straj
 
-    def pre_mhips_pass(self, st):
+    def pre_mhips_pass(self, st: Any) -> np.ndarray:
         """
         Calculated sufficient statistics for the filtering problem.
         Used to make sure all particles are in the expected state when using
@@ -412,9 +491,9 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
 
         lx = self.lxi + self.kf.lz + self.kf.lz**2
 
-        straj = numpy.empty((T,), dtype=object)
+        straj = np.empty((T,), dtype=object)
 
-        particles = numpy.empty((M, lx))
+        particles = np.empty((M, lx))
         # (xil, _zl, _Pl) = self.get_states(particles)
         xil = st.traj[0].pa.part[:, : self.lxi].reshape((M, self.lxi, 1))
 
@@ -426,7 +505,8 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
                 self.measure(particles, y=st.y[i], t=st.t[i])
 
             straj[i] = TrajectoryStep(
-                ParticleApproximation(particles), st.traj[i].ancestors
+                ParticleApproximation(particles),
+                st.traj[i].ancestors,
             )
 
             # (xin, _zn, _Pn) = self.get_states(st.traj[i + 1])
@@ -437,11 +517,18 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
             self.measure(particles, y=st.y[-1], t=st.t[-1])
 
         straj[-1] = TrajectoryStep(
-            ParticleApproximation(particles), st.traj[-1].ancestors
+            ParticleApproximation(particles),
+            st.traj[-1].ancestors,
         )
         return straj
 
-    def set_states(self, particles, xi_list, z_list, P_list):
+    def set_states(
+        self,
+        particles: np.ndarray,
+        xi_list: np.ndarray,
+        z_list: np.ndarray,
+        P_list: np.ndarray,
+    ) -> None:
         """
         Set the estimate of the states states
 
@@ -460,7 +547,10 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         particles[:, self.lxi : zend] = z_list.reshape((N, self.kf.lz))
         particles[:, zend:Pend] = P_list.reshape((N, self.kf.lz**2))
 
-    def get_states(self, particles):
+    def get_states(
+        self,
+        particles: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Return the estimates contained in the particles array
 
@@ -478,13 +568,13 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         zend = self.lxi + self.kf.lz
         Pend = zend + self.kf.lz**2
 
-        xil = particles[:, : self.lxi, numpy.newaxis]
-        zl = particles[:, self.lxi : zend, numpy.newaxis]
+        xil = particles[:, : self.lxi, np.newaxis]
+        zl = particles[:, self.lxi : zend, np.newaxis]
         Pl = particles[:, zend:Pend].reshape((N, self.kf.lz, self.kf.lz))
 
         return (xil, zl, Pl)
 
-    def get_Mz(self, smooth_particles):
+    def get_Mz(self, smooth_particles: np.ndarray) -> np.ndarray:
         """
         Return the cross covariance of z_t and z_t+1 at time t
 
@@ -500,10 +590,9 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS):
         Pend = zend + self.kf.lz**2
         Mend = Pend + self.kf.lz**2
 
-        Mz = smooth_particles[:, Pend:Mend].reshape((N, self.kf.lz, self.kf.lz))
-        return Mz
+        return smooth_particles[:, Pend:Mend].reshape((N, self.kf.lz, self.kf.lz))
 
-    def set_Mz(self, smooth_particles, Mz):
+    def set_Mz(self, smooth_particles: np.ndarray, Mz: np.ndarray) -> None:
         """
         Set the cross covariance estimate for z_t and z_t+1 at time t
 

@@ -5,9 +5,9 @@ framework.
 @author: Jerker Nordh
 """
 
-import numpy
+from typing import Any
 
-from builtins import range
+import numpy as np
 
 from .filter import ParticleTrajectory
 
@@ -24,7 +24,7 @@ class Simulator:
        to the particlar model class being used
     """
 
-    def __init__(self, model, u, y):
+    def __init__(self, model: Any, u: Any, y: Any) -> None:
         if u is not None:
             self.u = u
         else:
@@ -35,27 +35,27 @@ class Simulator:
         self.params = None
         self.model = model
 
-    def set_params(self, params):
+    def set_params(self, params: np.ndarray) -> None:
         """
         Set the parameters of the model (if any)
 
         Args:
          - params (array-like): Model specific paremeters
         """
-        self.params = numpy.copy(params)
+        self.params = np.copy(params)
         self.model.set_params(self.params)
 
     def simulate(
         self,
-        num_part,
-        num_traj,
-        filter="PF",
-        filter_options=None,
-        smoother="full",
-        smoother_options=None,
-        res=0.67,
-        meas_first=False,
-    ):
+        num_part: int,
+        num_traj: int,
+        filter: str = "PF",
+        filter_options: dict[str, Any] | None = None,
+        smoother: str | None = "full",
+        smoother_options: dict[str, Any] | None = None,
+        res: float = 0.67,
+        meas_first: bool = False,
+    ) -> int:
         """
         Solve the estimation problem
 
@@ -104,7 +104,11 @@ class Simulator:
         # Initialise a particle filter with our particle approximation of the initial state,
         # set the resampling threshold to 0.67 (effective particles / total particles )
         self.pt = ParticleTrajectory(
-            self.model, num_part, res, filter=filter, filter_options=filter_options
+            self.model,
+            num_part,
+            res,
+            filter=filter,
+            filter_options=filter_options,
         )
 
         offset = 0
@@ -120,11 +124,13 @@ class Simulator:
         # Use the filtered estimates above to created smoothed estimates
         if smoother is not None and num_traj > 0:
             self.straj = self.pt.perform_smoothing(
-                num_traj, method=smoother, smoother_options=smoother_options
+                num_traj,
+                method=smoother,
+                smoother_options=smoother_options,
             )
         return resamplings
 
-    def get_filtered_estimates(self):
+    def get_filtered_estimates(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Returns type (est, w) (must first have called 'simulate')
          - est: (T, N, D) array containing all particles
@@ -138,18 +144,18 @@ class Simulator:
         N = self.pt.traj[0].pa.part.shape[0]
         D = self.pt.traj[0].pa.part.shape[1]
 
-        est = numpy.empty((T, N, D))
+        est = np.empty((T, N, D))
 
-        w = numpy.empty((T, N))
+        w = np.empty((T, N))
 
         for t in range(T):
-            wtmp = numpy.exp(self.pt.traj[t].pa.w)
-            w[t] = wtmp / numpy.sum(wtmp)
+            wtmp = np.exp(self.pt.traj[t].pa.w)
+            w[t] = wtmp / np.sum(wtmp)
             est[t] = self.pt.traj[t].pa.part
 
         return (est, w)
 
-    def get_filtered_mean(self):
+    def get_filtered_mean(self) -> np.ndarray:
         """
         Calculate mean of filtered estimates (must first have
         called 'simulate')
@@ -165,13 +171,13 @@ class Simulator:
         T = len(self.pt.traj)
         D = self.pt.traj[0].pa.part.shape[1]
 
-        mean = numpy.empty((T, D))
+        mean = np.empty((T, D))
         for t in range(T):
-            mean[t] = numpy.sum((w[t].ravel() * est[t].T).T, 0)
+            mean[t] = np.sum((w[t].ravel() * est[t].T).T, 0)
 
         return mean
 
-    def get_smoothed_estimates(self):
+    def get_smoothed_estimates(self) -> np.ndarray:
         """
         Return smoothed estimates (must first have called 'simulate')
 
@@ -184,7 +190,7 @@ class Simulator:
         """
         return self.straj.get_smoothed_estimates()
 
-    def get_smoothed_mean(self):
+    def get_smoothed_mean(self) -> np.ndarray:
         """
         Calculate mean of smoothed estimates (must first have
         called 'simulate')
@@ -195,4 +201,4 @@ class Simulator:
         T is the length of the dataset, N is the number of particles and
         D is the dimension of each particle
         """
-        return numpy.mean(self.get_smoothed_estimates(), 1)
+        return np.mean(self.get_smoothed_estimates(), 1)

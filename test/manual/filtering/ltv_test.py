@@ -1,32 +1,34 @@
-import numpy
 import math
-import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
-from pyparticleest.models.ltv import LTV
 
-from builtins import range
+import matplotlib.pyplot as plt
+import numpy as np
+
+import pyparticleest.simulator as simulator
+from pyparticleest.models.ltv import LTV
 
 
 def generate_dataset(steps, z0, P0, Q, R):
-    x = numpy.zeros((steps + 1, 2, 1))
-    y = numpy.zeros((steps + 1, 2, 1))
-    A = numpy.asarray(((1.0, 1.0), (0.0, 1.0)))
-    C = numpy.asarray(((1.0, 0.0), (0.0, 0.0)))
-    x[0] = numpy.random.multivariate_normal(z0, P0).reshape((-1, 1))
-    y[0] = C.dot(x[0]) + numpy.random.multivariate_normal((0.0, 0.0), R).reshape(
-        (-1, 1)
+    x = np.zeros((steps + 1, 2, 1))
+    y = np.zeros((steps + 1, 2, 1))
+    A = np.asarray(((1.0, 1.0), (0.0, 1.0)))
+    C = np.asarray(((1.0, 0.0), (0.0, 0.0)))
+    x[0] = np.random.multivariate_normal(z0, P0).reshape((-1, 1))
+    y[0] = C.dot(x[0]) + np.random.multivariate_normal((0.0, 0.0), R).reshape(
+        (-1, 1),
     )
 
     for k in range(0, steps):
-        C = numpy.asarray(((math.cos(k + 1), 0.0), (math.sin(k + 1), 0.0))).reshape(
-            (2, -1)
+        C = np.asarray(((math.cos(k + 1), 0.0), (math.sin(k + 1), 0.0))).reshape(
+            (2, -1),
         )
 
-        x[k + 1] = A.dot(x[k]) + numpy.random.multivariate_normal(
-            (0.0, 0.0), Q
+        x[k + 1] = A.dot(x[k]) + np.random.multivariate_normal(
+            (0.0, 0.0),
+            Q,
         ).reshape((-1, 1))
-        y[k + 1] = C.dot(x[k + 1]) + numpy.random.multivariate_normal(
-            (0.0, 0.0), R
+        y[k + 1] = C.dot(x[k + 1]) + np.random.multivariate_normal(
+            (0.0, 0.0),
+            R,
         ).reshape((-1, 1))
 
     return (x, y)
@@ -39,21 +41,21 @@ def generate_dataset(steps, z0, P0, Q, R):
 
 
 class Model(LTV):
-    def __init__(self, z0, P0, Q, R):
-        A = numpy.asarray(((1.0, 1.0), (0.0, 1.0)))
-        C = numpy.asarray(((0.0, 0.0), (0.0, 0.0)))
-        super(Model, self).__init__(A=A, C=C, z0=z0, P0=P0, Q=Q, R=R)
+    def __init__(self, z0, P0, Q, R) -> None:
+        A = np.asarray(((1.0, 1.0), (0.0, 1.0)))
+        C = np.asarray(((0.0, 0.0), (0.0, 0.0)))
+        super().__init__(A=A, C=C, z0=z0, P0=P0, Q=Q, R=R)
 
     def get_meas_dynamics(self, y, t):
-        C = numpy.asarray(((math.cos(t), 0.0), (math.sin(t), 0.0))).reshape((2, 2))
+        C = np.asarray(((math.cos(t), 0.0), (math.sin(t), 0.0))).reshape((2, 2))
         return (y, C, None, None)
 
 
-def callback(params, Q):
-    print("params = %s" % numpy.exp(params))
+def callback(params, Q) -> None:
+    pass
 
 
-def callback_sim(estimator):
+def callback_sim(estimator) -> None:
     # vals = numpy.empty((num, steps+1))
 
     plt.figure(1)
@@ -79,10 +81,10 @@ if __name__ == "__main__":
     steps = 50
     num = 1
     M = 1
-    z0 = numpy.asarray((1.0, 2.0))
-    P0 = 10.0 * numpy.eye(2)
-    Q = 1.0 * numpy.eye(2)
-    R = 0.1 * numpy.eye(2)
+    z0 = np.asarray((1.0, 2.0))
+    P0 = 10.0 * np.eye(2)
+    Q = 1.0 * np.eye(2)
+    R = 0.1 * np.eye(2)
     (x, y) = generate_dataset(steps, z0, P0, Q, R)
     model = Model(z0, P0, Q, R)
     sim = simulator.Simulator(model, u=None, y=y)

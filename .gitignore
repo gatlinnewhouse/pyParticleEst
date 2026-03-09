@@ -12,3 +12,4 @@ docs/_build/
 *.egg-info
 plots/*.png
 plots/*.tex
+__pycache__/

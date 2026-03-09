@@ -1,23 +1,22 @@
 """Particle filtering for a trivial model
 Also illustrates that the"""
 
-import numpy
-import pyparticleest.utils.kalman as kalman
-import pyparticleest.interfaces as interfaces
 import matplotlib.pyplot as plt
-import pyparticleest.simulator as simulator
+import numpy as np
 import scipy.linalg
 
-from builtins import range
+import pyparticleest.interfaces as interfaces
+import pyparticleest.simulator as simulator
+import pyparticleest.utils.kalman as kalman
 
 
 def generate_dataset(steps, P0, Q, R):
-    x = numpy.zeros((steps + 1,))
-    y = numpy.zeros((steps,))
-    x[0] = 2.0 + 0.0 * numpy.random.normal(0.0, P0)
+    x = np.zeros((steps + 1,))
+    y = np.zeros((steps,))
+    x[0] = 2.0 + 0.0 * np.random.normal(0.0, P0)
     for k in range(1, steps + 1):
-        x[k] = x[k - 1] + numpy.random.normal(0.0, Q)
-        y[k - 1] = x[k] + numpy.random.normal(0.0, R)
+        x[k] = x[k - 1] + np.random.normal(0.0, Q)
+        y[k - 1] = x[k] + np.random.normal(0.0, R)
 
     return (x, y)
 
@@ -27,18 +26,18 @@ class Model(interfaces.SIR):
     y_k = x_k + e_k, e_k ~ N(0,R),
     x(0) ~ N(0,P0)"""
 
-    def __init__(self, P0, Q, R):
-        self.P0 = numpy.copy(P0)
-        self.Q = numpy.copy(Q)
-        self.R = numpy.copy(R)
+    def __init__(self, P0, Q, R) -> None:
+        self.P0 = np.copy(P0)
+        self.Q = np.copy(Q)
+        self.R = np.copy(R)
 
     def create_initial_estimate(self, N):
-        return numpy.random.normal(0.0, self.P0, (N,)).reshape((-1, 1))
+        return np.random.normal(0.0, self.P0, (N,)).reshape((-1, 1))
 
     def qsample(self, particles, u, y, t):
-        pnext = numpy.empty_like(particles)
+        pnext = np.empty_like(particles)
         err = y - particles
-        C = numpy.eye(1)
+        C = np.eye(1)
         P = self.Q
         S = C.dot(P).dot(C.T) + self.R
         Pn = P - P.dot(C.T).dot(scipy.linalg.solve(S, C.dot(P)))
@@ -47,14 +46,14 @@ class Model(interfaces.SIR):
                 particles[i]
                 + P.dot(C.T).dot(scipy.linalg.solve(S, err[i].reshape((-1, 1)))).ravel()
             )
-            pnext[i] = numpy.random.multivariate_normal(m, Pn).ravel()
+            pnext[i] = np.random.multivariate_normal(m, Pn).ravel()
 
         return pnext
 
     def logp_q(self, particles, next_part, u, y, t):
-        logpq = numpy.empty(len(particles), dtype=float)
+        logpq = np.empty(len(particles), dtype=float)
         err = y - particles
-        C = numpy.eye(1)
+        C = np.eye(1)
         P = self.Q
         S = C.dot(P).dot(C.T) + self.R
         Pn = P - P.dot(C.T).dot(scipy.linalg.solve(S, C.dot(P)))
@@ -64,22 +63,24 @@ class Model(interfaces.SIR):
                 + P.dot(C.T).dot(scipy.linalg.solve(S, err[i].reshape((-1, 1)))).ravel()
             )
             logpq[i] = kalman.lognormpdf(
-                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)), Pn
+                m.reshape((-1, 1)) - next_part[i].reshape((-1, 1)),
+                Pn,
             ).ravel()
 
         return logpq
 
     def logp_xnext(self, particles, next_part, u, t):
-        logpxn = numpy.empty(len(particles), dtype=float)
+        logpxn = np.empty(len(particles), dtype=float)
         for k in range(len(particles)):
             logpxn[k] = kalman.lognormpdf(
-                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1), self.Q
+                particles[k].reshape(-1, 1) - next_part[k].reshape(-1, 1),
+                self.Q,
             )
         return logpxn
 
     def measure(self, particles, y, t):
         """Return the log-pdf value of the measurement"""
-        logyprob = numpy.empty(len(particles), dtype=float)
+        logyprob = np.empty(len(particles), dtype=float)
         for k in range(len(particles)):
             logyprob[k] = kalman.lognormpdf(particles[k].reshape(-1, 1) - y, self.R)
         return logyprob
@@ -89,11 +90,11 @@ if __name__ == "__main__":
     steps = 50
     num = 50
     P0 = 1.0
-    Q = numpy.asarray(((1.0,),))
-    R = numpy.asarray(((1.0,),))
+    Q = np.asarray(((1.0,),))
+    R = np.asarray(((1.0,),))
 
     # Make realization deterministic
-    numpy.random.seed(1)
+    np.random.seed(1)
     (x, y) = generate_dataset(steps, P0, Q, R)
 
     model = Model(P0, Q, R)

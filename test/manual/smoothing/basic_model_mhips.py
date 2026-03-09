@@ -1,17 +1,19 @@
-import numpy
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 import pyparticleest.models.nlg as nlg
 import pyparticleest.simulator as simulator
-import matplotlib.pyplot as plt
-import time
 
 
 def generate_dataset(steps, P0, Q, R):
-    x = numpy.zeros((steps + 1,))
-    y = numpy.zeros((steps,))
-    x[0] = 2.0 + 0.0 * numpy.random.normal(0.0, P0)
+    x = np.zeros((steps + 1,))
+    y = np.zeros((steps,))
+    x[0] = 2.0 + 0.0 * np.random.normal(0.0, P0)
     for k in range(1, steps + 1):
-        x[k] = x[k - 1] + numpy.random.normal(0.0, Q)
-        y[k - 1] = x[k] + numpy.random.normal(0.0, R)
+        x[k] = x[k - 1] + np.random.normal(0.0, Q)
+        y[k - 1] = x[k] + np.random.normal(0.0, R)
 
     return (x, y)
 
@@ -21,13 +23,13 @@ class Model(nlg.NonlinearGaussianInitialGaussian):
     y_k = x_k + e_k, e_k ~ N(0,R),
     x(0) ~ N(0,P0)"""
 
-    def __init__(self, P0, Q, R):
-        x0 = numpy.zeros((1, 1))
-        super(Model, self).__init__(
+    def __init__(self, P0, Q, R) -> None:
+        x0 = np.zeros((1, 1))
+        super().__init__(
             x0=x0,
-            Px0=numpy.asarray(P0).reshape((1, 1)),
-            Q=numpy.asarray(Q).reshape((1, 1)),
-            R=numpy.asarray(R).reshape((1, 1)),
+            Px0=np.asarray(P0).reshape((1, 1)),
+            Q=np.asarray(Q).reshape((1, 1)),
+            R=np.asarray(R).reshape((1, 1)),
         )
 
     def calc_f(self, particles, u, t):
@@ -43,8 +45,8 @@ if __name__ == "__main__":
     M = 20
     P0 = 1.0
     Q = 1.0
-    R = numpy.asarray(((1.0,),))
-    numpy.random.seed(0)
+    R = np.asarray(((1.0,),))
+    np.random.seed(0)
     (x, y) = generate_dataset(steps, P0, Q, R)
 
     model = Model(P0, Q, R)

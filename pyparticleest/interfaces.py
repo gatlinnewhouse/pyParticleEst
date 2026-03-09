@@ -5,30 +5,49 @@ classes of algorithms present in the framework
 """
 
 import abc
-import numpy
+from typing import Any
+
+import numpy as np
 
 
-class SIR:
-    __metaclass__ = abc.ABCMeta
-
+class SIR(abc.ABC):
     @abc.abstractmethod
-    def measure(self, particles, y, t):
+    def measure(self, particles: np.ndarray, y: Any, t: float) -> np.ndarray:
         pass
 
     @abc.abstractmethod
-    def qsample(self, particles, u, y, t):
+    def qsample(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        y: Any,
+        t: float,
+    ) -> np.ndarray:
         pass
 
     @abc.abstractmethod
-    def logp_q(self, particles, next_part, u, y, t):
+    def logp_q(
+        self,
+        particles: np.ndarray,
+        next_part: np.ndarray,
+        u: Any,
+        y: Any,
+        t: float,
+    ) -> np.ndarray:
         pass
 
     @abc.abstractmethod
-    def logp_xnext(self, particles, next_part, u, t):
+    def logp_xnext(
+        self,
+        particles: np.ndarray,
+        next_part: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> np.ndarray:
         pass
 
     @abc.abstractmethod
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> np.ndarray:
         """Sample particles from initial distribution
 
         Args:
@@ -39,7 +58,11 @@ class SIR:
          of all particles"""
         pass
 
-    def copy_ind(self, particles, new_ind=None):
+    def copy_ind(
+        self,
+        particles: np.ndarray,
+        new_ind: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Copy select particles, can be overriden for models that require
         special handling of the particle representations when copying them
@@ -54,19 +77,36 @@ class SIR:
          (array-like) with first dimension = len(new_ind)
         """
         if new_ind is not None:
-            return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+            return np.copy(particles[new_ind])
+        return np.copy(particles)
 
-    def sample_smooth(self, part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind):
-        return numpy.copy(part)
+    def sample_smooth(
+        self,
+        part: np.ndarray,
+        ptraj: list[Any],
+        anc: np.ndarray,
+        future_trajs: list[Any] | None,
+        find: np.ndarray | None,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
+        return np.copy(part)
 
 
-class ParticleFilteringNonMarkov:
-    __metaclass__ = abc.ABCMeta
-
+class ParticleFilteringNonMarkov(abc.ABC):
     @abc.abstractmethod
-    def update_full(self, particles, traj, uvec, yvec, tvec, ancestors, noise):
+    def update_full(
+        self,
+        particles: np.ndarray,
+        traj: list[Any],
+        uvec: np.ndarray,
+        yvec: np.ndarray,
+        tvec: np.ndarray,
+        ancestors: np.ndarray,
+        noise: np.ndarray,
+    ) -> Any:
         """
         Propagate estimate forward in time
 
@@ -87,7 +127,15 @@ class ParticleFilteringNonMarkov:
         pass
 
     @abc.abstractmethod
-    def measure_full(self, particles, traj, uvec, yvec, tvec, ancestors):
+    def measure_full(
+        self,
+        particles: np.ndarray,
+        traj: list[Any],
+        uvec: np.ndarray,
+        yvec: np.ndarray,
+        tvec: np.ndarray,
+        ancestors: np.ndarray,
+    ) -> np.ndarray:
         """
         Return the log-pdf value of the measurement
 
@@ -108,7 +156,13 @@ class ParticleFilteringNonMarkov:
 
     @abc.abstractmethod
     # TODO: yt should be included here
-    def sample_process_noise_full(self, ptraj, ancestors, ut, tt):
+    def sample_process_noise_full(
+        self,
+        ptraj: list[Any],
+        ancestors: np.ndarray,
+        ut: np.ndarray,
+        tt: np.ndarray,
+    ) -> np.ndarray:
         """
         Sample process noise
 
@@ -125,7 +179,7 @@ class ParticleFilteringNonMarkov:
         pass
 
     @abc.abstractmethod
-    def create_initial_estimate(self, N):
+    def create_initial_estimate(self, N: int) -> np.ndarray:
         """Sample particles from initial distribution
 
         Args:
@@ -136,7 +190,11 @@ class ParticleFilteringNonMarkov:
          of all particles"""
         pass
 
-    def copy_ind(self, particles, new_ind=None):
+    def copy_ind(
+        self,
+        particles: np.ndarray,
+        new_ind: np.ndarray | None = None,
+    ) -> np.ndarray:
         """
         Copy select particles, can be overriden for models that require
         special handling of the particle representations when copying them
@@ -151,11 +209,21 @@ class ParticleFilteringNonMarkov:
          (array-like) with first dimension = len(new_ind)
         """
         if new_ind is not None:
-            return numpy.copy(particles[new_ind])
-        else:
-            return numpy.copy(particles)
+            return np.copy(particles[new_ind])
+        return np.copy(particles)
 
-    def sample_smooth(self, part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind):
+    def sample_smooth(
+        self,
+        part: np.ndarray,
+        ptraj: list[Any] | None,
+        anc: np.ndarray,
+        future_trajs: list[Any] | None,
+        find: np.ndarray | None,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Create sampled estimates for the smoothed trajectory. Allows the update
         representation of the particles used in the forward step to include
@@ -186,11 +254,20 @@ class ParticleFilteringNonMarkov:
         # default implementation uses the same format as forward in time
         # Is part of the ParticleFiltering interface since it is used
         # also when calculating "ancestor trajectories"
-        return numpy.copy(part)
+        return np.copy(part)
 
     def cond_predict_single_step(
-        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
-    ):
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        future_parts: np.ndarray,
+        find: np.ndarray,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Propagate states in 'part' conditioned on that the future state is
         'future_parts'. This is used for e.g. Rao-Blackwellized MHIPS, where
@@ -216,9 +293,9 @@ class ParticleFilteringNonMarkov:
 
         # Just return the conditional values, if some others statistics need to
         # be recomputed this method has to be overriden
-        return numpy.copy(future_parts)
+        return np.copy(future_parts)
 
-    def cond_sampled_initial(self, part, t):
+    def cond_sampled_initial(self, part: np.ndarray, t: float) -> np.ndarray:
         """
         Sample from initial distribution conditioned on the states being 'part'
         This is used for e.g. Rao-Blackwellized MHIPS, where we need to recompute
@@ -231,35 +308,69 @@ class ParticleFilteringNonMarkov:
 
         # Just return the conditional values, if some others statistics need to
         # be recomputed this method has to be overriden
-        return numpy.copy(part)
+        return np.copy(part)
 
 
-class ParticleFiltering(ParticleFilteringNonMarkov):
+class ParticleFiltering(ParticleFilteringNonMarkov, abc.ABC):
     """
     Base class for particles to be used with particle filtering.
     particles are a model specific array where the first dimension
     indexes the different particles.
     """
 
-    __metaclass__ = abc.ABCMeta
-
-    def sample_process_noise_full(self, ptraj, ancestors, ut, tt):
+    def sample_process_noise_full(
+        self,
+        ptraj: list[Any],
+        ancestors: np.ndarray,
+        ut: np.ndarray,
+        tt: np.ndarray,
+    ) -> np.ndarray:
         return self.sample_process_noise(
-            particles=ptraj[-1].pa.part[ancestors], u=ut[-1], t=tt[-1]
+            particles=ptraj[-1].pa.part[ancestors],
+            u=ut[-1],
+            t=tt[-1],
         )
 
-    def update_full(self, particles, traj, uvec, yvec, tvec, ancestors, noise):
+    def update_full(
+        self,
+        particles: np.ndarray,
+        traj: list[Any],
+        uvec: np.ndarray,
+        yvec: np.ndarray,
+        tvec: np.ndarray,
+        ancestors: np.ndarray,
+        noise: np.ndarray,
+    ) -> Any:
         return self.update(particles=particles, u=uvec[-1], t=tvec[-1], noise=noise)
 
-    def measure_full(self, particles, traj, uvec, yvec, tvec, ancestors):
+    def measure_full(
+        self,
+        particles: np.ndarray,
+        traj: list[Any],
+        uvec: np.ndarray,
+        yvec: np.ndarray,
+        tvec: np.ndarray,
+        ancestors: np.ndarray,
+    ) -> np.ndarray:
         return self.measure(particles, y=yvec[-1], t=tvec[-1])
 
     @abc.abstractmethod
-    def sample_process_noise(self, particles, u, t):
+    def sample_process_noise(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> np.ndarray:
         pass
 
     @abc.abstractmethod
-    def update(self, particles, u, t, noise):
+    def update(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+        noise: np.ndarray,
+    ) -> np.ndarray:
         """Propagate estimate forward in time
 
         Args:
@@ -277,7 +388,7 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
         pass
 
     @abc.abstractmethod
-    def measure(self, particles, y, t):
+    def measure(self, particles: np.ndarray, y: Any, t: float) -> np.ndarray:
         """
         Return the log-pdf value of the measurement
 
@@ -294,15 +405,19 @@ class ParticleFiltering(ParticleFilteringNonMarkov):
         pass
 
 
-class AuxiliaryParticleFiltering(object):
+class AuxiliaryParticleFiltering(abc.ABC):
     """
     Base class for particles to be used with auxiliary particle filtering
     """
 
-    __metaclass__ = abc.ABCMeta
-
     @abc.abstractmethod
-    def eval_1st_stage_weights(self, particles, u, y, t):
+    def eval_1st_stage_weights(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        y: Any,
+        t: float,
+    ) -> np.ndarray:
         """
         Evaluate "first stage weights" for the auxiliary particle filter.
         (log-probability of measurement using some propagated statistic, such
@@ -322,44 +437,65 @@ class AuxiliaryParticleFiltering(object):
         pass
 
 
-class FFBSiNonMarkov(object):
-    __metaclass__ = abc.ABCMeta
-
+class FFBSiNonMarkov(abc.ABC):
     @abc.abstractmethod
     def logp_xnext_full(
-        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
-    ):
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        future_trajs: list[Any],
+        find: np.ndarray,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         pass
 
     @abc.abstractmethod
     def logp_xnext_singlestep(
-        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
-    ):
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        future_parts: np.ndarray,
+        find: np.ndarray,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         pass
 
 
-class FFProposeFromMeasure(FFBSiNonMarkov):
-    __metaclass__ = abc.ABCMeta
-
+class FFProposeFromMeasure(FFBSiNonMarkov, abc.ABC):
     @abc.abstractmethod
-    def propose_from_y(self, N, y, t):
+    def propose_from_y(self, N: int, y: Any, t: float) -> np.ndarray:
         """
         Create N particles from p(x_t|y_t)
         """
         pass
 
 
-class FFBSi(FFBSiNonMarkov):
+class FFBSi(FFBSiNonMarkov, abc.ABC):
     """
     Base class for particles to be used with particle smoothing
     (Backward Simulation)
     """
 
-    __metaclass__ = abc.ABCMeta
-
     def logp_xnext_full(
-        self, part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind
-    ):
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        future_trajs: list[Any],
+        find: np.ndarray,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Return the log-pdf value for the entire future trajectory.
         Useful for non-markovian modeles, that result from e.g
@@ -395,8 +531,17 @@ class FFBSi(FFBSiNonMarkov):
         )
 
     def logp_xnext_singlestep(
-        self, part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind
-    ):
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        future_parts: np.ndarray,
+        find: np.ndarray,
+        ut: np.ndarray,
+        yt: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Return the log-pdf value for the first step of the future trajectory.
         Needed in e.g MHIPS
@@ -422,11 +567,20 @@ class FFBSi(FFBSiNonMarkov):
 
         # Default implemenation for markovian models, just look at the next state
         return self.logp_xnext(
-            particles=part, next_part=future_parts[find], u=ut[cur_ind], t=tt[cur_ind]
+            particles=part,
+            next_part=future_parts[find],
+            u=ut[cur_ind],
+            t=tt[cur_ind],
         )
 
     @abc.abstractmethod
-    def logp_xnext(self, particles, next_part, u, t):
+    def logp_xnext(
+        self,
+        particles: np.ndarray,
+        next_part: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> np.ndarray:
         """
         Return the log-pdf value for the possible future state 'next'
         given input u
@@ -445,15 +599,22 @@ class FFBSi(FFBSiNonMarkov):
         pass
 
 
-class FFBSiRSNonMarkov(FFBSiNonMarkov):
+class FFBSiRSNonMarkov(FFBSiNonMarkov, abc.ABC):
     """
     Base class for models to be used with rejection sampling methods
     """
 
-    __metaclass__ = abc.ABCMeta
-
     @abc.abstractmethod
-    def logp_xnext_max_full(self, part, past_trajs, pind, uvec, yvec, tvec, cur_ind):
+    def logp_xnext_max_full(
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        uvec: np.ndarray,
+        yvec: np.ndarray,
+        tvec: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Return the max log-pdf value for all possible future states'
         given input u
@@ -475,15 +636,18 @@ class FFBSiRSNonMarkov(FFBSiNonMarkov):
         pass
 
 
-class FFBSiRS(FFBSi):
+class FFBSiRS(FFBSi, abc.ABC):
     """
     Base class for models to be used with rejection sampling methods
     """
 
-    __metaclass__ = abc.ABCMeta
-
     @abc.abstractmethod
-    def logp_xnext_max(self, particles, u, t):
+    def logp_xnext_max(
+        self,
+        particles: np.ndarray,
+        u: Any,
+        t: float,
+    ) -> np.ndarray:
         """
         Return the max log-pdf value for all possible future states'
         given input u
@@ -501,20 +665,37 @@ class FFBSiRS(FFBSi):
         """
         pass
 
-    def logp_xnext_max_full(self, part, past_trajs, pind, uvec, yvec, tvec, cur_ind):
+    def logp_xnext_max_full(
+        self,
+        part: np.ndarray,
+        past_trajs: list[Any] | None,
+        pind: np.ndarray,
+        uvec: np.ndarray,
+        yvec: np.ndarray,
+        tvec: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         return self.logp_xnext_max(part, u=uvec[cur_ind], t=tvec[cur_ind])
 
 
-class SampleProposer(object):
+class SampleProposer(abc.ABC):
     """
     Base class for models to be used with methods that require drawing of new
     samples. Here 'q' is the name we give to the proposal distribtion.
     """
 
-    __metaclass__ = abc.ABCMeta
-
     @abc.abstractmethod
-    def propose_smooth(self, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind):
+    def propose_smooth(
+        self,
+        ptraj: list[Any] | None,
+        anc: np.ndarray,
+        future_trajs: list[Any] | None,
+        find: np.ndarray,
+        yt: np.ndarray,
+        ut: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Sample from a distribution q(x_t | x_{t-1}, x_{t+1:T}, y_t:T)
 
@@ -538,8 +719,17 @@ class SampleProposer(object):
 
     @abc.abstractmethod
     def logp_proposal(
-        self, prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind
-    ):
+        self,
+        prop_part: np.ndarray,
+        ptraj: list[Any] | None,
+        anc: np.ndarray,
+        future_trajs: list[Any] | None,
+        find: np.ndarray,
+        yt: np.ndarray,
+        ut: np.ndarray,
+        tt: np.ndarray,
+        cur_ind: int,
+    ) -> np.ndarray:
         """
         Eval the log-propability of the proposal distribution
 

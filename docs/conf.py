@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pyParticleEst documentation build configuration file, created by
 # sphinx-quickstart on Wed Oct  8 13:24:07 2014.
@@ -13,13 +12,14 @@
 # serve to show the default.
 
 import sys
-from mock import Mock as MagicMock
+from unittest.mock import Mock as MagicMock
+
 # from unittest.mock import MagicMock
 
 
 class Mock(MagicMock):
     @classmethod
-    def __getattr__(cls, name):
+    def __getattr__(cls, name: str) -> "Mock":
         return Mock()
 
 
@@ -68,7 +68,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "pyParticleEst"
-copyright = "2014, Jerker Nordh"
+project_copyright = "2014, Jerker Nordh"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -253,7 +253,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ("index", "pyparticleest", "pyParticleEst Documentation", ["Jerker Nordh"], 1)
+    ("index", "pyparticleest", "pyParticleEst Documentation", ["Jerker Nordh"], 1),
 ]
 
 # If true, show URL addresses after external links.

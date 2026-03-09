@@ -3,15 +3,26 @@
 @author: Jerker Nordh
 """
 
-import numpy
+from typing import Any
 
-from builtins import range
+import numpy as np
 
 from . import filter as pf
 from .filter import ParticleApproximation, TrajectoryStep
 
 
-def bsi_full(model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind):
+def bsi_full(
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: np.ndarray,
+    future_trajs: list[Any],
+    find: np.ndarray,
+    ut: np.ndarray,
+    yt: np.ndarray,
+    tt: np.ndarray,
+    cur_ind: int,
+) -> np.ndarray:
     """
     Perform backward simulation by drawing particles from
     the categorical distribution with weights given by
@@ -28,10 +39,10 @@ def bsi_full(model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind):
 
     M = len(find)
     N = len(pa.w)
-    res = numpy.empty(M, dtype=int)
+    res = np.empty(M, dtype=int)
 
     for j in range(M):
-        currfind = find[j] * numpy.ones((N,), dtype=int)
+        currfind = find[j] * np.ones((N,), dtype=int)
         p_next = model.logp_xnext_full(
             pa.part,
             ptraj,
@@ -45,16 +56,27 @@ def bsi_full(model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind):
         )
 
         w = pa.w + p_next
-        w = w - numpy.max(w)
-        w_norm = numpy.exp(w)
-        w_norm /= numpy.sum(w_norm)
+        w = w - np.max(w)
+        w_norm = np.exp(w)
+        w_norm /= np.sum(w_norm)
         res[j] = pf.sample(w_norm, 1)
     return res
 
 
 def bsi_rs(
-    model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind, maxpdf, max_iter
-):
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: np.ndarray,
+    future_trajs: list[Any],
+    find: np.ndarray,
+    ut: np.ndarray,
+    yt: np.ndarray,
+    tt: np.ndarray,
+    cur_ind: int,
+    maxpdf: float,
+    max_iter: int,
+) -> np.ndarray:
     """
     Perform backward simulation by using rejection sampling to draw particles
     from the categorical distribution with weights given by
@@ -72,14 +94,15 @@ def bsi_rs(
     """
 
     M = len(find)
-    todo = numpy.arange(M)
-    res = numpy.empty(M, dtype=int)
-    weights = numpy.copy(pa.w)
-    weights -= numpy.max(weights)
-    weights = numpy.exp(weights)
-    weights /= numpy.sum(weights)
+    todo = np.arange(M)
+    res = np.empty(M, dtype=int)
+    weights = np.copy(pa.w)
+    weights -= np.max(weights)
+    weights = np.exp(weights)
+    weights /= np.sum(weights)
+    rng = np.random.default_rng()
     for _i in range(max_iter):
-        ind = numpy.random.permutation(pf.sample(weights, len(todo)))
+        ind = rng.permutation(pf.sample(weights, len(todo)))
         pn = model.logp_xnext_full(
             pa.part[ind],
             ptraj,
@@ -91,7 +114,7 @@ def bsi_rs(
             tt=tt,
             cur_ind=cur_ind,
         )
-        test = numpy.log(numpy.random.uniform(size=len(todo)))
+        test = np.log(rng.uniform(size=len(todo)))
         accept = test < pn - maxpdf
         res[todo[accept]] = ind[accept]
         todo = todo[~accept]
@@ -102,29 +125,38 @@ def bsi_rs(
     # already calculated to avoid double work, or will that
     # take more time than simply evaulating them all again?
     res[todo] = bsi_full(
-        model, pa, ptraj, pind, future_trajs, todo, ut=ut, yt=yt, tt=tt, cur_ind=cur_ind
+        model,
+        pa,
+        ptraj,
+        pind,
+        future_trajs,
+        todo,
+        ut=ut,
+        yt=yt,
+        tt=tt,
+        cur_ind=cur_ind,
     )
     return res
 
 
 def bsi_rsas(
-    model,
-    pa,
-    ptraj,
-    pind,
-    future_trajs,
-    find,
-    ut,
-    yt,
-    tt,
-    cur_ind,
-    maxpdf,
-    x1,
-    P1,
-    sv,
-    sw,
-    ratio,
-):
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: np.ndarray,
+    future_trajs: list[Any],
+    find: np.ndarray,
+    ut: np.ndarray,
+    yt: np.ndarray,
+    tt: np.ndarray,
+    cur_ind: int,
+    maxpdf: float,
+    x1: float,
+    P1: float,
+    sv: float,
+    sw: float,
+    ratio: float,
+) -> np.ndarray:
     """
     Perform backward simulation by using rejection sampling to draw particles
     from the categorical distribution with weights given by
@@ -153,17 +185,18 @@ def bsi_rsas(
        switching to the full bsi (D_0 / D_1)
     """
     M = len(find)
-    todo = numpy.arange(M)
-    res = numpy.empty(M, dtype=int)
-    weights = numpy.copy(pa.w)
-    weights -= numpy.max(weights)
-    weights = numpy.exp(weights)
-    weights /= numpy.sum(weights)
+    todo = np.arange(M)
+    res = np.empty(M, dtype=int)
+    weights = np.copy(pa.w)
+    weights -= np.max(weights)
+    weights = np.exp(weights)
+    weights /= np.sum(weights)
     pk = x1
     Pk = P1
     stop_criteria = ratio / len(pa)
+    rng = np.random.default_rng()
     while True:
-        ind = numpy.random.permutation(pf.sample(weights, len(todo)))
+        ind = rng.permutation(pf.sample(weights, len(todo)))
         pn = model.logp_xnext_full(
             pa.part[ind],
             ptraj,
@@ -175,9 +208,9 @@ def bsi_rsas(
             tt=tt,
             cur_ind=cur_ind,
         )
-        test = numpy.log(numpy.random.uniform(size=len(todo)))
+        test = np.log(rng.uniform(size=len(todo)))
         accept = test < pn - maxpdf
-        ak = numpy.sum(accept)
+        ak = np.sum(accept)
         mk = len(todo)
         res[todo[accept]] = ind[accept]
         todo = todo[~accept]
@@ -195,14 +228,34 @@ def bsi_rsas(
             break
 
     res[todo] = bsi_full(
-        model, pa, ptraj, pind, future_trajs, todo, ut=ut, yt=yt, tt=tt, cur_ind=cur_ind
+        model,
+        pa,
+        ptraj,
+        pind,
+        future_trajs,
+        todo,
+        ut=ut,
+        yt=yt,
+        tt=tt,
+        cur_ind=cur_ind,
     )
     return res
 
 
 def bsi_mcmc(
-    model, pa, ptraj, pind, future_trajs, find, ut, yt, tt, cur_ind, R, ancestors
-):
+    model: Any,
+    pa: ParticleApproximation,
+    ptraj: list[Any],
+    pind: np.ndarray,
+    future_trajs: list[Any],
+    find: np.ndarray,
+    ut: np.ndarray,
+    yt: np.ndarray,
+    tt: np.ndarray,
+    cur_ind: int,
+    R: int,
+    ancestors: np.ndarray,
+) -> np.ndarray:
     """
     Perform backward simulation by using Metropolis-Hastings to draw particles
     from the categorical distribution with weights given by
@@ -223,10 +276,10 @@ def bsi_mcmc(
 
     M = len(find)
     ind = ancestors
-    weights = numpy.copy(pa.w)
-    weights -= numpy.max(weights)
-    weights = numpy.exp(weights)
-    weights /= numpy.sum(weights)
+    weights = np.copy(pa.w)
+    weights -= np.max(weights)
+    weights = np.exp(weights)
+    weights /= np.sum(weights)
 
     pcurr = model.logp_xnext_full(
         pa.part[ind],
@@ -239,8 +292,9 @@ def bsi_mcmc(
         tt=tt,
         cur_ind=cur_ind,
     )
+    rng = np.random.default_rng()
     for _j in range(R):
-        propind = numpy.random.permutation(pf.sample(weights, M))
+        propind = rng.permutation(pf.sample(weights, M))
         pprop = model.logp_xnext_full(
             pa.part[propind],
             ptraj,
@@ -254,7 +308,7 @@ def bsi_mcmc(
         )
         diff = pprop - pcurr
         diff[diff > 0.0] = 0.0
-        test = numpy.log(numpy.random.uniform(size=M))
+        test = np.log(rng.uniform(size=M))
         accept = test < diff
         ind[accept] = propind[accept]
         pcurr[accept] = pprop[accept]
@@ -262,7 +316,7 @@ def bsi_mcmc(
     return ind
 
 
-class SmoothTrajectory(object):
+class SmoothTrajectory:
     """
     Create smoothed trajectory from filtered trajectory
 
@@ -274,13 +328,19 @@ class SmoothTrajectory(object):
      - options (dict): options to pass on to the smoothing algorithm
     """
 
-    def __init__(self, pt, M=1, method="full", options=None):
+    def __init__(
+        self,
+        pt: Any,
+        M: int = 1,
+        method: str = "full",
+        options: dict[str, Any] | None = None,
+    ) -> None:
 
         self.traj = None
 
-        self.u = numpy.copy(pt.uvec)
-        self.y = numpy.copy(pt.yvec)
-        self.t = numpy.copy(pt.tvec)
+        self.u = np.copy(pt.uvec)
+        self.y = np.copy(pt.yvec)
+        self.t = np.copy(pt.tvec)
         self.M = M
 
         self.model = pt.pf.model
@@ -289,17 +349,11 @@ class SmoothTrajectory(object):
         elif method == "ancestor":
             self.perform_ancestors(pt=pt, M=M)
         elif method == "mhips" or method == "mhips_reduced":
-            if method == "mhips":
-                reduced = False
-            else:
-                reduced = True
+            reduced = method != "mhips"
             # Initialize using forward trajectories
             self.traj = self.perform_ancestors_int(pt=pt, M=M)
 
-            if "R" in options:
-                R = options["R"]
-            else:
-                R = 10
+            R = options.get("R", 10)
             for _i in range(R):
                 # Recover filtering statistics for linear states
                 if hasattr(self.model, "pre_mhips_pass"):
@@ -307,21 +361,21 @@ class SmoothTrajectory(object):
                 self.traj = self.perform_mhips_pass(options=options, reduced=reduced)
 
         elif method == "mhbp":
-            if "R" in options:
-                R = options["R"]
-            else:
-                R = 10
+            R = options.get("R", 10)
             self.perform_mhbp(pt=pt, M=M, R=R)
         else:
-            raise ValueError("Unknown smoother: %s" % method)
+            msg = f"Unknown smoother: {method}"
+            raise ValueError(msg)
 
         if hasattr(self.model, "post_smoothing"):
             self.traj = self.model.post_smoothing(self)
 
-    def __len__(self):
+    def __len__(self) -> int:
+        if self.traj is None:
+            return 0
         return len(self.traj)
 
-    def perform_ancestors(self, pt, M):
+    def perform_ancestors(self, pt: Any, M: int) -> None:
         """
         Create smoothed trajectories by taking the forward trajectories
 
@@ -335,11 +389,11 @@ class SmoothTrajectory(object):
             # Do e.g. constrained smoothing for RBPS models
             self.traj = self.model.post_smoothing(self)
 
-    def calculate_ancestors(self, pt, ind):
+    def calculate_ancestors(self, pt: Any, ind: np.ndarray) -> np.ndarray:
         T = len(pt)
         M = len(ind)
         ancestors = pt[T - 1].ancestors[ind]
-        find = numpy.arange(M, dtype=int)
+        find = np.arange(M, dtype=int)
         last_part = self.model.sample_smooth(
             part=pt[T - 1].pa.part[ind],
             ptraj=pt[: (T - 1)],
@@ -352,9 +406,10 @@ class SmoothTrajectory(object):
             cur_ind=T - 1,
         )
 
-        traj = numpy.empty((len(pt),), dtype=object)
+        traj = np.empty((len(pt),), dtype=object)
         traj[T - 1] = TrajectoryStep(
-            ParticleApproximation(last_part), numpy.arange(M, dtype=int)
+            ParticleApproximation(last_part),
+            np.arange(M, dtype=int),
         )
 
         for t in reversed(range(T - 1)):
@@ -373,13 +428,13 @@ class SmoothTrajectory(object):
                         yt=self.y,
                         tt=self.t,
                         cur_ind=t,
-                    )
+                    ),
                 ),
                 ancestors=find,
             )
         return traj
 
-    def perform_ancestors_int(self, pt, M):
+    def perform_ancestors_int(self, pt: Any, M: int) -> np.ndarray:
         """
         Create smoothed trajectories by taking the forward trajectories, don't
         perform post processing
@@ -389,15 +444,21 @@ class SmoothTrajectory(object):
          - M (int): number of trajectories to createa
         """
 
-        tmp = numpy.copy(pt[-1].pa.w)
-        tmp -= numpy.max(tmp)
-        tmp = numpy.exp(tmp)
-        tmp = tmp / numpy.sum(tmp)
+        tmp = np.copy(pt[-1].pa.w)
+        tmp -= np.max(tmp)
+        tmp = np.exp(tmp)
+        tmp = tmp / np.sum(tmp)
         ind = pf.sample(tmp, M)
 
         return self.calculate_ancestors(pt, ind)
 
-    def perform_bsi(self, pt, M, method, options):
+    def perform_bsi(
+        self,
+        pt: Any,
+        M: int,
+        method: str,
+        options: dict[str, Any],
+    ) -> None:
         """
         Create smoothed trajectories using Backward Simulation
 
@@ -409,10 +470,10 @@ class SmoothTrajectory(object):
         """
 
         # Sample from end time estimates
-        tmp = numpy.copy(pt[-1].pa.w)
-        tmp -= numpy.max(tmp)
-        tmp = numpy.exp(tmp)
-        tmp = tmp / numpy.sum(tmp)
+        tmp = np.copy(pt[-1].pa.w)
+        tmp -= np.max(tmp)
+        tmp = np.exp(tmp)
+        tmp = tmp / np.sum(tmp)
         ind = pf.sample(tmp, M)
         ancestors = pt[-1].ancestors[ind]
         last_part = self.model.sample_smooth(
@@ -426,14 +487,18 @@ class SmoothTrajectory(object):
             tt=self.t,
             cur_ind=len(pt) - 1,
         )
-        self.traj = numpy.empty((len(pt),), dtype=object)
+        self.traj = np.empty((len(pt),), dtype=object)
         self.traj[-1] = TrajectoryStep(
-            ParticleApproximation(last_part), numpy.arange(M, dtype=int)
+            ParticleApproximation(last_part),
+            np.arange(M, dtype=int),
         )
 
-        if method == "full":
-            pass
-        elif method == "mcmc" or method == "ancestor" or method == "mhips":
+        if (
+            method == "full"
+            or method == "mcmc"
+            or method == "ancestor"
+            or method == "mhips"
+        ):
             pass
         elif method == "rs":
             max_iter = options["R"]
@@ -444,9 +509,10 @@ class SmoothTrajectory(object):
             sw = options["sw"]
             ratio = options["ratio"]
         else:
-            raise ValueError("Unknown sampler: %s" % method)
+            msg = f"Unknown sampler: {method}"
+            raise ValueError(msg)
 
-        find = numpy.arange(M, dtype=numpy.int)
+        find = np.arange(M, dtype=int)
 
         for cur_ind in reversed(range(len(pt) - 1)):
             ft = self.traj[(cur_ind + 1) :]
@@ -522,7 +588,7 @@ class SmoothTrajectory(object):
 
             ancestors = pt[cur_ind].ancestors[ind]
             # Select 'previous' particle
-            find = numpy.arange(M, dtype=int)
+            find = np.arange(M, dtype=int)
             tmp = self.model.sample_smooth(
                 part=pt[cur_ind].pa.part[ind],
                 ptraj=pt[:cur_ind],
@@ -535,14 +601,15 @@ class SmoothTrajectory(object):
                 cur_ind=cur_ind,
             )
             self.traj[cur_ind] = TrajectoryStep(
-                ParticleApproximation(tmp), numpy.arange(M, dtype=int)
+                ParticleApproximation(tmp),
+                np.arange(M, dtype=int),
             )
 
     #        if hasattr(self.model, 'post_smoothing'):
     #            # Do e.g. constrained smoothing for RBPS models
     #            self.traj = self.model.post_smoothing(self)
 
-    def perform_mhbp(self, pt, M, R, reduced=False):
+    def perform_mhbp(self, pt: Any, M: int, R: int, reduced: bool = False) -> None:
         """
         Create smoothed trajectories using Metropolis-Hastings Backward Propeser
 
@@ -555,15 +622,15 @@ class SmoothTrajectory(object):
         ut = self.u
         yt = self.y
         tt = self.t
-        straj = numpy.empty((T,), dtype=object)
+        straj = np.empty((T,), dtype=object)
 
         # Initialise from end time estimates
-        tmp = numpy.copy(pt[-1].pa.w)
-        tmp -= numpy.max(tmp)
-        tmp = numpy.exp(tmp)
-        tmp = tmp / numpy.sum(tmp)
+        tmp = np.copy(pt[-1].pa.w)
+        tmp -= np.max(tmp)
+        tmp = np.exp(tmp)
+        tmp = tmp / np.sum(tmp)
         cind = pf.sample(tmp, M)
-        find = numpy.arange(M, dtype=int)
+        find = np.arange(M, dtype=int)
         #        anc = pt[-1].ancestors[cind]
         #        last_part = self.model.sample_smooth(part=pt[-1].pa.part[cind],
         #                                             ptraj=pt[:-1],
@@ -575,19 +642,16 @@ class SmoothTrajectory(object):
 
         for t in reversed(range(T)):
             # Initialise from filtered estimate
-            if t < T - 1:
-                ft = straj[(t + 1) :]
-            else:
-                ft = None
+            ft = straj[t + 1 :] if t < T - 1 else None
 
             # Initialize with filterted estimates
             pnew = pt[t].pa.part[cind]
             if t > 0:
                 anc = pt[t].ancestors[cind]
-                tmp = numpy.copy(pt[t - 1].pa.w)
-                tmp -= numpy.max(tmp)
-                tmp = numpy.exp(tmp)
-                tmp = tmp / numpy.sum(tmp)
+                tmp = np.copy(pt[t - 1].pa.w)
+                tmp -= np.max(tmp)
+                tmp = np.exp(tmp)
+                tmp = tmp / np.sum(tmp)
                 ptraj = pt[:t]
             else:
                 ptraj = None
@@ -634,7 +698,11 @@ class SmoothTrajectory(object):
             # Do e.g. constrained smoothing for RBPS models
             self.traj = self.model.post_smoothing(self)
 
-    def perform_mhips_pass(self, options, reduced=False):
+    def perform_mhips_pass(
+        self,
+        options: dict[str, Any] | None,
+        reduced: bool = False,
+    ) -> np.ndarray:
         """
         Runs MHIPS with the proposal density q as p(x_{t+1}|x_t)
 
@@ -649,9 +717,9 @@ class SmoothTrajectory(object):
         ut = self.u
         yt = self.y
         tt = self.t
-        pind = numpy.arange(self.M, dtype=numpy.int)
+        pind = np.arange(self.M, dtype=int)
 
-        straj = numpy.empty((T,), dtype=object)
+        straj = np.empty((T,), dtype=object)
         pt = self.traj[: T - 1]
         (part, _acc) = mc_step(
             model=self.model,
@@ -668,7 +736,7 @@ class SmoothTrajectory(object):
             reduced=reduced,
         )
 
-        tmp = numpy.copy(
+        tmp = np.copy(
             self.model.sample_smooth(
                 part=part,
                 ptraj=pt,
@@ -679,7 +747,7 @@ class SmoothTrajectory(object):
                 yt=yt,
                 tt=tt,
                 cur_ind=T - 1,
-            )
+            ),
         )
         straj[T - 1] = TrajectoryStep(ParticleApproximation(tmp), pind)
 
@@ -755,7 +823,7 @@ class SmoothTrajectory(object):
 
         return straj
 
-    def get_smoothed_estimates(self):
+    def get_smoothed_estimates(self) -> np.ndarray:
         """
         Return smoothed estimates (must first have called 'simulate')
 
@@ -770,7 +838,7 @@ class SmoothTrajectory(object):
         N = self.traj[0].pa.part.shape[0]
         D = self.traj[0].pa.part.shape[1]
 
-        est = numpy.empty((T, N, D))
+        est = np.empty((T, N, D))
 
         for t in range(T):
             est[t] = self.traj[t].pa.part
@@ -779,19 +847,19 @@ class SmoothTrajectory(object):
 
 
 def mc_step(
-    model,
-    part,
-    ptraj,
-    pind_prop,
-    pind_curr,
-    future_trajs,
-    find,
-    ut,
-    yt,
-    tt,
-    cur_ind,
-    reduced,
-):
+    model: Any,
+    part: np.ndarray,
+    ptraj: list[Any] | None,
+    pind_prop: np.ndarray | None,
+    pind_curr: np.ndarray | None,
+    future_trajs: list[Any] | None,
+    find: np.ndarray,
+    ut: np.ndarray,
+    yt: np.ndarray,
+    tt: np.ndarray,
+    cur_ind: int,
+    reduced: bool,
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Perform a single iteration of the MCMC sampler used for MHIPS and MHBP
 
@@ -811,13 +879,13 @@ def mc_step(
     # cur_ind, we therefore need to recomputed the sufficient statistics
     # (for Rao-Blackwellized models)
     if ptraj is not None:
-        oldpart = numpy.copy(ptraj[-1].pa.part[pind_curr])
+        oldpart = np.copy(ptraj[-1].pa.part[pind_curr])
         part = model.cond_predict_single_step(
             part=oldpart,
             past_trajs=ptraj[:-1],
             pind=ptraj[-1].ancestors[pind_curr],
             future_parts=part,
-            find=numpy.arange(len(pind_curr)),
+            find=np.arange(len(pind_curr)),
             ut=ut,
             yt=yt,
             tt=tt,
@@ -829,10 +897,13 @@ def mc_step(
     if reduced:
         if ptraj is not None:
             noise = model.sample_process_noise_full(
-                ptraj=ptraj, ancestors=pind_prop, ut=ut[:cur_ind], tt=tt[:cur_ind]
+                ptraj=ptraj,
+                ancestors=pind_prop,
+                ut=ut[:cur_ind],
+                tt=tt[:cur_ind],
             )
 
-            xprop = numpy.copy(ptraj[-1].pa.part[pind_prop])
+            xprop = np.copy(ptraj[-1].pa.part[pind_prop])
 
             model.update_full(
                 particles=xprop,
@@ -893,7 +964,7 @@ def mc_step(
                 past_trajs=ptraj[:-1],
                 pind=ptraj[-1].ancestors[pind_prop],
                 future_parts=xprop,
-                find=numpy.arange(len(xprop), dtype=int),
+                find=np.arange(len(xprop), dtype=int),
                 ut=ut,
                 yt=yt,
                 tt=tt,
@@ -904,7 +975,7 @@ def mc_step(
                 past_trajs=ptraj[:-1],
                 pind=ptraj[-1].ancestors[pind_curr],
                 future_parts=part,
-                find=numpy.arange(len(part), dtype=int),
+                find=np.arange(len(part), dtype=int),
                 ut=ut,
                 yt=yt,
                 tt=tt,
@@ -915,8 +986,8 @@ def mc_step(
             logp_prev_prop = model.eval_logp_x0(xprop, tt[0])
             logp_prev_curr = model.eval_logp_x0(part, tt[0])
 
-    xpropy = numpy.copy(xprop)
-    curparty = numpy.copy(part)
+    xpropy = np.copy(xprop)
+    curparty = np.copy(part)
     if yt[cur_ind] is not None:
         logp_y_prop = model.measure_full(
             particles=xpropy,
@@ -974,7 +1045,8 @@ def mc_step(
         + (logp_q_curr - logp_q_prop)
     )
 
-    test = numpy.log(numpy.random.uniform(size=len(ratio)))
+    rng = np.random.default_rng()
+    test = np.log(rng.uniform(size=len(ratio)))
     acc = test < ratio
     curparty[acc] = xpropy[acc]
     return (curparty, acc)
