@@ -1,5 +1,5 @@
 """
-Benchmark: SIS/PF, APF, and RBPF on a non-linear non-Gaussian SSM.
+Benchmark: SIS, SIR/PF, APF, and RBPF on a non-linear non-Gaussian SSM.
 
 Model (Gordon-Salmond-Smith 1993, stochastic volatility variant):
     x_{t+1} = x_t/2 + 25*x_t/(1+x_t^2) + 8*cos(1.2*t) + v_t,  v_t ~ N(0, Q)
@@ -23,10 +23,12 @@ Metrics reported per filter:
 
 import time
 
+import latextable
 import matplotlib.pyplot as plt
 import numpy
 import scipy.stats
 import tikzplotlib
+from texttable import Texttable
 
 import pyparticleest.filter as pfilter
 import pyparticleest.interfaces as interfaces
@@ -382,15 +384,53 @@ def print_metrics(results):
         )
 
 
+def print_latex_table_standard(results):
+    """Generate and print a LaTeX table for the standard benchmark results using latextable."""
+    print("\n% --- LaTeX Table: Standard Benchmark ---")
+    table = Texttable()
+    table.set_cols_align(["l", "r", "r", "r", "r", "r"])
+    rows = [
+        [
+            "Filter",
+            "RMSE",
+            "Mean $N_{\\mathrm{eff}}$",
+            "Time (s)",
+            "Resamples",
+            "Log ML",
+        ]
+    ]
+
+    for name, r in results.items():
+        rows.append(
+            [
+                name,
+                f"{r['rmse']:.4f}",
+                f"{r['neff']:.4f}",
+                f"{r['time_s']:.4f}",
+                r["resamples"],
+                f"{r['log_ml']:.4f}",
+            ]
+        )
+
+    table.add_rows(rows)
+    print(
+        latextable.draw_latex(
+            table,
+            caption="Standard Non-linear Non-Gaussian SSM Benchmark Results",
+            label="tab:standard_benchmark",
+        )
+    )
+
+
 colors = {
     "SIS": "tab:blue",
-    "SIR (Bootstrap PF)": "tab:orange",
+    "SIR": "tab:orange",
     "APF": "tab:green",
     "RBPF": "tab:red",
 }
 markers = {
     "SIS": "P",
-    "SIR (Bootstrap PF)": "*",
+    "SIR": "*",
     "APF": "D",
     "RBPF": "X",
 }
@@ -450,6 +490,7 @@ def plot_combined_estimates(results, STEPS, xs, ys):
             marker=markers[name],
             markersize=4.0,
         )
+    ax.set_title("All: State estimate vs ground truth")
     ax.set_xlabel("Time step $t$")
     ax.set_ylabel("$x_t$")
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=4, fontsize=9)
@@ -479,25 +520,27 @@ def plot_neff(results, strajs, STEPS, output_prefix="benchmark"):
     plt.close(fig)
 
 
-def plot_rmse_over_time(results, xs, STEPS):
+def plot_rmse_over_time(
+    results, xs, STEPS, output_prefix="benchmark", est_key="estimates"
+):
     """Cumulative RMSE over time for each filter."""
     t_axis = numpy.arange(1, STEPS + 1)
     fig, ax = plt.subplots(figsize=(8, 4))
     for name, r in results.items():
-        est = r["estimates"]
+        est = r[est_key]
         cum_rmse = numpy.sqrt(
             numpy.cumsum((est[1 : STEPS + 1] - xs[1 : STEPS + 1]) ** 2)
             / numpy.arange(1, STEPS + 1)
         )
         ax.plot(t_axis, cum_rmse, label=name, color=colors[name], lw=1)
-    ax.set_title("Cumulative RMSE over time")
+    ax.set_title(f"Cumulative RMSE for {output_prefix} {est_key} over time")
     ax.set_xlabel("Time step $t$")
     ax.set_ylabel("RMSE")
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=4, fontsize=9)
     ax.grid(True, alpha=0.3)
     fig.tight_layout()
-    fig.savefig("plots/benchmark_rmse_time.png", dpi=150)
-    tikzplotlib.save("plots/benchmark_rmse_time.tex")
+    fig.savefig(f"plots/{output_prefix}_{est_key}_rmse_time.png", dpi=150)
+    tikzplotlib.save(f"plots/{output_prefix}_{est_key}_rmse_time.tex")
     plt.close(fig)
 
 
@@ -514,7 +557,7 @@ def run_mlnlg_benchmark():
 
     results = {}
 
-    # ── Bootstrap PF (3D joint state) ────────────────────────────────────────
+    # ── SIS ────────────────────────────────────────
     pf_model = MLNLGModelPF()
     straj_sis, t_sis, res_sis, log_sis = run_filter(
         pf_model, "pf", ys, us=None, N=N, resample=0
@@ -535,13 +578,13 @@ def run_mlnlg_benchmark():
         "log_ml": log_sis,
     }
 
-    # ── Bootstrap PF (3D joint state) ────────────────────────────────────────
+    # ── SIR ────────────────────────────────────────
     pf_model = MLNLGModelPF()
     straj_pf, t_pf, res_pf, log_pf = run_filter(pf_model, "pf", ys, us=None, N=N)
     est_xi_pf = weighted_means(straj_pf, state_index=0)
     est_z1_pf = weighted_means(straj_pf, state_index=1)
     est_z2_pf = weighted_means(straj_pf, state_index=2)
-    results["SIR (Bootstrap PF)"] = {
+    results["SIR"] = {
         "rmse_xi": rmse(est_xi_pf, xis),
         "rmse_z1": rmse(est_z1_pf, zs[:, 0]),
         "rmse_z2": rmse(est_z2_pf, zs[:, 1]),
@@ -606,6 +649,46 @@ def run_mlnlg_benchmark():
             f" {r['time_s']:>8.4f} {r['resamples']:>7d}"
         )
 
+    # ── LaTeX Table MLNLG using latextable ───────────────────────────────────
+    print("\n% --- LaTeX Table: MLNLG Benchmark ---")
+    table = Texttable()
+    table.set_cols_align(["l", "r", "r", "r", "r", "r", "r", "r"])
+    rows = [
+        [
+            "Filter",
+            "RMSE($\\xi$)",
+            "RMSE($z_1$)",
+            "RMSE($z_2$)",
+            "Mean $N_{\\mathrm{eff}}$",
+            "Time (s)",
+            "Resamples",
+            "Log ML",
+        ]
+    ]
+
+    for name, r in results.items():
+        rows.append(
+            [
+                name,
+                f"{r['rmse_xi']:.4f}",
+                f"{r['rmse_z1']:.4f}",
+                f"{r['rmse_z2']:.4f}",
+                f"{r['neff']:.4f}",
+                f"{r['time_s']:.4f}",
+                r["resamples"],
+                f"{r['log_ml']:.4f}",
+            ]
+        )
+
+    table.add_rows(rows)
+    print(
+        latextable.draw_latex(
+            table,
+            caption="Mixed Linear/Non-linear Gaussian SSM Benchmark Results",
+            label="tab:mlnlg_benchmark",
+        )
+    )
+
     # ── Plot ξ estimates ─────────────────────────────────────────────────────
     t_axis = numpy.arange(STEPS + 1)
     plt.style.use("ggplot")
@@ -645,11 +728,19 @@ def run_mlnlg_benchmark():
 
     print("\nMLNLG plots saved to plots/mlnlg_{xi,z1,z2}.png")
     mlnlg_strajs = [
-        ("SIR (Bootstrap PF)", straj_pf),
+        ("SIS", straj_sis),
+        ("SIR", straj_pf),
         ("APF", straj_apf),
         ("RBPF", straj_rb),
     ]
     plot_neff(results, mlnlg_strajs, STEPS, output_prefix="mlnlg")
+    plot_rmse_over_time(results, xis, STEPS, output_prefix="mlnlg", est_key="est_xi")
+    plot_rmse_over_time(
+        results, zs[:, 0], STEPS, output_prefix="mlnlg", est_key="est_z1"
+    )
+    plot_rmse_over_time(
+        results, zs[:, 1], STEPS, output_prefix="mlnlg", est_key="est_z2"
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -679,11 +770,11 @@ def main():
         "log_ml": log_sis,
     }
 
-    # ── Bootstrap PF (SIR) ───────────────────────────────────────────────────
+    # ── SIR ───────────────────────────────────────────────────
     pf_model = NLGSSModel()
     straj_pf, t_pf, res_pf, log_pf = run_filter(pf_model, "pf", ys, us=None, N=N)
     est_pf = extract_state(straj_pf)
-    results["SIR (Bootstrap PF)"] = {
+    results["SIR"] = {
         "rmse": rmse(est_pf, xs),
         "neff": mean_neff(straj_pf),
         "time_s": t_pf,
@@ -720,18 +811,19 @@ def main():
 
     # ── Print metrics table ───────────────────────────────────────────────────
     print_metrics(results)
+    print_latex_table_standard(results)
 
     # ── Plot ──────────────────────────────────────────────────────────────────
     plot_individual_estimates(results, STEPS, xs, ys)
     plot_combined_estimates(results, STEPS, xs, ys)
     strajs = [
         ("SIS", straj_sis),
-        ("SIR (Bootstrap PF)", straj_pf),
+        ("SIR", straj_pf),
         ("APF", straj_apf),
         ("RBPF", straj_rb),
     ]
-    plot_neff(results, strajs, STEPS, output_prefix="nlgss")
-    plot_rmse_over_time(results, xs, STEPS)
+    plot_neff(results, strajs, STEPS, output_prefix="benchmark")
+    plot_rmse_over_time(results, xs, STEPS, output_prefix="benchmark")
     run_mlnlg_benchmark()
 
 

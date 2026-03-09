@@ -6,6 +6,8 @@ dependencies = [
   "scipy",
   "matplotlib",
   "tikzplotlib",
+  "latextable",
+  "texttable",
   "webcolors<24.6.0",
 ]
 requires-python = ">=3.8"

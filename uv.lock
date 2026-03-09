@@ -798,6 +798,18 @@ wheels = [
 ]
 
 [[package]]
+name = "latextable"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "texttable" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/1b/c33196862b41b8b69d46d3aa9e2aafefcf378ff05ff67da6014d68d724ac/latextable-1.0.1.tar.gz", hash = "sha256:e0d5e426f65e06c39d4b16441f027e435393bf11b40151a3aab3c706576d9ce9", size = 9107, upload-time = "2023-11-10T13:26:09.236Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/94/18/34acc346d10326ab4d615cd1919bcbf2b22f13c365a7c88ba8afc60b5270/latextable-1.0.1-py3-none-any.whl", hash = "sha256:3c2db035574f36ef95ed8e2ccf32d37c2f534b6f2701022c5e00f159244b8306", size = 9130, upload-time = "2023-11-10T13:26:07.434Z" },
+]
+
+[[package]]
 name = "markupsafe"
 version = "2.1.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1433,9 +1445,11 @@ name = "pyparticleest"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
+    { name = "latextable" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "scipy" },
+    { name = "texttable" },
     { name = "tikzplotlib" },
     { name = "webcolors" },
 ]
@@ -1453,10 +1467,12 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "cython", marker = "extra == 'cython'" },
+    { name = "latextable" },
     { name = "matplotlib" },
     { name = "numpy", specifier = "==1.17.3" },
     { name = "numpydoc", marker = "extra == 'docs'" },
     { name = "scipy" },
+    { name = "texttable" },
     { name = "tikzplotlib" },
     { name = "webcolors", specifier = "<24.6.0" },
 ]
@@ -1889,6 +1905,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797b8f7902564ab6ea0d60ff8ca23952079064155d1ae1/tabulate-0.9.0.tar.gz", hash = "sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c", size = 81090, upload-time = "2022-10-06T17:21:48.54Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f", size = 35252, upload-time = "2022-10-06T17:21:44.262Z" },
+]
+
+[[package]]
+name = "texttable"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/dc/0aff23d6036a4d3bf4f1d8c8204c5c79c4437e25e0ae94ffe4bbb55ee3c2/texttable-1.7.0.tar.gz", hash = "sha256:2d2068fb55115807d3ac77a4ca68fa48803e84ebb0ee2340f858107a36522638", size = 12831, upload-time = "2023-10-03T09:48:12.272Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/24/99/4772b8e00a136f3e01236de33b0efda31ee7077203ba5967fcc76da94d65/texttable-1.7.0-py2.py3-none-any.whl", hash = "sha256:72227d592c82b3d7f672731ae73e4d1f88cd8e2ef5b075a7a7f01a23a3743917", size = 10768, upload-time = "2023-10-03T09:48:10.434Z" },
 ]
 
 [[package]]
