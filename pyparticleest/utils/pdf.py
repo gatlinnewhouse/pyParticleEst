@@ -3,6 +3,23 @@ Utilities for evalutating probability density functions
 """
 
 from collections.abc import Sequence
+import numba as nb
+
+
+@nb.njit(cache=True)
+def _nb_unifsum_eval(
+    p: float, c: float, w_min: float, w_diff: float, l: float, h: float, t: float
+) -> float:
+    if p < l:
+        return 0.0
+    elif p < (c - w_diff / 2.0):
+        return t * (p - l) / w_min
+    elif p < (c + w_diff / 2.0):
+        return t
+    elif p < h:
+        return t * (c + w_diff / 2.0 - p + w_min) / w_min
+    else:
+        return 0.0
 
 
 class unifsum:
@@ -59,14 +76,6 @@ class unifsum:
         Returns:
          (float): the pdf value
         """
-        if p < self.l:
-            v = 0.0
-        elif p < (self.c - self.w_diff / 2):
-            v = self.t * (p - self.l) / self.w_min
-        elif p < (self.c + self.w_diff / 2):
-            v = self.t
-        elif p < self.h:
-            v = self.t * (self.c + self.w_diff / 2 - p + self.w_min) / self.w_min
-        else:
-            v = 0.0
-        return v
+        return _nb_unifsum_eval(
+            p, self.c, self.w_min, self.w_diff, self.l, self.h, self.t
+        )
