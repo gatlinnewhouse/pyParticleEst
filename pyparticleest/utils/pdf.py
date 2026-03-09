@@ -1,5 +1,4 @@
-"""Utilities for evalutating probability density functions
-"""
+"""Utilities for evalutating probability density functions"""
 
 from collections.abc import Sequence
 

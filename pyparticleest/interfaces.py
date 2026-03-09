@@ -396,8 +396,7 @@ class ParticleFiltering(ParticleFilteringNonMarkov, abc.ABC):
 
 
 class AuxiliaryParticleFiltering(abc.ABC):
-    """Base class for particles to be used with auxiliary particle filtering
-    """
+    """Base class for particles to be used with auxiliary particle filtering"""
 
     @abc.abstractmethod
     def eval_1st_stage_weights(
@@ -459,8 +458,7 @@ class FFBSiNonMarkov(abc.ABC):
 class FFProposeFromMeasure(FFBSiNonMarkov, abc.ABC):
     @abc.abstractmethod
     def propose_from_y(self, N: int, y: Any, t: float) -> np.ndarray:
-        """Create N particles from p(x_t|y_t)
-        """
+        """Create N particles from p(x_t|y_t)"""
 
 
 class FFBSi(FFBSiNonMarkov, abc.ABC):
@@ -579,8 +577,7 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
 
 
 class FFBSiRSNonMarkov(FFBSiNonMarkov, abc.ABC):
-    """Base class for models to be used with rejection sampling methods
-    """
+    """Base class for models to be used with rejection sampling methods"""
 
     @abc.abstractmethod
     def logp_xnext_max_full(
@@ -613,8 +610,7 @@ class FFBSiRSNonMarkov(FFBSiNonMarkov, abc.ABC):
 
 
 class FFBSiRS(FFBSi, abc.ABC):
-    """Base class for models to be used with rejection sampling methods
-    """
+    """Base class for models to be used with rejection sampling methods"""
 
     @abc.abstractmethod
     def logp_xnext_max(

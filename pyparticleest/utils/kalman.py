@@ -1,6 +1,5 @@
 #!/usr/bin/python
-"""A module with operations useful for Kalman filtering.
-"""
+"""A module with operations useful for Kalman filtering."""
 
 import math
 from typing import Any
@@ -43,8 +42,7 @@ def _nb_smooth(
 
 
 def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
-    """Calculate gaussian probability density of err, when err ~ N(0,sigma)
-    """
+    """Calculate gaussian probability density of err, when err ~ N(0,sigma)"""
     tmp = err.reshape(-1, 1)
     return -0.5 * (
         S.shape[0] * l2pi
@@ -54,8 +52,7 @@ def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
 
 
 def lognormpdf_cho(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> float:
-    """Calculate gaussian probability density of err, when err ~ N(0,Schol*Scholt^T)
-    """
+    """Calculate gaussian probability density of err, when err ~ N(0,Schol*Scholt^T)"""
     dim = len(err)
     ld = np.sum(np.log(np.diag(Schol[0]))) * 2
     return -0.5 * (
@@ -161,8 +158,7 @@ class KalmanFilter:
             self.h_k = h_k
 
     def time_update(self) -> None:
-        """Do a time update, i.e. predict one step forward in time using the dynamics
-        """
+        """Do a time update, i.e. predict one step forward in time using the dynamics"""
         # Calculate next state
         (self.z, self.P) = self.predict_full(A=self.A, f_k=self.f_k, Q=self.Q)
 
@@ -180,8 +176,7 @@ class KalmanFilter:
         f_k: np.ndarray,
         Q: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Update the estimates to time t+1, using the supplied matrices as the dynamics
-        """
+        """Update the estimates to time t+1, using the supplied matrices as the dynamics"""
         z_out, P_out = _nb_predict_full(z, P, A, f_k, Q)
         z[:] = z_out
         P[:, :] = P_out
@@ -207,8 +202,7 @@ class KalmanFilter:
         C: np.ndarray | None,
         h_k: np.ndarray | None = None,
     ) -> np.ndarray:
-        """Calculate different between measurement and predicted measurement
-        """
+        """Calculate different between measurement and predicted measurement"""
         yhat = np.zeros_like(y)
         if C is not None:
             yhat += C.dot(z)

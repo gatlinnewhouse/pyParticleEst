@@ -1108,7 +1108,6 @@ class ParticleTrajectory:
 
         self.traj = []
 
-
     def forward(self, u: Any, y: Any) -> bool:
         """Append new time step to trajectory
 

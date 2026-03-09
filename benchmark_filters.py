@@ -315,61 +315,6 @@ def finalize_plot(fig, ax, filename):
     plt.close(fig)
 
 
-def plot_xi_estimates(results, STEPS, xis):
-    t_axis = np.arange(STEPS + 1)
-    fig = plt.figure(figsize=(9, 5))
-    ax = plt.gca()
-
-    ax.plot(t_axis, xis, "k-", lw=2, label="Ground truth", zorder=5)
-
-    for name, r in results.items():
-        ax.plot(
-            t_axis,
-            r["est_xi"],
-            "--",
-            lw=1.5,
-            color=COLORS[name],
-            marker=MARKERS[name],
-            markersize=6,
-            markevery=5,
-            label=name,
-        )
-
-    setup_plot(
-        ax, r"MLNLG: $\xi$ Estimate vs Ground Truth (All)", "Time step $t$", r"$\xi_t$"
-    )
-    finalize_plot(fig, ax, "mlnlg_xi_all")
-
-
-def plot_xi_estimate_individual(name, r, STEPS, xis):
-    """Plot an individual filter's ξ estimate against ground truth."""
-    t_axis = np.arange(STEPS + 1)
-    fig = plt.figure(figsize=(9, 5))
-    ax = plt.gca()
-
-    ax.plot(t_axis, xis, "k-", lw=2, label="Ground truth", zorder=5)
-
-    ax.plot(
-        t_axis,
-        r["est_xi"],
-        "--",
-        lw=1.5,
-        color=COLORS.get(name, "#1f77b4"),
-        marker=MARKERS.get(name, "o"),
-        markersize=6,
-        markevery=5,
-        label=name,
-    )
-
-    setup_plot(
-        ax,
-        f"MLNLG: {name} $\\xi$ Estimate vs Ground Truth",
-        "Time step $t$",
-        r"$\xi_t$",
-    )
-    finalize_plot(fig, ax, f"mlnlg_xi_{name.lower()}")
-
-
 def plot_tap_magnitude(results, STEPS, zs, tap_idx: int):
     t_axis = np.arange(STEPS + 1)
     re, im = 2 * tap_idx, 2 * tap_idx + 1
@@ -422,23 +367,97 @@ def plot_neff(results, strajs, STEPS):
     finalize_plot(fig, ax, "mlnlg_neff")
 
 
-def plot_rmse_over_time(results, xis, STEPS):
+def plot_z_rmse_over_time(results, zs, STEPS):
+    """Cumulative RMSE of the aggregate channel state z over time."""
     t_axis = np.arange(1, STEPS + 1)
     fig = plt.figure(figsize=(9, 5))
     ax = plt.gca()
 
+    L = zs.shape[1]  # usually 4
+
     for name, r in results.items():
-        est = r["est_xi"]
-        cum_rmse = np.sqrt(
-            np.cumsum((est[1 : STEPS + 1] - xis[1 : STEPS + 1]) ** 2)
-            / np.arange(1, STEPS + 1)
-        )
+        est_z = r["est_z"]  # List of L arrays
+
+        # Calculate squared error across all L dimensions at each time step
+        sq_err = np.zeros(STEPS)
+        for i in range(L):
+            sq_err += (est_z[i][1 : STEPS + 1] - zs[1 : STEPS + 1, i]) ** 2
+
+        # Cumulative mean across time AND dimensions
+        cum_rmse = np.sqrt(np.cumsum(sq_err) / (np.arange(1, STEPS + 1) * L))
+
         ax.plot(t_axis, cum_rmse, label=name, color=COLORS[name], lw=1.5)
 
     setup_plot(
-        ax, r"Cumulative RMSE for $\xi$ Estimates Over Time", "Time step $t$", "RMSE"
+        ax,
+        r"Cumulative RMSE for Channel State ($z$) Over Time",
+        "Time step $t$",
+        "RMSE",
     )
-    finalize_plot(fig, ax, "mlnlg_xi_rmse_time")
+    finalize_plot(fig, ax, "mlnlg_z_rmse_time")
+
+
+def plot_z_component_estimate(results, STEPS, zs, z_idx: int, component_name: str):
+    """Plot a single component of the z state (e.g., Tap 1 Real)."""
+    t_axis = np.arange(STEPS + 1)
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
+
+    ax.plot(t_axis, zs[:, z_idx], "k-", lw=2, label="Ground truth", zorder=5)
+
+    for name, r in results.items():
+        ax.plot(
+            t_axis,
+            r["est_z"][z_idx],
+            "--",
+            lw=1.5,
+            color=COLORS[name],
+            marker=MARKERS[name],
+            markersize=6,
+            markevery=5,
+            label=name,
+        )
+
+    setup_plot(
+        ax,
+        f"MLNLG: {component_name} Estimate vs Ground Truth",
+        "Time step $t$",
+        f"$z_{{{z_idx}, t}}$",
+    )
+    finalize_plot(fig, ax, f"mlnlg_z_comp_{z_idx}")
+
+
+def plot_z_component_estimate_individual(
+    name, r, STEPS, zs, z_idx: int, component_name: str
+):
+    """Plot an individual filter's single z state component against ground truth."""
+    t_axis = np.arange(STEPS + 1)
+    fig = plt.figure(figsize=(9, 5))
+    ax = plt.gca()
+
+    # Plot ground truth
+    ax.plot(t_axis, zs[:, z_idx], "k-", lw=2, label="Ground truth", zorder=5)
+
+    # Plot the specific filter's estimate
+    ax.plot(
+        t_axis,
+        r["est_z"][z_idx],
+        "--",
+        lw=1.5,
+        color=COLORS.get(name, "#1f77b4"),
+        marker=MARKERS.get(name, "o"),
+        markersize=6,
+        markevery=5,
+        label=name,
+    )
+
+    setup_plot(
+        ax,
+        f"MLNLG: {name} {component_name} Estimate vs Ground Truth",
+        "Time step $t$",
+        f"$z_{{{z_idx}, t}}$",
+    )
+    finalize_plot(fig, ax, f"mlnlg_z_comp_{z_idx}_{name.lower()}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -517,15 +536,19 @@ def main() -> None:
 
     save_latex_table(results, n_taps)
 
-    plot_xi_estimates(results, STEPS, xis)
-
+    # raw real part of tap 1
+    plot_z_component_estimate(results, STEPS, zs, z_idx=0, component_name="Tap 1")
     for name, r in results.items():
-        plot_xi_estimate_individual(name, r, STEPS, xis)
+        plot_z_component_estimate_individual(
+            name, r, STEPS, zs, z_idx=0, component_name="Tap 1 (Real)"
+        )
 
     for tap_idx in range(n_taps):
         plot_tap_magnitude(results, STEPS, zs, tap_idx)
+
     plot_neff(results, strajs, STEPS)
-    plot_rmse_over_time(results, xis, STEPS)
+
+    plot_z_rmse_over_time(results, zs, STEPS)
     print(f"\nPlots saved to plots/")
 
 
