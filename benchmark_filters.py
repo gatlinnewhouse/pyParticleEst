@@ -1,39 +1,23 @@
-"""Benchmark: SIS, SIR, APF, and RBPF on a Mixed Linear/Nonlinear Gaussian SSM.
-
-Model (Schön et al. 2005 MLNLG framework, Gordon-Salmond-Smith 1993 nonlinear dynamics):
-
-  Nonlinear sub-state (sampled by all filters, Kalman-filtered conditioned on ξ by RBPF):
-    ξ_{t+1} = ξ_t/2 + 25·ξ_t/(1+ξ_t²) + 8·cos(1.2·t) + v_ξ,  v_ξ ~ N(0, Q_ξ)
-
-  Linear sub-state (2 independently fading channel taps, each 2D real/imag):
-    z_{t+1} = A_z · z_t + v_z,  v_z ~ N(0, Q_z)
-
-    A_z = block_diag(ρ₁·R(ω₁), ρ₂·R(ω₂))   where R(ω) is a 2×2 rotation matrix
-    — models Jakes/Clarke fading: each tap decorrelates at rate ρ with Doppler shift ω
-
-  Observation (linear in z, nonlinear in ξ):
-    y_t = C · z_{t+1} + ξ_{t+1}²/20 + e_t,  e_t ~ N(0, R)
-
-The RBPF advantage: SIS/SIR/APF must sample all 5 dimensions (1 ξ + 4 z).
-The RBPF samples only ξ (1D) and runs a 4D Kalman filter per particle for z.
-As z-dimension grows, the curse of dimensionality hits PF/APF but not RBPF.
-
-References:
-  - Gordon, Salmond, Smith (1993): nonlinear ξ dynamics
-  - Schön, Gustafsson, Nordlund (2005): MLNLG/MPF framework
-  - Hendeby, Karlsson, Gustafsson (2010): RBPF filter bank formulation
-"""
+"""Benchmark: SIS, SIR, APF, and RBPF on a Mixed Linear/Nonlinear Gaussian SSM."""
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Any
 
-import matplot2tikz
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as sla
 import scipy.stats
+
+# Added for table and tikz exports
+import latextable
+from texttable import Texttable
+import matplot2tikz
 
 import pyparticleest.filter as pfilter
 from pyparticleest import interfaces
@@ -43,26 +27,23 @@ from pyparticleest.models import mlnlg
 # ══════════════════════════════════════════════════════════════════════════════
 # Model parameters
 # ══════════════════════════════════════════════════════════════════════════════
-MLNLG_Q_XI = 10.0  # nonlinear process noise variance
-
-# 2 channel taps × (real, imag) = 4D linear sub-state
+MLNLG_Q_XI = 10.0
 MLNLG_L = 4
 
-# Per-tap fading: (decay rate ρ, Doppler angular frequency ω)
 _TAP_PARAMS = [
-    (0.95, 0.05),  # tap 1: slow fade, low Doppler
-    (0.88, 0.15),  # tap 2: faster fade, higher Doppler
+    (0.95, 0.05),
+    (0.88, 0.15),
 ]
 _blocks = [
     rho * np.array([[np.cos(omega), np.sin(omega)], [-np.sin(omega), np.cos(omega)]])
     for rho, omega in _TAP_PARAMS
 ]
-MLNLG_AZ = sla.block_diag(*_blocks)  # (4×4)
-MLNLG_QZ = 0.3 * np.eye(MLNLG_L)  # linear process noise
-MLNLG_C = np.ones((1, MLNLG_L))  # observation: sum of all taps
-MLNLG_R = 1.0  # measurement noise variance
-MLNLG_XI0_VAR = 5.0  # initial ξ variance
-MLNLG_Z0_COV = 0.5 * np.eye(MLNLG_L)  # initial z covariance
+MLNLG_AZ = sla.block_diag(*_blocks)
+MLNLG_QZ = 0.3 * np.eye(MLNLG_L)
+MLNLG_C = np.ones((1, MLNLG_L))
+MLNLG_R = 1.0
+MLNLG_XI0_VAR = 5.0
+MLNLG_Z0_COV = 0.5 * np.eye(MLNLG_L)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -72,7 +53,6 @@ def simulate_mlnlg(
     steps: int,
     seed: int = 42,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Simulate the MLNLG model and return (ξ, z, y) ground truth."""
     rng = np.random.default_rng(seed)
     L = MLNLG_L
 
@@ -101,11 +81,9 @@ def simulate_mlnlg(
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Joint-state PF model (SIS, SIR, APF all use this — samples all 5 dims)
+# Joint-state PF model
 # ══════════════════════════════════════════════════════════════════════════════
 class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFiltering):
-    """5D joint-state PF: particles = [ξ, z₁_re, z₁_im, z₂_re, z₂_im]."""
-
     def create_initial_estimate(self, N: int) -> np.ndarray:
         L = MLNLG_L
         particles = np.empty((N, 1 + L))
@@ -131,7 +109,7 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
 
     def measure(self, particles, y, t) -> np.ndarray:
         xi = particles[:, 0]
-        z = particles[:, 1:]  # (N, L)
+        z = particles[:, 1:]
         y_hat = (MLNLG_C @ z.T).ravel() + xi**2 / 20.0
         return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=np.sqrt(MLNLG_R))
 
@@ -150,11 +128,9 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# RBPF model (ξ sampled, z Kalman-filtered — samples only 1D)
+# RBPF model
 # ══════════════════════════════════════════════════════════════════════════════
 class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
-    """Rao-Blackwellized PF: ξ (1D) sampled, z (4D) analytically tracked."""
-
     def __init__(self, N: int) -> None:
         L = MLNLG_L
         super().__init__(
@@ -170,22 +146,19 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         )
 
     def get_nonlin_pred_dynamics(self, particles, u, t):
-        """ξ_{t+1} = f_nl(ξ_t, t) + v_ξ, no linear dependence on z."""
         xi = particles[:, 0]
         N = len(particles)
         L = MLNLG_L
         f = xi / 2.0 + 25.0 * xi / (1.0 + xi**2) + 8.0 * np.cos(1.2 * t)
-        fxi = f[:, np.newaxis, np.newaxis]  # (N, lxi=1, 1)
-        Axi = np.zeros((N, 1, L))  # (N, lxi=1, lz=L) — ξ doesn't depend on z
-        return (Axi, fxi, None)  # Qxi=None → uses default
+        fxi = f[:, np.newaxis, np.newaxis]
+        Axi = np.zeros((N, 1, L))
+        return (Axi, fxi, None)
 
     def get_meas_dynamics(self, y, particles, t):
-        """y_t = C·z_t + ξ_t²/20 + e_t.  C is constant, h(ξ) varies."""
         xi = particles[:, 0]
-        h = (xi**2 / 20.0)[:, np.newaxis, np.newaxis]  # (N, 1, 1)
+        h = (xi**2 / 20.0)[:, np.newaxis, np.newaxis]
         return (np.asarray(y).reshape((-1, 1)), None, h, None)
 
-    # Stubs required by FFBSiRS — not used during forward filtering
     def logp_xnext(self, particles, next_part, u, t):
         return np.zeros(len(particles))
 
@@ -199,7 +172,6 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
 def weighted_means(
     straj: pfilter.ParticleTrajectory, state_index: int = 0
 ) -> np.ndarray:
-    """Weighted-mean estimate for a given state index across time."""
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
         pa = step.pa
@@ -213,7 +185,6 @@ def weighted_means(
 def weighted_means_z(
     straj: pfilter.ParticleTrajectory, lxi: int, z_index: int
 ) -> np.ndarray:
-    """Weighted-mean z estimate from RBPF trajectory (z starts at index lxi)."""
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
         pa = step.pa
@@ -232,7 +203,6 @@ def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
 def run_filter(
     model, filter_name: str, ys: np.ndarray, N: int, resample: float = 2.0 / 3.0
 ) -> tuple:
-    """Run a named filter and return (straj, wall_time, resample_count, log_ml)."""
     straj = pfilter.ParticleTrajectory(
         model=model,
         N=N,
@@ -262,7 +232,6 @@ def rmse(estimates: np.ndarray, truth: np.ndarray) -> float:
 
 
 def rmse_aggregate(est_list: list[np.ndarray], truth_list: list[np.ndarray]) -> float:
-    """Aggregate RMSE across multiple state dimensions."""
     total_sq = 0.0
     total_n = 0
     for est, truth in zip(est_list, truth_list):
@@ -273,118 +242,180 @@ def rmse_aggregate(est_list: list[np.ndarray], truth_list: list[np.ndarray]) -> 
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Output Formatting
+# ══════════════════════════════════════════════════════════════════════════════
+def save_latex_table(results: dict[str, dict[str, Any]], n_taps: int) -> None:
+    """Generate and save a LaTeX table using texttable and latextable."""
+    filepath = "plots/benchmark_results_table.tex"
+
+    table = Texttable()
+    table.set_deco(Texttable.HEADER)
+
+    # Define headers dynamically
+    headers = ["Filter", "RMSE($\\xi$)", "RMSE($z$)"]
+    headers.extend([f"RMSE(Tap {i + 1})" for i in range(n_taps)])
+    headers.extend(["$N_{\\mathrm{eff}}$", "Time (s)", "Resamples"])
+
+    table.header(headers)
+
+    for name, r in results.items():
+        row = [name, f"{r['rmse_xi']:.4f}", f"{r['rmse_z_agg']:.4f}"]
+        row.extend([f"{t:.4f}" for t in r["rmse_tap"]])
+        row.extend([f"{r['neff']:.4f}", f"{r['time_s']:.4f}", str(r["resamples"])])
+        table.add_row(row)
+
+    latex_output = latextable.draw_latex(
+        table,
+        caption="Filter Benchmark Results on MLNLG Model",
+        label="tab:benchmark_results",
+        position="htbp",
+    )
+
+    with open(filepath, "w") as f:
+        f.write(latex_output)
+    print(f"LaTeX table saved to {filepath}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Plotting
 # ══════════════════════════════════════════════════════════════════════════════
-COLORS = {"SIS": "tab:blue", "SIR": "tab:orange", "APF": "tab:green", "RBPF": "tab:red"}
+COLORS = {"SIS": "#1f77b4", "SIR": "#ff7f0e", "APF": "#2ca02c", "RBPF": "#d62728"}
 MARKERS = {"SIS": "P", "SIR": "*", "APF": "D", "RBPF": "X"}
 
 
+def setup_plot(ax, title, xlabel, ylabel):
+    """Helper for consistent, accessible plot styling."""
+    ax.set_title(title, fontsize=14, weight="bold")
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.tick_params(axis="both", which="major", labelsize=10)
+    ax.grid(True, linestyle="--", alpha=0.6, color="#b0b0b0")
+    ax.set_facecolor("white")
+
+
+def finalize_plot(fig, ax, filename):
+    """Adds right-aligned legend and saves both PNG and TikZ/LaTeX formats."""
+    # Place legend outside to the right
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.04, 0.5),
+        fontsize=11,
+        frameon=True,
+        facecolor="white",
+        edgecolor="black",
+    )
+
+    # Save standard PNG with bounding box adjustments
+    png_path = f"plots/{filename}.png"
+    fig.savefig(png_path, dpi=150, bbox_inches="tight", facecolor="white")
+
+    # Save to TikZ via tikzplotlib
+    tex_path = f"plots/{filename}.tex"
+    matplot2tikz.save(tex_path, strict=True)
+
+    plt.close(fig)
+
+
 def plot_xi_estimates(results, STEPS, xis):
-    """All filters' ξ estimates on one figure."""
     t_axis = np.arange(STEPS + 1)
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(t_axis, xis, "k-", lw=1.5, label="Ground truth", zorder=5)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot(t_axis, xis, "k-", lw=2, label="Ground truth", zorder=5)
+
     for name, r in results.items():
         ax.plot(
             t_axis,
             r["est_xi"],
             "--",
-            lw=1,
+            lw=1.5,
             color=COLORS[name],
             marker=MARKERS[name],
-            markersize=4,
+            markersize=6,
             markevery=5,
             label=name,
         )
-    ax.set_title(r"MLNLG: $\xi$ estimate vs ground truth")
-    ax.set_xlabel("Time step $t$")
-    ax.set_ylabel(r"$\xi_t$")
-    ax.legend(loc="best", fontsize=9)
-    ax.grid(True, alpha=0.3)
-    fig.tight_layout()
-    matplot2tikz.save("plots/mlnlg_xi.tikz")
-    plt.close(fig)
+
+    setup_plot(
+        ax, r"MLNLG: $\xi$ Estimate vs Ground Truth", "Time step $t$", r"$\xi_t$"
+    )
+    finalize_plot(fig, ax, "mlnlg_xi")
 
 
 def plot_tap_magnitude(results, STEPS, zs, tap_idx: int):
-    """Plot tap envelope |h| = sqrt(re² + im²) for one tap."""
     t_axis = np.arange(STEPS + 1)
     re, im = 2 * tap_idx, 2 * tap_idx + 1
     gt_mag = np.sqrt(zs[:, re] ** 2 + zs[:, im] ** 2)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(t_axis, gt_mag, "k-", lw=1.5, label="Ground truth", zorder=5)
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.plot(t_axis, gt_mag, "k-", lw=2, label="Ground truth", zorder=5)
+
     for name, r in results.items():
-        est_re = r["est_z"][re]
-        est_im = r["est_z"][im]
-        est_mag = np.sqrt(est_re**2 + est_im**2)
+        est_mag = np.sqrt(r["est_z"][re] ** 2 + r["est_z"][im] ** 2)
         ax.plot(
             t_axis,
             est_mag,
             "--",
-            lw=1,
+            lw=1.5,
             color=COLORS[name],
             marker=MARKERS[name],
-            markersize=4,
+            markersize=6,
             markevery=5,
             label=name,
         )
-    ax.set_title(f"MLNLG: Tap {tap_idx + 1} envelope $|h_{tap_idx + 1}|$")
-    ax.set_xlabel("Time step $t$")
-    ax.set_ylabel(f"$|h_{tap_idx + 1}|$")
-    ax.legend(loc="best", fontsize=9)
-    ax.grid(True, alpha=0.3)
-    fig.tight_layout()
-    matplot2tikz.save(f"plots/mlnlg_tap{tap_idx + 1}_mag.tikz")
-    plt.close(fig)
+
+    setup_plot(
+        ax,
+        f"MLNLG: Tap {tap_idx + 1} Envelope $|h_{tap_idx + 1}|$",
+        "Time step $t$",
+        f"$|h_{tap_idx + 1}|$",
+    )
+    finalize_plot(fig, ax, f"mlnlg_tap{tap_idx + 1}_mag")
 
 
 def plot_neff(results, strajs, STEPS):
-    """Neff over time for all filters."""
     t_axis = np.arange(STEPS + 1)
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(9, 5))
+
     for name, straj in strajs:
         neffs = [step.pa.calc_Neff() / step.pa.num for step in straj.traj]
-        ax.plot(t_axis, neffs, label=name, color=COLORS[name], lw=1)
-    ax.axhline(2.0 / 3.0, color="k", ls=":", lw=1, label="Resample threshold")
-    ax.set_title(r"Normalised effective sample size ($N_{\mathrm{eff}} / N$)")
-    ax.set_xlabel("Time step $t$")
-    ax.set_ylabel(r"$N_{\mathrm{eff}} / N$")
-    ax.legend(loc="best", fontsize=9)
-    ax.grid(True, alpha=0.3)
-    fig.tight_layout()
-    matplot2tikz.save("plots/mlnlg_neff.tikz")
-    plt.close(fig)
+        ax.plot(t_axis, neffs, label=name, color=COLORS[name], lw=1.5)
+
+    ax.axhline(2.0 / 3.0, color="k", ls=":", lw=2, label="Resample threshold")
+    setup_plot(
+        ax,
+        r"Normalized Effective Sample Size ($N_{\mathrm{eff}} / N$)",
+        "Time step $t$",
+        r"$N_{\mathrm{eff}} / N$",
+    )
+    finalize_plot(fig, ax, "mlnlg_neff")
 
 
 def plot_rmse_over_time(results, xis, STEPS):
-    """Cumulative RMSE of ξ over time."""
     t_axis = np.arange(1, STEPS + 1)
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(9, 5))
+
     for name, r in results.items():
         est = r["est_xi"]
         cum_rmse = np.sqrt(
             np.cumsum((est[1 : STEPS + 1] - xis[1 : STEPS + 1]) ** 2)
             / np.arange(1, STEPS + 1)
         )
-        ax.plot(t_axis, cum_rmse, label=name, color=COLORS[name], lw=1)
-    ax.set_title(r"Cumulative RMSE for $\xi$ estimates over time")
-    ax.set_xlabel("Time step $t$")
-    ax.set_ylabel("RMSE")
-    ax.legend(loc="best", fontsize=9)
-    ax.grid(True, alpha=0.3)
-    fig.tight_layout()
-    matplot2tikz.save("plots/mlnlg_xi_rmse_time.tikz")
-    plt.close(fig)
+        ax.plot(t_axis, cum_rmse, label=name, color=COLORS[name], lw=1.5)
+
+    setup_plot(
+        ax, r"Cumulative RMSE for $\xi$ Estimates Over Time", "Time step $t$", "RMSE"
+    )
+    finalize_plot(fig, ax, "mlnlg_xi_rmse_time")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 def main() -> None:
+    os.makedirs("plots", exist_ok=True)
+
     np.random.seed(42)
     STEPS = 100
-    N = 1000  # particles
+    N = 1000
     L = MLNLG_L
 
     xis, zs, ys = simulate_mlnlg(STEPS, seed=42)
@@ -392,125 +423,67 @@ def main() -> None:
     results: dict[str, dict[str, Any]] = {}
     strajs: list[tuple[str, pfilter.ParticleTrajectory]] = []
 
-    # ── SIS (PF with resample=0) ─────────────────────────────────────────────
-    print("Running SIS...")
-    pf_model = MLNLGModelPF()
-    straj_sis, t_sis, res_sis, log_sis = run_filter(pf_model, "pf", ys, N, resample=0)
-    est_xi_sis = weighted_means(straj_sis, state_index=0)
-    est_z_sis = [weighted_means(straj_sis, state_index=1 + i) for i in range(L)]
-    per_tap_sis = [
-        rmse_aggregate(
-            [est_z_sis[2 * t], est_z_sis[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]]
-        )
-        for t in range(L // 2)
+    filters_to_run = [
+        ("SIS", MLNLGModelPF(), "pf", 0),
+        ("SIR", MLNLGModelPF(), "pf", 2.0 / 3.0),
+        ("APF", MLNLGModelPF(), "apf", 2.0 / 3.0),
+        ("RBPF", MLNLGModelRBPF(N), "pf", 2.0 / 3.0),
     ]
-    results["SIS"] = {
-        "rmse_xi": rmse(est_xi_sis, xis),
-        "rmse_z_agg": rmse_aggregate(est_z_sis, [zs[:, i] for i in range(L)]),
-        "rmse_tap": per_tap_sis,
-        "neff": mean_neff(straj_sis),
-        "time_s": t_sis,
-        "resamples": res_sis,
-        "log_ml": log_sis,
-        "est_xi": est_xi_sis,
-        "est_z": est_z_sis,
-    }
-    strajs.append(("SIS", straj_sis))
 
-    # ── SIR (PF with resample=2/3) ───────────────────────────────────────────
-    print("Running SIR...")
-    pf_model = MLNLGModelPF()
-    straj_sir, t_sir, res_sir, log_sir = run_filter(pf_model, "pf", ys, N)
-    est_xi_sir = weighted_means(straj_sir, state_index=0)
-    est_z_sir = [weighted_means(straj_sir, state_index=1 + i) for i in range(L)]
-    per_tap_sir = [
-        rmse_aggregate(
-            [est_z_sir[2 * t], est_z_sir[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]]
+    for name, model, filter_type, resample in filters_to_run:
+        print(f"Running {name}...")
+        straj, t_wall, resamples, log_ml = run_filter(
+            model, filter_type, ys, N, resample=resample
         )
-        for t in range(L // 2)
-    ]
-    results["SIR"] = {
-        "rmse_xi": rmse(est_xi_sir, xis),
-        "rmse_z_agg": rmse_aggregate(est_z_sir, [zs[:, i] for i in range(L)]),
-        "rmse_tap": per_tap_sir,
-        "neff": mean_neff(straj_sir),
-        "time_s": t_sir,
-        "resamples": res_sir,
-        "log_ml": log_sir,
-        "est_xi": est_xi_sir,
-        "est_z": est_z_sir,
-    }
-    strajs.append(("SIR", straj_sir))
 
-    # ── APF ──────────────────────────────────────────────────────────────────
-    print("Running APF...")
-    apf_model = MLNLGModelPF()
-    straj_apf, t_apf, res_apf, log_apf = run_filter(apf_model, "apf", ys, N)
-    est_xi_apf = weighted_means(straj_apf, state_index=0)
-    est_z_apf = [weighted_means(straj_apf, state_index=1 + i) for i in range(L)]
-    per_tap_apf = [
-        rmse_aggregate(
-            [est_z_apf[2 * t], est_z_apf[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]]
-        )
-        for t in range(L // 2)
-    ]
-    results["APF"] = {
-        "rmse_xi": rmse(est_xi_apf, xis),
-        "rmse_z_agg": rmse_aggregate(est_z_apf, [zs[:, i] for i in range(L)]),
-        "rmse_tap": per_tap_apf,
-        "neff": mean_neff(straj_apf),
-        "time_s": t_apf,
-        "resamples": res_apf,
-        "log_ml": log_apf,
-        "est_xi": est_xi_apf,
-        "est_z": est_z_apf,
-    }
-    strajs.append(("APF", straj_apf))
+        est_xi = weighted_means(straj, state_index=0)
 
-    # ── RBPF (ξ sampled, z Kalman-filtered) ──────────────────────────────────
-    print("Running RBPF...")
-    rb_model = MLNLGModelRBPF(N)
-    straj_rb, t_rb, res_rb, log_rb = run_filter(rb_model, "pf", ys, N)
-    est_xi_rb = weighted_means(straj_rb, state_index=0)
-    est_z_rb = [weighted_means_z(straj_rb, lxi=1, z_index=i) for i in range(L)]
-    per_tap_rb = [
-        rmse_aggregate(
-            [est_z_rb[2 * t], est_z_rb[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]]
-        )
-        for t in range(L // 2)
-    ]
-    results["RBPF"] = {
-        "rmse_xi": rmse(est_xi_rb, xis),
-        "rmse_z_agg": rmse_aggregate(est_z_rb, [zs[:, i] for i in range(L)]),
-        "rmse_tap": per_tap_rb,
-        "neff": mean_neff(straj_rb),
-        "time_s": t_rb,
-        "resamples": res_rb,
-        "log_ml": log_rb,
-        "est_xi": est_xi_rb,
-        "est_z": est_z_rb,
-    }
-    strajs.append(("RBPF", straj_rb))
+        if name == "RBPF":
+            est_z = [weighted_means_z(straj, lxi=1, z_index=i) for i in range(L)]
+        else:
+            est_z = [weighted_means(straj, state_index=1 + i) for i in range(L)]
 
-    # ── Print metrics ────────────────────────────────────────────────────────
+        per_tap_rmse = [
+            rmse_aggregate(
+                [est_z[2 * t], est_z[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]]
+            )
+            for t in range(L // 2)
+        ]
+
+        results[name] = {
+            "rmse_xi": rmse(est_xi, xis),
+            "rmse_z_agg": rmse_aggregate(est_z, [zs[:, i] for i in range(L)]),
+            "rmse_tap": per_tap_rmse,
+            "neff": mean_neff(straj),
+            "time_s": t_wall,
+            "resamples": resamples,
+            "log_ml": log_ml,
+            "est_xi": est_xi,
+            "est_z": est_z,
+        }
+        strajs.append((name, straj))
+
+    # ── Console Output ───────────────────────────────────────────────────────
     n_taps = L // 2
     tap_headers = "".join(
         f" {'RMSE(tap' + str(i + 1) + ')':>12}" for i in range(n_taps)
     )
     print(
-        f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers}"
-        f" {'Neff':>8} {'Time(s)':>8} {'Resamp':>7}"
+        f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers} {'Neff':>8} {'Time(s)':>8} {'Resamp':>7}"
     )
     print("-" * (55 + 13 * n_taps))
     for name, r in results.items():
         tap_vals = "".join(f" {t:>12.4f}" for t in r["rmse_tap"])
         print(
-            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals}"
-            f" {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d}"
+            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d}"
         )
 
-    # ── Plots ────────────────────────────────────────────────────────────────
-    plt.style.use("ggplot")
+    # ── Save Outputs ─────────────────────────────────────────────────────────
+    # Ensure default styles for white background plotting
+    plt.style.use("default")
+
+    save_latex_table(results, n_taps)
+
     plot_xi_estimates(results, STEPS, xis)
     for tap_idx in range(n_taps):
         plot_tap_magnitude(results, STEPS, zs, tap_idx)
