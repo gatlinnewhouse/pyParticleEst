@@ -4,50 +4,32 @@ Created on Jun 25, 2014
 @author: Jerker Nordh
 """
 
+from dataclasses import dataclass
 from typing import Any
 
 import numpy
 
 
+@dataclass
 class OpCount:
-    def __init__(
-        self,
-        cnt_sample: int = 0,
-        cnt_update: int = 0,
-        cnt_measure: int = 0,
-        cnt_pdfxn: int = 0,
-        cnt_pdfxn_full: int = 0,
-        cnt_pdfxnmax: int = 0,
-        cnt_propsmooth: int = 0,
-        cnt_pdfsmooth: int = 0,
-        cnt_eval1st: int = 0,
-        cnt_eval_logp_x0: int = 0,
-    ) -> None:
-        self.cnt_sample = cnt_sample
-        self.cnt_update = cnt_update
-        self.cnt_measure = cnt_measure
-        self.cnt_pdfxn = cnt_pdfxn
-        self.cnt_pdfxn_full = cnt_pdfxn_full
-        self.cnt_pdfxnmax = cnt_pdfxnmax
-        self.cnt_propsmooth = cnt_propsmooth
-        self.cnt_pdfsmooth = cnt_pdfsmooth
-        self.cnt_eval1st = cnt_eval1st
-        self.cnt_eval_logp_x0 = cnt_eval_logp_x0
+    cnt_sample: int = 0
+    cnt_update: int = 0
+    cnt_measure: int = 0
+    cnt_pdfxn: int = 0
+    cnt_pdfxn_full: int = 0
+    cnt_pdfxnmax: int = 0
+    cnt_propsmooth: int = 0
+    cnt_pdfsmooth: int = 0
+    cnt_eval1st: int = 0
+    cnt_eval_logp_x0: int = 0
 
     def __add__(self, other: "OpCount") -> "OpCount":
-        x = OpCount(
-            cnt_sample=self.cnt_sample + other.cnt_sample,
-            cnt_update=self.cnt_update + other.cnt_update,
-            cnt_measure=self.cnt_measure + other.cnt_measure,
-            cnt_pdfxn=self.cnt_pdfxn + other.cnt_pdfxn,
-            cnt_pdfxn_full=self.cnt_pdfxn_full + other.cnt_pdfxn_full,
-            cnt_pdfxnmax=self.cnt_pdfxnmax + other.cnt_pdfxnmax,
-            cnt_propsmooth=self.cnt_propsmooth + other.cnt_propsmooth,
-            cnt_pdfsmooth=self.cnt_pdfsmooth + other.cnt_pdfsmooth,
-            cnt_eval1st=self.cnt_eval1st + other.cnt_eval1st,
-            cnt_eval_logp_x0=self.cnt_eval_logp_x0 + other.cnt_eval_logp_x0,
+        return OpCount(
+            **{
+                field: getattr(self, field) + getattr(other, field)
+                for field in self.__annotations__
+            }
         )
-        return x
 
 
 class Instrumenter:
@@ -127,7 +109,13 @@ class Instrumenter:
         """Update estimate using 'data' as input"""
         self.oc.cnt_update += len(particles)
         return self.model.update_full(
-            particles, traj, uvec, yvec, tvec, ancestors, noise,
+            particles,
+            traj,
+            uvec,
+            yvec,
+            tvec,
+            ancestors,
+            noise,
         )
 
     def measure_full(
@@ -144,12 +132,18 @@ class Instrumenter:
         return self.model.measure_full(particles, traj, uvec, yvec, tvec, ancestors)
 
     def copy_ind(
-        self, particles: numpy.ndarray, new_ind: numpy.ndarray | None = None,
+        self,
+        particles: numpy.ndarray,
+        new_ind: numpy.ndarray | None = None,
     ) -> numpy.ndarray:
         return self.model.copy_ind(particles, new_ind)
 
     def logp_xnext(
-        self, particles: numpy.ndarray, next_part: numpy.ndarray, u: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        next_part: numpy.ndarray,
+        u: Any,
+        t: float,
     ) -> numpy.ndarray:
         """Return the log-pdf value for the possible future state 'next' given input u"""
         self.oc.cnt_pdfxn += max(len(particles), len(next_part))
@@ -168,7 +162,13 @@ class Instrumenter:
         """Return the log-pdf value for the possible future state 'next' given input u"""
         self.oc.cnt_pdfxnmax += len(part)
         return self.model.logp_xnext_max_full(
-            part, past_trajs, pind, uvec, yvec, tvec, cur_ind,
+            part,
+            past_trajs,
+            pind,
+            uvec,
+            yvec,
+            tvec,
+            cur_ind,
         )
 
     def sample_smooth(
@@ -185,7 +185,15 @@ class Instrumenter:
     ) -> numpy.ndarray:
         """Update ev. Rao-Blackwellized states conditioned on "next_part" """
         return self.model.sample_smooth(
-            part, ptraj, anc, future_trajs, find, ut, yt, tt, cur_ind,
+            part,
+            ptraj,
+            anc,
+            future_trajs,
+            find,
+            ut,
+            yt,
+            tt,
+            cur_ind,
         )
 
     def propose_smooth(
@@ -206,7 +214,14 @@ class Instrumenter:
             N = len(find)
         self.oc.cnt_propsmooth += N
         return self.model.propose_smooth(
-            ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind,
+            ptraj,
+            anc,
+            future_trajs,
+            find,
+            yt,
+            ut,
+            tt,
+            cur_ind,
         )
 
     def logp_proposal(
@@ -224,7 +239,15 @@ class Instrumenter:
         """Eval log q(x_t | x_{t-1}, x_{t+1}, y_t)"""
         self.oc.cnt_pdfsmooth += len(prop_part)
         return self.model.logp_proposal(
-            prop_part, ptraj, anc, future_trajs, find, yt, ut, tt, cur_ind,
+            prop_part,
+            ptraj,
+            anc,
+            future_trajs,
+            find,
+            yt,
+            ut,
+            tt,
+            cur_ind,
         )
 
     def logp_xnext_full(
@@ -241,7 +264,15 @@ class Instrumenter:
     ) -> numpy.ndarray:
         self.oc.cnt_pdfxn += max(len(part), len(find))
         return self.model.logp_xnext_full(
-            part, past_trajs, pind, future_trajs, find, ut, yt, tt, cur_ind,
+            part,
+            past_trajs,
+            pind,
+            future_trajs,
+            find,
+            ut,
+            yt,
+            tt,
+            cur_ind,
         )
 
     def logp_xnext_singlestep(
@@ -258,11 +289,23 @@ class Instrumenter:
     ) -> numpy.ndarray:
         self.oc.cnt_pdfxn += max(len(part), len(find))
         return self.model.logp_xnext_singlestep(
-            part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind,
+            part,
+            past_trajs,
+            pind,
+            future_parts,
+            find,
+            ut,
+            yt,
+            tt,
+            cur_ind,
         )
 
     def eval_1st_stage_weights(
-        self, particles: numpy.ndarray, u: Any, y: Any, t: float,
+        self,
+        particles: numpy.ndarray,
+        u: Any,
+        y: Any,
+        t: float,
     ) -> numpy.ndarray:
         self.oc.cnt_eval1st += len(particles)
         return self.model.eval_1st_stage_weights(particles, u, y, t)
@@ -290,7 +333,15 @@ class Instrumenter:
         cur_ind: int,
     ) -> numpy.ndarray:
         return self.model.cond_predict_single_step(
-            part, past_trajs, pind, future_parts, find, ut, yt, tt, cur_ind,
+            part,
+            past_trajs,
+            pind,
+            future_parts,
+            find,
+            ut,
+            yt,
+            tt,
+            cur_ind,
         )
 
     def cond_sampled_initial(self, part: numpy.ndarray, t: float) -> numpy.ndarray:
