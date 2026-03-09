@@ -5,8 +5,6 @@
 
 import numpy
 
-from builtins import range
-
 from . import filter as pf
 from .filter import ParticleApproximation, TrajectoryStep
 
@@ -78,8 +76,9 @@ def bsi_rs(
     weights -= numpy.max(weights)
     weights = numpy.exp(weights)
     weights /= numpy.sum(weights)
+    rng = numpy.random.default_rng()
     for _i in range(max_iter):
-        ind = numpy.random.permutation(pf.sample(weights, len(todo)))
+        ind = rng.permutation(pf.sample(weights, len(todo)))
         pn = model.logp_xnext_full(
             pa.part[ind],
             ptraj,
@@ -91,7 +90,7 @@ def bsi_rs(
             tt=tt,
             cur_ind=cur_ind,
         )
-        test = numpy.log(numpy.random.uniform(size=len(todo)))
+        test = numpy.log(rng.uniform(size=len(todo)))
         accept = test < pn - maxpdf
         res[todo[accept]] = ind[accept]
         todo = todo[~accept]
@@ -162,8 +161,9 @@ def bsi_rsas(
     pk = x1
     Pk = P1
     stop_criteria = ratio / len(pa)
+    rng = numpy.random.default_rng()
     while True:
-        ind = numpy.random.permutation(pf.sample(weights, len(todo)))
+        ind = rng.permutation(pf.sample(weights, len(todo)))
         pn = model.logp_xnext_full(
             pa.part[ind],
             ptraj,
@@ -175,7 +175,7 @@ def bsi_rsas(
             tt=tt,
             cur_ind=cur_ind,
         )
-        test = numpy.log(numpy.random.uniform(size=len(todo)))
+        test = numpy.log(rng.uniform(size=len(todo)))
         accept = test < pn - maxpdf
         ak = numpy.sum(accept)
         mk = len(todo)
@@ -239,8 +239,9 @@ def bsi_mcmc(
         tt=tt,
         cur_ind=cur_ind,
     )
+    rng = numpy.random.default_rng()
     for _j in range(R):
-        propind = numpy.random.permutation(pf.sample(weights, M))
+        propind = rng.permutation(pf.sample(weights, M))
         pprop = model.logp_xnext_full(
             pa.part[propind],
             ptraj,
@@ -254,7 +255,7 @@ def bsi_mcmc(
         )
         diff = pprop - pcurr
         diff[diff > 0.0] = 0.0
-        test = numpy.log(numpy.random.uniform(size=M))
+        test = numpy.log(rng.uniform(size=M))
         accept = test < diff
         ind[accept] = propind[accept]
         pcurr[accept] = pprop[accept]
@@ -974,7 +975,8 @@ def mc_step(
         + (logp_q_curr - logp_q_prop)
     )
 
-    test = numpy.log(numpy.random.uniform(size=len(ratio)))
+    rng = numpy.random.default_rng()
+    test = numpy.log(rng.uniform(size=len(ratio)))
     acc = test < ratio
     curparty[acc] = xpropy[acc]
     return (curparty, acc)
