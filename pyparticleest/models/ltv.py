@@ -4,8 +4,8 @@
 
 from typing import Any
 
-import numpy
 import numba as nb
+import numpy
 import scipy.linalg
 
 import pyparticleest.utils.kalman as kalman
@@ -846,7 +846,7 @@ class LTV(FFBSi, ParticleFiltering):
     ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """internal helper function"""
         return _nb_calc_l2_grad(
-            zn, Pn, z, P, A, f, M, A_grad, f_grad, len(self.params), self.kf.lz
+            zn, Pn, z, P, A, f, M, A_grad, f_grad, len(self.params), self.kf.lz,
         )
 
     def calc_l3(
