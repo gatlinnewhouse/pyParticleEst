@@ -10,3 +10,4 @@ docs/_build/
 *.profile
 *.so
 *.egg-info
+__pycache__/

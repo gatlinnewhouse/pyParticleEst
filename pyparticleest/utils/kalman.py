@@ -6,10 +6,41 @@ A module with operations useful for Kalman filtering.
 import math
 from typing import Any
 
+import numba as nb
 import numpy as np
 import scipy.linalg
 
 l2pi = math.log(2 * math.pi)
+
+
+@nb.njit(cache=True)
+def _nb_predict_full(
+    z: np.ndarray,
+    P: np.ndarray,
+    A: np.ndarray,
+    f_k: np.ndarray,
+    Q: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    z_out = f_k + np.dot(A, z)
+    P_out = np.dot(A, np.dot(P, A.T)) + Q
+    return z_out, P_out
+
+
+@nb.njit(cache=True)
+def _nb_smooth(
+    z: np.ndarray,
+    P: np.ndarray,
+    z_next: np.ndarray,
+    P_next: np.ndarray,
+    A: np.ndarray,
+    z_np: np.ndarray,
+    P_np: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    J = np.dot(P, np.dot(A.T, np.linalg.inv(P_np)))
+    z_smooth = z + np.dot(J, z_next - z_np)
+    P_smooth = P + np.dot(J, np.dot(P_next - P_np, J.T))
+    M_smooth = np.dot(J, P_next)
+    return z_smooth, P_smooth, M_smooth
 
 
 def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
@@ -162,8 +193,9 @@ class KalmanFilter:
         """
         Update the estimates to time t+1, using the supplied matrices as the dynamics
         """
-        z[:] = f_k + A.dot(z)  # Calculate the next state
-        P[:, :] = A.dot(P).dot(A.T) + Q  # Calculate the estimated variance
+        z_out, P_out = _nb_predict_full(z, P, A, f_k, Q)
+        z[:] = z_out
+        P[:, :] = P_out
         return (z, P)
 
     def predict_full(
@@ -178,9 +210,7 @@ class KalmanFilter:
         Calculate next state estimate without actually updating
         the internal variables, using the supplied matrices as the dynamics
         """
-        z = f_k + A.dot(z)  # Calculate the next state
-        P = A.dot(P).dot(A.T) + Q  # Calculate the estimated variance
-        return (z, P)
+        return _nb_predict_full(z, P, A, f_k, Q)
 
     def measurement_diff(
         self,
@@ -302,8 +332,4 @@ class KalmanSmoother(KalmanFilter):
         """
 
         (z_np, P_np) = self.predict_full(z, P, A, f, Q)
-        J = P.dot(A.T.dot(np.linalg.inv(P_np)))
-        z_smooth = z + J.dot(z_next - z_np)
-        P_smooth = P + J.dot((P_next - P_np).dot(J.T))
-        M_smooth = J.dot(P_next)
-        return (z_smooth, P_smooth, M_smooth)
+        return _nb_smooth(z, P, z_next, P_next, A, z_np, P_np)
