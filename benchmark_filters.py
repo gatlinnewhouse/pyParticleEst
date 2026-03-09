@@ -71,7 +71,8 @@ MLNLG_Z0_COV = 0.5 * np.eye(2)
 
 
 def simulate_mlnlg(
-    steps: int, seed: int = 0,
+    steps: int,
+    seed: int = 0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Simulate a mixed linear/nonlinear Gaussian SSM.
 
@@ -107,7 +108,8 @@ def simulate_mlnlg(
 
 # ── Helper: extract weighted mean from a ParticleTrajectory ──────────────────
 def weighted_means(
-    straj: pfilter.ParticleTrajectory, state_index: int = 0,
+    straj: pfilter.ParticleTrajectory,
+    state_index: int = 0,
 ) -> np.ndarray:
     """Return array of weighted-mean estimates for state_index across time."""
     means = np.empty(len(straj))
@@ -142,13 +144,20 @@ class NLGSSModel(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFilte
         return np.random.normal(x0_mean, np.sqrt(x0_var), size=(N, 1))
 
     def sample_process_noise(
-        self, particles: np.ndarray, u: Any | None, t: int,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        t: int,
     ) -> np.ndarray:
         N = len(particles)
         return np.random.normal(0.0, np.sqrt(Q), size=(N, 1))
 
     def update(
-        self, particles: np.ndarray, u: Any | None, t: int, noise: np.ndarray,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        t: int,
+        noise: np.ndarray,
     ) -> np.ndarray:
         x = particles[:, 0]
         x_next = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * np.cos(1.2 * t) + noise[:, 0]
@@ -162,7 +171,11 @@ class NLGSSModel(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFilte
 
     # ── APF first-stage weights: use propagated mean as predictor ────────────
     def eval_1st_stage_weights(
-        self, particles: np.ndarray, u: Any | None, y: float, t: int,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        y: float,
+        t: int,
     ) -> np.ndarray:
         x = particles[:, 0]
         x_pred = x / 2.0 + 25.0 * x / (1.0 + x**2) + 8.0 * np.cos(1.2 * t)
@@ -188,7 +201,10 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
         return particles
 
     def sample_process_noise(
-        self, particles: np.ndarray, u: Any | None, t: int,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        t: int,
     ) -> np.ndarray:
         N = len(particles)
         noise = np.empty((N, 3))
@@ -197,7 +213,11 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
         return noise
 
     def update(
-        self, particles: np.ndarray, u: Any | None, t: int, noise: np.ndarray,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        t: int,
+        noise: np.ndarray,
     ) -> np.ndarray:
         xi = particles[:, 0]
         particles[:, 0] = (
@@ -213,7 +233,11 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
         return scipy.stats.norm.logpdf(float(y), loc=y_hat, scale=np.sqrt(MLNLG_R))
 
     def eval_1st_stage_weights(
-        self, particles: np.ndarray, u: Any | None, y: float, t: int,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        y: float,
+        t: int,
     ) -> np.ndarray:
         xi = particles[:, 0]
         z = particles[:, 1:]
@@ -270,7 +294,10 @@ class RBPFModel(mlnlg.MixedNLGaussianSampledInitialGaussian):
 
     # xi_{t+1} = f(xi_t, t) + v_xi
     def get_nonlin_pred_dynamics(
-        self, particles: np.ndarray, u: Any | None, t: int,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        t: int,
     ) -> tuple[np.ndarray, np.ndarray, Any | None]:
         xi = particles[:, 0]  # shape (N,)
         N = len(particles)
@@ -282,7 +309,10 @@ class RBPFModel(mlnlg.MixedNLGaussianSampledInitialGaussian):
 
     # y_t = h(xi_t) + C*z_t + e_t  with C=0, h = xi^2/20
     def get_meas_dynamics(
-        self, y: float, particles: np.ndarray, t: int,
+        self,
+        y: float,
+        particles: np.ndarray,
+        t: int,
     ) -> tuple[np.ndarray, Any | None, np.ndarray, Any | None]:
         xi = particles[:, 0]
         h = (xi**2 / 20.0)[:, np.newaxis, np.newaxis]
@@ -291,7 +321,9 @@ class RBPFModel(mlnlg.MixedNLGaussianSampledInitialGaussian):
 
 
 def weighted_means_z(
-    straj: pfilter.ParticleTrajectory, lxi: int, z_index: int,
+    straj: pfilter.ParticleTrajectory,
+    lxi: int,
+    z_index: int,
 ) -> np.ndarray:
     """Return weighted-mean z estimates from RBPF trajectory.
 
@@ -330,7 +362,10 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         )
 
     def get_nonlin_pred_dynamics(
-        self, particles: np.ndarray, u: Any | None, t: int,
+        self,
+        particles: np.ndarray,
+        u: Any | None,
+        t: int,
     ) -> tuple[np.ndarray, np.ndarray, Any | None]:
         """ξ_{t+1} = f_nl(ξ_t, t) + v_ξ, no linear dependence on z."""
         xi = particles[:, 0]
@@ -341,7 +376,10 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
         return (Axi, fxi, None)  # Qxi=None → uses default
 
     def get_meas_dynamics(
-        self, y: float, particles: np.ndarray, t: int,
+        self,
+        y: float,
+        particles: np.ndarray,
+        t: int,
     ) -> tuple[np.ndarray, Any | None, np.ndarray, Any | None]:
         """y_t = C·z_t + ξ_t²/20 + e_t.  C is constant, h(ξ) varies."""
         xi = particles[:, 0]
@@ -469,7 +507,10 @@ markers: dict[str, str] = {
 
 
 def plot_individual_estimates(
-    results: dict[str, dict[str, Any]], STEPS: int, xs: np.ndarray, ys: np.ndarray,
+    results: dict[str, dict[str, Any]],
+    STEPS: int,
+    xs: np.ndarray,
+    ys: np.ndarray,
 ) -> None:
     """One figure per algorithm, each with ground truth overlaid."""
     t_axis = np.arange(STEPS + 1)
@@ -509,7 +550,10 @@ def plot_individual_estimates(
 
 
 def plot_combined_estimates(
-    results: dict[str, dict[str, Any]], STEPS: int, xs: np.ndarray, ys: np.ndarray,
+    results: dict[str, dict[str, Any]],
+    STEPS: int,
+    xs: np.ndarray,
+    ys: np.ndarray,
 ) -> None:
     """All algorithms on one figure for comparison."""
     t_axis = np.arange(STEPS + 1)
