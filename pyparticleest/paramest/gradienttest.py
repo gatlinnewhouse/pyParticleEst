@@ -7,15 +7,18 @@ Created on Mar 27, 2015
 import numpy
 import matplotlib.pyplot as plt
 from pyparticleest.paramest.paramest import ParamEstimation
+from typing import Any
 
 
 class GradPlot:
-    def __init__(self, params, vals, diff):
+    def __init__(
+        self, params: numpy.ndarray, vals: numpy.ndarray, diff: numpy.ndarray | None
+    ) -> None:
         self.params = params
         self.vals = vals
         self.diff = diff
 
-    def plot(self, fig_id):
+    def plot(self, fig_id: int | str) -> None:
         fig = plt.figure(fig_id)
         fig.clf()
         plt.plot(self.params, self.vals)
@@ -29,12 +32,19 @@ class GradPlot:
                         self.diff[k],
                     )
 
-    def draw_gradient(self, x, y, dx, dydx):
+    def draw_gradient(self, x: float, y: float, dx: float, dydx: float) -> None:
         plt.plot((x - dx, x + dx), (y - dydx * dx, y + dydx * dx), "r")
 
 
 class GradientTest(ParamEstimation):
-    def test(self, param_id, param_vals, num=100, nums=1, analytic_grad=True):
+    def test(
+        self,
+        param_id: int,
+        param_vals: numpy.ndarray,
+        num: int = 100,
+        nums: int = 1,
+        analytic_grad: bool = True,
+    ) -> None:
         self.simulate(num_part=num, num_traj=nums)
         param_steps = len(param_vals)
         logpy = numpy.zeros((param_steps,))

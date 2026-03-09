@@ -5,6 +5,7 @@
 
 from pyparticleest.simulator import Simulator
 import numpy
+from typing import Any, Callable
 
 
 class ParamEstimation(Simulator):
@@ -16,18 +17,18 @@ class ParamEstimation(Simulator):
 
     def maximize(
         self,
-        param0,
-        num_part,
-        num_traj,
-        max_iter=1000,
-        tol=0.001,
-        callback=None,
-        callback_sim=None,
-        meas_first=False,
-        filter="pf",
-        smoother="full",
-        smoother_options=None,
-    ):
+        param0: numpy.ndarray,
+        num_part: int | numpy.ndarray | list[int],
+        num_traj: int | numpy.ndarray | list[int],
+        max_iter: int = 1000,
+        tol: float = 0.001,
+        callback: Callable[..., Any] | None = None,
+        callback_sim: Callable[..., Any] | None = None,
+        meas_first: bool = False,
+        filter: str = "pf",
+        smoother: str = "full",
+        smoother_options: dict[str, Any] | None = None,
+    ) -> tuple[numpy.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -102,7 +103,7 @@ class ParamEstimation(Simulator):
         return (params_local, -numpy.inf)
 
 
-def alpha_gen(it):
+def alpha_gen(it: int) -> float:
     offset = 100
     if it <= offset:
         return 1
@@ -119,20 +120,20 @@ class ParamEstimationSAEM(Simulator):
 
     def maximize(
         self,
-        param0,
-        num_part,
-        num_traj,
-        max_iter=1000,
-        tol=0.001,
-        callback=None,
-        callback_sim=None,
-        meas_first=False,
-        filter="pf",
-        filter_options=None,
-        smoother="full",
-        smoother_options=None,
-        alpha_gen=alpha_gen,
-    ):
+        param0: numpy.ndarray,
+        num_part: int | numpy.ndarray | list[int],
+        num_traj: int | numpy.ndarray | list[int],
+        max_iter: int = 1000,
+        tol: float = 0.001,
+        callback: Callable[..., Any] | None = None,
+        callback_sim: Callable[..., Any] | None = None,
+        meas_first: bool = False,
+        filter: str = "pf",
+        filter_options: dict[str, Any] | None = None,
+        smoother: str = "full",
+        smoother_options: dict[str, Any] | None = None,
+        alpha_gen: Callable[[int], float] = alpha_gen,
+    ) -> tuple[numpy.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -226,23 +227,23 @@ class ParamEstimationPSAEM(Simulator):
 
     def maximize(
         self,
-        param0,
-        num_part,
-        max_iter=1000,
-        tol=0.001,
-        callback=None,
-        callback_sim=None,
-        meas_first=False,
-        filter="cpfas",
-        filter_options=None,
-        alpha_gen=alpha_gen,
-        discard_eps=0.0,
-        discard_percentile=0,
-        M=1,
-        smoother="ancestor",
-        raoblackwell=False,
-        max_traj=0,
-    ):
+        param0: numpy.ndarray,
+        num_part: int,
+        max_iter: int = 1000,
+        tol: float = 0.001,
+        callback: Callable[..., Any] | None = None,
+        callback_sim: Callable[..., Any] | None = None,
+        meas_first: bool = False,
+        filter: str = "cpfas",
+        filter_options: dict[str, Any] | None = None,
+        alpha_gen: Callable[[int], float] = alpha_gen,
+        discard_eps: float = 0.0,
+        discard_percentile: float = 0.0,
+        M: int = 1,
+        smoother: str = "ancestor",
+        raoblackwell: bool = False,
+        max_traj: int = 0,
+    ) -> tuple[numpy.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
@@ -273,7 +274,9 @@ class ParamEstimationPSAEM(Simulator):
         alltrajs = None
         weights = None
 
-        def default_callback(params, Q, cur_iter):
+        def default_callback(
+            params: numpy.ndarray, Q: float, cur_iter: int
+        ) -> bool | None:
             if cur_iter >= max_iter:
                 return True
 
@@ -356,21 +359,21 @@ class ParamEstimationPSAEM2(Simulator):
 
     def maximize(
         self,
-        param0,
-        num_part,
-        max_iter=1000,
-        tol=0.001,
-        callback=None,
-        callback_sim=None,
-        meas_first=False,
-        filter="cpfas",
-        filter_options=None,
-        smoother="full",
-        smoother_options=None,
-        alpha_gen=alpha_gen,
-        discard_eps=0.0,
-        discard_percentile=0,
-    ):
+        param0: numpy.ndarray,
+        num_part: int,
+        max_iter: int = 1000,
+        tol: float = 0.001,
+        callback: Callable[..., Any] | None = None,
+        callback_sim: Callable[..., Any] | None = None,
+        meas_first: bool = False,
+        filter: str = "cpfas",
+        filter_options: dict[str, Any] | None = None,
+        smoother: str = "full",
+        smoother_options: dict[str, Any] | None = None,
+        alpha_gen: Callable[[int], float] = alpha_gen,
+        discard_eps: float = 0.0,
+        discard_percentile: float = 0.0,
+    ) -> tuple[numpy.ndarray, float]:
         """
         Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
