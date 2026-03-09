@@ -1,5 +1,4 @@
-"""
-Benchmark: SIS, SIR/PF, APF, and RBPF on a non-linear non-Gaussian SSM.
+"""Benchmark: SIS, SIR/PF, APF, and RBPF on a non-linear non-Gaussian SSM.
 
 Model (Gordon-Salmond-Smith 1993, stochastic volatility variant):
     x_{t+1} = x_t/2 + 25*x_t/(1+x_t^2) + 8*cos(1.2*t) + v_t,  v_t ~ N(0, Q)
@@ -32,8 +31,8 @@ import scipy.stats
 from texttable import Texttable
 
 import pyparticleest.filter as pfilter
-import pyparticleest.interfaces as interfaces
-import pyparticleest.models.mlnlg as mlnlg
+from pyparticleest import interfaces
+from pyparticleest.models import mlnlg
 
 # ── Model parameters ─────────────────────────────────────────────────────────
 Q = 10.0  # process noise variance
@@ -131,8 +130,7 @@ def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
 #     Particles = [x_t]  (scalar, shape (N,1))
 # ══════════════════════════════════════════════════════════════════════════════
 class NLGSSModel(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFiltering):
-    """
-    Non-linear Gaussian SSM for use with PF and APF.
+    """Non-linear Gaussian SSM for use with PF and APF.
 
     Particle state: 1-D np array [x_t].
     """
@@ -257,8 +255,7 @@ class MLNLGModelPF(interfaces.ParticleFiltering, interfaces.AuxiliaryParticleFil
 #     y_t  = C*z_t + h(xi_t) + e_t  with C=0, h=xi^2/20
 # ══════════════════════════════════════════════════════════════════════════════
 class RBPFModel(mlnlg.MixedNLGaussianSampledInitialGaussian):
-    """
-    Rao-Blackwellized particle filter for the same NLGSSM.
+    """Rao-Blackwellized particle filter for the same NLGSSM.
 
     The 'linear' sub-state z is a dummy scalar kept at 0 with near-zero
     covariance so that the RBPF collapses to standard PF behaviour, while

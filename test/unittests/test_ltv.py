@@ -1,5 +1,4 @@
-"""
-Created on Jul 23, 2015
+"""Created on Jul 23, 2015
 
 @author: ajn
 """
@@ -9,13 +8,14 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import pyparticleest.models.ltv as ltv
+from pyparticleest.models import ltv
 
 
 class Model(ltv.LTV):
     """x_{k+1} = sin(x_k) + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, x0, P0, A, C, f, Q, R) -> None:
         super().__init__(

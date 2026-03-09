@@ -1,5 +1,4 @@
-"""
-Created on Jun 25, 2014
+"""Created on Jun 25, 2014
 
 @author: Jerker Nordh
 """
@@ -33,8 +32,7 @@ class OpCount:
 
 
 class Instrumenter:
-    """
-    Count number of operations performed
+    """Count number of operations performed
 
     Wraps all calls and counts the number of calls * number of particles in
     each call.
@@ -53,6 +51,7 @@ class Instrumenter:
 
     Args:
      - model: Object of encapsulated model class
+
     """
 
     def __init__(self, model: Any) -> None:

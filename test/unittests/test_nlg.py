@@ -1,5 +1,4 @@
-"""
-Created on Jul 23, 2015
+"""Created on Jul 23, 2015
 
 @author: ajn
 """
@@ -10,13 +9,14 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 
-import pyparticleest.models.nlg as nlg
+from pyparticleest.models import nlg
 
 
 class Model(nlg.NonlinearGaussianInitialGaussian):
     """x_{k+1} = sin(x_k) + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0, Q, R) -> None:
         x0 = np.zeros((1, 1))

@@ -3,8 +3,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.models.nlg as nlg
-import pyparticleest.simulator as simulator
+from pyparticleest import simulator
+from pyparticleest.models import nlg
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -12,7 +12,7 @@ def generate_dataset(steps, P0, Q, R):
     y = np.zeros((steps + 1,))
     x[0] = np.random.multivariate_normal((0.0,), P0)
     y[0] = 0.05 * x[0] ** 2 + np.random.multivariate_normal((0.0,), R)
-    for k in range(0, steps):
+    for k in range(steps):
         x[k + 1] = (
             0.5 * x[k]
             + 25.0 * x[k] / (1 + x[k] ** 2)
@@ -33,7 +33,8 @@ def wmean(logw, val):
 class Model(nlg.NonlinearGaussianInitialGaussian):
     """x_{k+1} = 0.5*x_k + 25.0*x_k/(1+x_k**2) + 8*math.cos(1.2*k) + v_k, v_k ~ N(0,Q)
     y_k = 0.05*x_k**2 + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0, Q, R) -> None:
         super().__init__(Px0=P0, Q=Q, R=R)

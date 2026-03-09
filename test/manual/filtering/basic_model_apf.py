@@ -1,12 +1,12 @@
 """Particle filtering for a trivial model
-Also illustrates that the"""
+Also illustrates that the
+"""
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.interfaces as interfaces
-import pyparticleest.simulator as simulator
-import pyparticleest.utils.kalman as kalman
+from pyparticleest import interfaces, simulator
+from pyparticleest.utils import kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -23,7 +23,8 @@ def generate_dataset(steps, P0, Q, R):
 class Model(interfaces.ParticleFiltering):
     """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0, Q, R) -> None:
         self.P0 = np.copy(P0)
@@ -50,13 +51,11 @@ class Model(interfaces.ParticleFiltering):
         return logyprob
 
     def eval_1st_stage_weights(self, particles, u, y, t):
-        """
-        Evaluate "first stage weights" for the auxiliary particle filter.
+        r"""Evaluate "first stage weights" for the auxiliary particle filter.
         (log-probability of measurement using some propagated statistic, such
         as the mean, for the future state)
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - u (array-like): input signal
@@ -65,6 +64,7 @@ class Model(interfaces.ParticleFiltering):
 
         Returns:
          (array-like) with first dimension = N, logp(y_{t+1}|\hat{x}_{t+1|t}^i)
+
         """
         return self.measure(particles, y, t + 1)
 

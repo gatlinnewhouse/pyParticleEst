@@ -3,7 +3,7 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.simulator as simulator
+from pyparticleest import simulator
 from pyparticleest.models.ltv import LTV
 
 
@@ -17,7 +17,7 @@ def generate_dataset(steps, z0, P0, Q, R):
         (-1, 1),
     )
 
-    for k in range(0, steps):
+    for k in range(steps):
         C = np.asarray(((math.cos(k + 1), 0.0), (math.sin(k + 1), 0.0))).reshape(
             (2, -1),
         )

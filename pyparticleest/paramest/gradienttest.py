@@ -1,5 +1,4 @@
-"""
-Created on Mar 27, 2015
+"""Created on Mar 27, 2015
 
 @author: ajn
 """

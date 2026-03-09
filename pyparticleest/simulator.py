@@ -1,5 +1,4 @@
-"""
-Simulator class providing the top-level interface to all the methods in the
+"""Simulator class providing the top-level interface to all the methods in the
 framework.
 
 @author: Jerker Nordh
@@ -13,8 +12,7 @@ from .filter import ParticleTrajectory
 
 
 class Simulator:
-    """
-    Class interfacing filters/smoothers to assisst in solving estimation problem
+    """Class interfacing filters/smoothers to assisst in solving estimation problem
 
     Args:
      - model: object of class describing problem type
@@ -22,6 +20,7 @@ class Simulator:
        to the particlar model class being used
      - y (array-like):  measurements, first dimension is the time index, the rest is specific
        to the particlar model class being used
+
     """
 
     def __init__(self, model: Any, u: Any, y: Any) -> None:
@@ -36,11 +35,11 @@ class Simulator:
         self.model = model
 
     def set_params(self, params: np.ndarray) -> None:
-        """
-        Set the parameters of the model (if any)
+        """Set the parameters of the model (if any)
 
         Args:
          - params (array-like): Model specific paremeters
+
         """
         self.params = np.copy(params)
         self.model.set_params(self.params)
@@ -56,8 +55,7 @@ class Simulator:
         res: float = 0.67,
         meas_first: bool = False,
     ) -> int:
-        """
-        Solve the estimation problem
+        """Solve the estimation problem
 
         Args:
          - num_part (int): Number of particles used in the forward filter.
@@ -98,6 +96,7 @@ class Simulator:
                Options:
                 - R: the number of iterations to run the Markov chain for each
                   time step
+
         """
         resamplings = 0
 
@@ -131,15 +130,13 @@ class Simulator:
         return resamplings
 
     def get_filtered_estimates(self) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Returns type (est, w) (must first have called 'simulate')
+        """Returns type (est, w) (must first have called 'simulate')
          - est: (T, N, D) array containing all particles
          - w: (T,D) array containing all particle weights
 
         T is the length of the dataset, N is the number of particles and
         D is the dimension of each particle
         """
-
         T = len(self.pt.traj)
         N = self.pt.traj[0].pa.part.shape[0]
         D = self.pt.traj[0].pa.part.shape[1]
@@ -156,8 +153,7 @@ class Simulator:
         return (est, w)
 
     def get_filtered_mean(self) -> np.ndarray:
-        """
-        Calculate mean of filtered estimates (must first have
+        """Calculate mean of filtered estimates (must first have
         called 'simulate')
 
         Returns:
@@ -165,6 +161,7 @@ class Simulator:
 
         T is the length of the dataset, N is the number of particles and
         D is the dimension of each particle
+
         """
         (est, w) = self.get_filtered_estimates()
 
@@ -178,8 +175,7 @@ class Simulator:
         return mean
 
     def get_smoothed_estimates(self) -> np.ndarray:
-        """
-        Return smoothed estimates (must first have called 'simulate')
+        """Return smoothed estimates (must first have called 'simulate')
 
         Returns:
          - (T, N, D) array
@@ -187,12 +183,12 @@ class Simulator:
         T is the length of the dataset,
         N is the number of particles
         D is the dimension of each particle
+
         """
         return self.straj.get_smoothed_estimates()
 
     def get_smoothed_mean(self) -> np.ndarray:
-        """
-        Calculate mean of smoothed estimates (must first have
+        """Calculate mean of smoothed estimates (must first have
         called 'simulate')
 
         Returns:
@@ -200,5 +196,6 @@ class Simulator:
 
         T is the length of the dataset, N is the number of particles and
         D is the dimension of each particle
+
         """
         return np.mean(self.get_smoothed_estimates(), 1)

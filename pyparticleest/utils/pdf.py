@@ -1,5 +1,4 @@
-"""
-Utilities for evalutating probability density functions
+"""Utilities for evalutating probability density functions
 """
 
 from collections.abc import Sequence
@@ -29,12 +28,12 @@ def _nb_unifsum_eval(
 
 
 class unifsum:
-    """
-    pdf for sum of two uniform variables
+    """pdf for sum of two uniform variables
 
     Args:
      a: lower limits (1st, 2nd)
      a: upper limits (1st, 2nd)
+
     """
 
     def __init__(self, a: Sequence[float], b: Sequence[float]) -> None:
@@ -73,14 +72,14 @@ class unifsum:
         self.t = 1.0 / (self.w_min + self.w_diff)
 
     def __call__(self, p: float) -> float:
-        """
-        Evaluate density a point p
+        """Evaluate density a point p
 
         Args:
          - p (float): point at which to evaluate the pdf
 
         Returns:
          (float): the pdf value
+
         """
         return _nb_unifsum_eval(
             p,

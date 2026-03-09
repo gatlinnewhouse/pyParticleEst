@@ -48,22 +48,20 @@ def _nb_normalize_weights(
 
 
 def sample(w: np.ndarray, n: int) -> np.ndarray:
-    """
-    Return n random indices, where the probability if index
+    """Return n random indices, where the probability if index
     is given by w[i].
 
     Args:
     - w (array_like): probability weights
     - n (int):  number of indices to sample
-    """
 
+    """
     rng = np.random.default_rng()
     return _numba_sample(w, n, float(rng.random()))
 
 
 class ParticleFilter:
-    """
-    Particle Filter class, creates filter estimates by calling appropriate
+    """Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
     a specified threshold is reach.
 
@@ -71,6 +69,7 @@ class ParticleFilter:
      - model (ParticleFiltering): object describing the model to be used
      - res (float): 0 .. 1 , the ratio of effective number of particles that
        triggers resampling. 0 disables resampling
+
     """
 
     def __init__(self, model: Any, res: float = 0.0) -> None:
@@ -78,8 +77,7 @@ class ParticleFilter:
         self.model = model
 
     def create_initial_estimate(self, N: int) -> np.ndarray:
-        """
-        Create initial particle estimate
+        """Create initial particle estimate
 
         Args:
          - N (int): Number of particles
@@ -98,8 +96,7 @@ class ParticleFilter:
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Forward the estimate stored in traj from t to t+1 using the motion model
+        """Forward the estimate stored in traj from t to t+1 using the motion model
         with input u=uvec[cur_ind] at time t=tvec[cur_ind] and measurement
         y=yvec[cur_ind+1] at t=tvec[cur_ind+1]
 
@@ -114,6 +111,7 @@ class ParticleFilter:
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
+
         """
         pa = ParticleApproximation(traj[-1].pa.part, traj[-1].pa.w)
 
@@ -159,8 +157,7 @@ class ParticleFilter:
         pa: "ParticleApproximation",
         inplace: bool = True,
     ) -> "ParticleApproximation":
-        """
-        Update particle approximation of x_t to x_{t+1} using u as input.
+        """Update particle approximation of x_t to x_{t+1} using u as input.
 
         Args:
          - traj (array-like): approximation for time t
@@ -175,8 +172,8 @@ class ParticleFilter:
 
         Returns:
             ParticleApproximation for time t+1
-        """
 
+        """
         if not inplace:
             pa = ParticleApproximation(
                 self.model.copy_ind(traj[-1].pa.part, ancestors),
@@ -211,8 +208,7 @@ class ParticleFilter:
         cur_ind: int,
         inplace: bool = True,
     ) -> "ParticleApproximation":
-        """
-        Evaluate and update particle approximation using new measurement y
+        """Evaluate and update particle approximation using new measurement y
 
         Args:
          - pa (ParticleApproximation): approximation for time t
@@ -228,8 +224,8 @@ class ParticleFilter:
 
         Returns:
             ParticleApproximation for time t
-        """
 
+        """
         if not inplace:
             pa_out = copy.deepcopy(pa)
             pa = pa_out
@@ -249,8 +245,7 @@ class ParticleFilter:
 
 
 class SIR:
-    """
-    Particle Filter class, creates filter estimates by calling appropriate
+    """Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
     a specified threshold is reach.
 
@@ -258,6 +253,7 @@ class SIR:
      - model (ParticleFiltering): object describing the model to be used
      - res (float): 0 .. 1 , the ratio of effective number of particles that
        triggers resampling. 0 disables resampling
+
     """
 
     def __init__(self, model: Any, res: float = 0.0) -> None:
@@ -265,8 +261,7 @@ class SIR:
         self.model = model
 
     def create_initial_estimate(self, N: int) -> np.ndarray:
-        """
-        Create initial particle estimate
+        """Create initial particle estimate
 
         Args:
          - N (int): Number of particles
@@ -285,8 +280,7 @@ class SIR:
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Forward the estimate stored in pa from t to t+1 using the motion model
+        """Forward the estimate stored in pa from t to t+1 using the motion model
         with input u=uvec[cur_ind] at time t=tvec[cur_ind] and measurement
         y=yvec[cur_ind+1] at t=tvec[cur_ind+1]
 
@@ -301,6 +295,7 @@ class SIR:
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
+
         """
         pa = ParticleApproximation(traj[-1].pa.part, traj[-1].pa.w)
 
@@ -357,8 +352,7 @@ class SIR:
         pa: "ParticleApproximation",
         inplace: bool = True,
     ) -> "ParticleApproximation":
-        """
-        Update particle approximation of x_t to x_{t+1} using u as input.
+        """Update particle approximation of x_t to x_{t+1} using u as input.
 
         Args:
          - traj (array-like): approximation for time t
@@ -373,8 +367,8 @@ class SIR:
 
         Returns:
             ParticleApproximation for time t+1
-        """
 
+        """
         return pa
 
     def measure(
@@ -388,8 +382,7 @@ class SIR:
         cur_ind: int,
         inplace: bool = True,
     ) -> "ParticleApproximation":
-        """
-        Evaluate and update particle approximation using new measurement y
+        """Evaluate and update particle approximation using new measurement y
 
         Args:
          - pa (ParticleApproximation): approximation for time t
@@ -405,8 +398,8 @@ class SIR:
 
         Returns:
             ParticleApproximation for time t
-        """
 
+        """
         if not inplace:
             pa_out = copy.deepcopy(pa)
             pa = pa_out
@@ -438,8 +431,7 @@ class CSIRAS(SIR):
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Forward the estimate stored in pa from t to t+1 using the motion model
+        """Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
 
         Args:
@@ -453,6 +445,7 @@ class CSIRAS(SIR):
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
+
         """
         N = len(traj[-1].pa.part)
         ancestors = np.empty((N,), dtype=int)
@@ -518,8 +511,7 @@ class CSIRAS(SIR):
 
 
 class FFPropY:
-    """
-    Particle Filter class, creates filter estimates by calling appropriate
+    """Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
     a specified threshold is reach.
 
@@ -527,6 +519,7 @@ class FFPropY:
      - model (ParticleFiltering): object describing the model to be used
      - res (float): 0 .. 1 , the ratio of effective number of particles that
        triggers resampling. 0 disables resampling
+
     """
 
     def __init__(self, model: Any, N: int, res: float = 0.0) -> None:
@@ -535,8 +528,7 @@ class FFPropY:
         self.N = N
 
     def create_initial_estimate(self, N: int) -> np.ndarray:
-        """
-        Create initial particle estimate
+        """Create initial particle estimate
 
         Args:
          - N (int): Number of particles
@@ -556,8 +548,7 @@ class FFPropY:
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Forward the estimate stored in pa from t to t+1 using the motion model
+        """Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
         cur_ind is at time t
 
@@ -572,6 +563,7 @@ class FFPropY:
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
+
         """
         pa = ParticleApproximation(self.model.copy_ind(traj[-1].pa.part), traj[-1].pa.w)
 
@@ -613,8 +605,7 @@ class FFPropY:
         cur_ind: int,
         inplace: bool = True,
     ) -> "ParticleApproximation":
-        """
-        Evaluate and update particle approximation using new measurement y
+        """Evaluate and update particle approximation using new measurement y
 
         Args:
          - pa (ParticleApproximation): approximation for time t
@@ -630,16 +621,15 @@ class FFPropY:
 
         Returns:
             ParticleApproximation for time t
-        """
 
+        """
         assert not inplace
         part = self.model.propose_from_y(self.N, y=yvec[cur_ind], t=tvec[cur_ind])
         return ParticleApproximation(part)
 
 
 class CPF(ParticleFilter):
-    """
-    Particle Filter class, creates filter estimates by calling appropriate
+    """Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
     a specified threshold is reach.
 
@@ -647,6 +637,7 @@ class CPF(ParticleFilter):
      - model (ParticleFiltering): object describing the model to be used
      - res (float): 0 .. 1 , the ratio of effective number of particles that
        triggers resampling. 0 disables resampling
+
     """
 
     def __init__(self, model: Any, cond_traj: list["TrajectoryStep"]) -> None:
@@ -654,8 +645,7 @@ class CPF(ParticleFilter):
         self.model = model
 
     def create_initial_estimate(self, N: int) -> np.ndarray:
-        """
-        Create initial particle estimate
+        """Create initial particle estimate
 
         Args:
          - N (int): Number of particles
@@ -676,8 +666,7 @@ class CPF(ParticleFilter):
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Forward the estimate stored in pa from t to t+1 using the motion model
+        """Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
 
         Args:
@@ -691,6 +680,7 @@ class CPF(ParticleFilter):
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
+
         """
         N = len(traj[cur_ind].pa.part)
         ancestors = np.empty((N,), dtype=int)
@@ -731,8 +721,7 @@ class CPF(ParticleFilter):
 
 
 class CPFAS(CPF):
-    """
-    Particle Filter class, creates filter estimates by calling appropriate
+    """Particle Filter class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
     a specified threshold is reach.
 
@@ -740,6 +729,7 @@ class CPFAS(CPF):
      - model (ParticleFiltering): object describing the model to be used
      - res (float): 0 .. 1 , the ratio of effective number of particles that
        triggers resampling. 0 disables resampling
+
     """
 
     def forward(
@@ -750,8 +740,7 @@ class CPFAS(CPF):
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Forward the estimate stored in pa from t to t+1 using the motion model
+        """Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
 
         Args:
@@ -765,6 +754,7 @@ class CPFAS(CPF):
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
+
         """
         N = len(traj[-1].pa.part)
         ancestors = np.empty((N,), dtype=int)
@@ -828,7 +818,8 @@ class CPFAS(CPF):
 class AuxiliaryParticleFilter(ParticleFilter):
     """Auxiliary Particle Filer class, creates filter estimates by calling appropriate
     methods in the supplied particle objects and handles resampling when
-    a specified threshold is reach"""
+    a specified threshold is reach
+    """
 
     def forward(
         self,
@@ -838,8 +829,7 @@ class AuxiliaryParticleFilter(ParticleFilter):
         tvec: np.ndarray,
         cur_ind: int,
     ) -> tuple["ParticleApproximation", bool, np.ndarray]:
-        """
-        Use the first stage weights to try to predict which particles will be in
+        """Use the first stage weights to try to predict which particles will be in
         regions of high likely hood at time t+1, use this information to resample
         the particles before propagating them forward in time
 
@@ -854,8 +844,8 @@ class AuxiliaryParticleFilter(ParticleFilter):
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): anecstral indices for particles at time t+1
-        """
 
+        """
         pa = ParticleApproximation(traj[-1].pa.part, traj[-1].pa.w)
 
         resampled = False
@@ -913,8 +903,7 @@ class CPFYAS(CPFAS):
         self.N = N
 
     def forward(self, traj, yvec, uvec, tvec, cur_ind):
-        """
-        Forward the estimate stored in pa from t to t+1 using the motion model
+        """Forward the estimate stored in pa from t to t+1 using the motion model
         with input u at time time and measurement y at time t+1
 
         Args:
@@ -928,8 +917,8 @@ class CPFYAS(CPFAS):
          - pa (ParticleApproximation): approximation for time t+1
          - resampled (bool): were the particles resampled
          - ancestors (array-like): ancestral indices for particles at time t+1
-        """
 
+        """
         ancestors = np.empty((self.N,), dtype=int)
         tmp = np.exp(traj[cur_ind].pa.w)
         tmp /= np.sum(tmp)
@@ -997,8 +986,7 @@ class CPFYAS(CPFAS):
         cur_ind: int,
         inplace: bool = True,
     ) -> "ParticleApproximation":
-        """
-        Evaluate and update particle approximation using new measurement y
+        """Evaluate and update particle approximation using new measurement y
 
         Args:
          - pa (ParticleApproximation): approximation for time t
@@ -1014,8 +1002,8 @@ class CPFYAS(CPFAS):
 
         Returns:
             ParticleApproximation for time t
-        """
 
+        """
         assert not inplace
         part = self.model.propose_from_y(self.N, y=yvec[cur_ind], t=tvec[cur_ind])
         part[-1] = self.ctraj[cur_ind].pa.part
@@ -1023,8 +1011,7 @@ class CPFYAS(CPFAS):
 
 
 class TrajectoryStep:
-    """
-    Store particle approximation, input, output and timestamp for
+    """Store particle approximation, input, output and timestamp for
     a single time index in a trajectory
 
     Args:
@@ -1035,6 +1022,7 @@ class TrajectoryStep:
        (y[t] is the measurment of x[t])
      - t (float): time stamp for time t
      - ancestors (array-like): indices for each particles ancestor
+
     """
 
     def __init__(
@@ -1047,8 +1035,7 @@ class TrajectoryStep:
 
 
 class ParticleTrajectory:
-    """
-    Store particle trajectories, each time instance is saved
+    """Store particle trajectories, each time instance is saved
     as a TrajectoryStep object
 
     Args:
@@ -1063,6 +1050,7 @@ class ParticleTrajectory:
        space for input/output/time vectors
      - utype (array): the datatype of the input signals
      - ytype (array): the datatype of the measurements
+
     """
 
     def __init__(
@@ -1120,11 +1108,9 @@ class ParticleTrajectory:
 
         self.traj = []
 
-        return
 
     def forward(self, u: Any, y: Any) -> bool:
-        """
-        Append new time step to trajectory
+        """Append new time step to trajectory
 
         Args:f
          - u (array-like): Input to go from x_t -> x_{t+1}
@@ -1132,8 +1118,8 @@ class ParticleTrajectory:
 
         Returns:
          (bool) True if the particle approximation was resampled
-        """
 
+        """
         if len(self.traj) == 0:
             self.ind = 0
             particles = self.pf.create_initial_estimate(self.N)
@@ -1170,16 +1156,15 @@ class ParticleTrajectory:
         return resampled
 
     def measure(self, y: Any) -> None:
-        """
-        Update estimate using new measurement
+        """Update estimate using new measurement
 
         Args:
          - y (array-like): Measurement at current time index
 
         Returns:
          None
-        """
 
+        """
         if self.ind + 1 >= self.T:
             ushape = np.asarray(self.uvec.shape)
             ushape[0] = self.ind + 2
@@ -1238,8 +1223,7 @@ class ParticleTrajectory:
         return self.traj[index]
 
     def spawn(self) -> "ParticleTrajectory":
-        """
-        Create new ParticleTrajectory starting at the end of
+        """Create new ParticleTrajectory starting at the end of
         the current one
         """
         return ParticleTrajectory(
@@ -1255,9 +1239,7 @@ class ParticleTrajectory:
         method: str = "full",
         smoother_options: dict[str, Any] | None = None,
     ) -> Any:
-        """
-
-        Run a smoothing algorithms on the filtered estimate
+        """Run a smoothing algorithms on the filtered estimate
 
         Args:
          - M (int): number of smoothed trajectories to create
@@ -1266,6 +1248,7 @@ class ParticleTrajectory:
 
         Returns:
          SmoothTrajectory object containing the smoothed estimates
+
         """
         from .smoother import SmoothTrajectory
 
@@ -1306,8 +1289,7 @@ class ParticleTrajectory:
 
 
 class ParticleApproximation:
-    """
-    Contains collection of particles approximating a pdf
+    """Contains collection of particles approximating a pdf
 
     Use either seed and num or particles (and optionally weights,
     if not uniform)
@@ -1350,25 +1332,24 @@ class ParticleApproximation:
         return len(self.part)
 
     def calc_Neff(self) -> float:
-        """
-        Calculate number of effective particles, common metric used to determine
+        """Calculate number of effective particles, common metric used to determine
         when to resample
 
         Returns:
          (float) number of effective particles
+
         """
         return _nb_calc_neff(self.w)
 
     def resample(self, model: Any, N: int | None = None) -> np.ndarray:
-        """
-        Resample approximation so all particles have the same weight
+        """Resample approximation so all particles have the same weight
 
         Args:
          - model: object containing problem specific methods
          - N: new number of particles is N. If 'None' out the number of
            particles remains the same
-        """
 
+        """
         if N is None:
             N = self.num
 
@@ -1384,21 +1365,23 @@ class ParticleApproximation:
         return new_ind
 
     def sample(self) -> np.ndarray:
-        """
-        Draw one particle at random with probability corresponding to its weight
+        """Draw one particle at random with probability corresponding to its weight
 
         Returns:
-         (array-like) sampled particle"""
+         (array-like) sampled particle
+
+        """
         return self.part[sample(np.exp(self.w), 1)[0]]
 
     def find_best_particles(self, n: int = 1) -> np.ndarray:
-        """
-        Return particles with largest weights
+        """Return particles with largest weights
 
         Args:
          - n (int): Number of particles to return
 
         Returns:
-         - (array-like) with len=n, representing the n most likely estimates"""
+         - (array-like) with len=n, representing the n most likely estimates
+
+        """
         indices = np.argsort(self.w)
         return indices[:n]

@@ -1,5 +1,4 @@
-"""
-Interfaces required for using the parameter estimation methods
+"""Interfaces required for using the parameter estimation methods
 
 @author: Jerker Nordh
 """
@@ -20,18 +19,16 @@ class ParamEst(abc.ABC):
 class ParamEstIntFullTraj(abc.ABC):
     @abc.abstractmethod
     def set_params(self, params: np.ndarray) -> None:
-        """
-        New set of parameters for which the integral approximation terms will be evaluated
+        """New set of parameters for which the integral approximation terms will be evaluated
 
         Args:
          - params (array-like): new parameter values
+
         """
-        pass
 
     @abc.abstractmethod
     def eval_logp_x0(self, particles: np.ndarray, t: float) -> np.ndarray | float:
-        """
-        Calculate term of the I1 integral approximation as specified in [1].
+        """Calculate term of the I1 integral approximation as specified in [1].
         Eg. Evaluate log p(x_0) or sum log p(x_0)
 
         Args:
@@ -39,8 +36,9 @@ class ParamEstIntFullTraj(abc.ABC):
            of all particles, with first dimension = N (number of particles)
          - t (float): time stamp
 
-        Returns: (array-like) or (float)"""
-        pass
+        Returns: (array-like) or (float)
+
+        """
 
     @abc.abstractmethod
     def eval_logp_xnext_fulltraj(self, straj: Any, ut: Any, tt: Any) -> float:
@@ -54,7 +52,8 @@ class ParamEstIntFullTraj(abc.ABC):
 class ParamEstInterface(ParamEstIntFullTraj, abc.ABC):
     """Interface s for particles to be used with the parameter estimation
     algorithm presented in [1]
-    [1] - 'System identification of nonlinear state-space models' by Schon, Wills and Ninness"""
+    [1] - 'System identification of nonlinear state-space models' by Schon, Wills and Ninness
+    """
 
     def eval_logp_xnext_fulltraj(self, straj: Any, ut: Any, tt: Any) -> float:
         logp_xnext = 0.0
@@ -85,8 +84,7 @@ class ParamEstInterface(ParamEstIntFullTraj, abc.ABC):
         u: Any,
         t: float,
     ) -> np.ndarray | float:
-        """
-        Calculate gradient of a term of the I2 integral approximation
+        """Calculate gradient of a term of the I2 integral approximation
         as specified in [1].
 
         Eg. Evaluate log p(x_{t+1}|x_t) or sum log p(x_{t+1}|x_t)
@@ -98,6 +96,7 @@ class ParamEstInterface(ParamEstIntFullTraj, abc.ABC):
          - t (float): time stamp
 
         Returns: (array-like) or (float)
+
         """
         # Here we can just reuse the method used in the particle smoothing as default
         return self.logp_xnext(particles, particles_next, u, t)
@@ -108,8 +107,7 @@ class ParamEstInterface(ParamEstIntFullTraj, abc.ABC):
         y: Any,
         t: float,
     ) -> np.ndarray | float:
-        """
-        Calculate gradient of a term of the I3 integral approximation
+        """Calculate gradient of a term of the I3 integral approximation
         as specified in [1].
 
         Eg. Evaluate log p(y_t|x_t) or sum log p(y_t|x_t)
@@ -121,8 +119,8 @@ class ParamEstInterface(ParamEstIntFullTraj, abc.ABC):
          - t (float): time stamp
 
         Returns: (array-like) or (float)
-        """
 
+        """
         # Default implementation, doesn't work for classes were the measure updates
         # the internal state of the particle (e.g Rao-Blackwellized models)
         return self.measure(particles, y, t)
@@ -203,8 +201,7 @@ class ParamEstInterface_GradientSearch(
         particles: np.ndarray,
         t: float,
     ) -> tuple[np.ndarray | float, np.ndarray]:
-        """
-        Calculate term of the I1 integral approximation as specified in [1].
+        """Calculate term of the I1 integral approximation as specified in [1].
         Eg. Evaluate log p(x_0) or sum log p(x_0)
 
         Args:
@@ -216,8 +213,8 @@ class ParamEstInterface_GradientSearch(
         respect to the corresponding parameter
 
         Returns: ((array-like) or (float), array-like) (value, gradient)
+
         """
-        pass
 
     @abc.abstractmethod
     def eval_logp_xnext_val_grad(
@@ -227,8 +224,7 @@ class ParamEstInterface_GradientSearch(
         u: Any,
         t: float,
     ) -> tuple[np.ndarray | float, np.ndarray]:
-        """
-        Calculate gradient of a term of the I2 integral approximation
+        """Calculate gradient of a term of the I2 integral approximation
         as specified in [1].
 
         Eg. Evaluate log p(x_{t+1}|x_t) or sum log p(x_{t+1}|x_t)
@@ -244,8 +240,8 @@ class ParamEstInterface_GradientSearch(
         respect to the corresponding parameter
 
         Returns: ((array-like) or (float), array-like) (value, gradient)
+
         """
-        pass
 
     @abc.abstractmethod
     def eval_logp_y_val_grad(
@@ -254,8 +250,7 @@ class ParamEstInterface_GradientSearch(
         y: Any,
         t: float,
     ) -> tuple[np.ndarray | float, np.ndarray]:
-        """
-        Calculate gradient of a term of the I3 integral approximation
+        """Calculate gradient of a term of the I3 integral approximation
         as specified in [1].
 
         Eg. Evaluate log p(y_t|x_t) or sum log p(y_t|x_t)
@@ -271,8 +266,8 @@ class ParamEstInterface_GradientSearch(
         respect to the corresponding parameter
 
         Returns: ((array-like) or (float), array-like) (value, gradient)
+
         """
-        pass
 
 
 class ParamEstBaseNumeric(ParamEstIntFullTraj):
@@ -289,7 +284,7 @@ class ParamEstBaseNumeric(ParamEstIntFullTraj):
 
     def maximize(self, straj: Any) -> np.ndarray:
         def fval(params_val: np.ndarray) -> float:
-            """internal function"""
+            """Internal function"""
             self.set_params(params_val)
             log_py = self.eval_logp_y_fulltraj(straj, straj.y, straj.t)
             log_pxnext = self.eval_logp_xnext_fulltraj(straj, straj.u, straj.t)
@@ -324,7 +319,7 @@ class ParamEstBaseNumericGrad(ParamEstInterface_GradientSearchFullTraj):
     def maximize(self, straj: Any) -> np.ndarray:
 
         def fval_grad(params_val: np.ndarray) -> tuple[float, np.ndarray]:
-            """internal function"""
+            """Internal function"""
             self.set_params(params_val)
             (logp_y, grad_logp_y) = self.eval_logp_y_val_grad_fulltraj(
                 straj,

@@ -1,5 +1,4 @@
-"""
-Created on Nov 11, 2013
+"""Created on Nov 11, 2013
 
 @author: Jerker Nordh
 """
@@ -10,8 +9,8 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.models.mlnlg as mlnlg
-import pyparticleest.simulator as simulator
+from pyparticleest import simulator
+from pyparticleest.models import mlnlg
 
 C_theta = np.array(
     [
@@ -94,7 +93,6 @@ class ParticleLSB(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
 
     def __init__(self) -> None:
         """Define all model variables"""
-
         # No uncertainty in initial state
         xi0 = np.array(
             [

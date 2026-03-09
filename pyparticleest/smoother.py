@@ -23,8 +23,7 @@ def bsi_full(
     tt: np.ndarray,
     cur_ind: int,
 ) -> np.ndarray:
-    """
-    Perform backward simulation by drawing particles from
+    r"""Perform backward simulation by drawing particles from
     the categorical distribution with weights given by
     \omega_{t|T}^i = \omega_{t|t}^i*p(x_{t+1}|x^i)
 
@@ -35,8 +34,8 @@ def bsi_full(
     - ut (array-like): inputs signal for {t:T}
     - yt (array-like): measurements for {t:T}
     - tt (array-like): time stamps for {t:T}
-    """
 
+    """
     M = len(find)
     N = len(pa.w)
     res = np.empty(M, dtype=int)
@@ -77,8 +76,7 @@ def bsi_rs(
     maxpdf: float,
     max_iter: int,
 ) -> np.ndarray:
-    """
-    Perform backward simulation by using rejection sampling to draw particles
+    r"""Perform backward simulation by using rejection sampling to draw particles
     from the categorical distribution with weights given by
     \omega_{t|T}^i = \omega_{t|t}^i*p(x_{t+1}|x^i)
 
@@ -91,8 +89,8 @@ def bsi_rs(
      - tt (array-like): time stamps for {t:T}
      - maxpdf (float): argmax p(x_{t+1:T}|x_t)
      - max_iter (int): number of attempts before falling back to bsi_full
-    """
 
+    """
     M = len(find)
     todo = np.arange(M)
     res = np.empty(M, dtype=int)
@@ -157,10 +155,9 @@ def bsi_rsas(
     sw: float,
     ratio: float,
 ) -> np.ndarray:
-    """
-    Perform backward simulation by using rejection sampling to draw particles
+    """Perform backward simulation by using rejection sampling to draw particles
     from the categorical distribution with weights given by
-    \omega_{t|T}^i = \omega_{t|t}^i*p(x_{t+1}|x^i)
+    \\omega_{t|T}^i = \\omega_{t|t}^i*p(x_{t+1}|x^i)
 
     Adaptively determine when to to fallback to bsi_full by using a Kalman
     filter to track the prediceted acceptance rate of the rejection sampler
@@ -183,6 +180,7 @@ def bsi_rsas(
      - sw (float): measurement noise (for Kalman filter)
      - ratio (float): cost ration of running rejection sampling compared to
        switching to the full bsi (D_0 / D_1)
+
     """
     M = len(find)
     todo = np.arange(M)
@@ -256,8 +254,7 @@ def bsi_mcmc(
     R: int,
     ancestors: np.ndarray,
 ) -> np.ndarray:
-    """
-    Perform backward simulation by using Metropolis-Hastings to draw particles
+    r"""Perform backward simulation by using Metropolis-Hastings to draw particles
     from the categorical distribution with weights given by
     \omega_{t|T}^i = \omega_{t|t}^i*p(x_{t+1}|x^i)
 
@@ -270,6 +267,7 @@ def bsi_mcmc(
      - tt (array-like): time stamps for {t:T}
      - R (int): number of iterations to run the markov chain
      - ancestor (array-like): ancestor of each particle from the particle filter
+
     """
     # Perform backward simulation using an MCMC sampler proposing new
     # backward particles, initialized with the filtered trajectory
@@ -317,8 +315,7 @@ def bsi_mcmc(
 
 
 class SmoothTrajectory:
-    """
-    Create smoothed trajectory from filtered trajectory
+    """Create smoothed trajectory from filtered trajectory
 
     Args:
      - pt (ParticleTrajectory): Forward estimates (typically
@@ -326,6 +323,7 @@ class SmoothTrajectory:
      - M (int): Number of smoothed trajectories to create
      - method (string): Smoothing method to use
      - options (dict): options to pass on to the smoothing algorithm
+
     """
 
     def __init__(
@@ -376,12 +374,12 @@ class SmoothTrajectory:
         return len(self.traj)
 
     def perform_ancestors(self, pt: Any, M: int) -> None:
-        """
-        Create smoothed trajectories by taking the forward trajectories
+        """Create smoothed trajectories by taking the forward trajectories
 
         Args:
          - pt (ParticleTrajectory): forward trajetories
          - M (int): number of trajectories to createa
+
         """
         self.traj = self.perform_ancestors_int(pt, M)
 
@@ -435,15 +433,14 @@ class SmoothTrajectory:
         return traj
 
     def perform_ancestors_int(self, pt: Any, M: int) -> np.ndarray:
-        """
-        Create smoothed trajectories by taking the forward trajectories, don't
+        """Create smoothed trajectories by taking the forward trajectories, don't
         perform post processing
 
         Args:
          - pt (ParticleTrajectory): forward trajetories
          - M (int): number of trajectories to createa
-        """
 
+        """
         tmp = np.copy(pt[-1].pa.w)
         tmp -= np.max(tmp)
         tmp = np.exp(tmp)
@@ -459,16 +456,15 @@ class SmoothTrajectory:
         method: str,
         options: dict[str, Any],
     ) -> None:
-        """
-        Create smoothed trajectories using Backward Simulation
+        """Create smoothed trajectories using Backward Simulation
 
         Args:
          - pt (ParticleTrajectory): forward trajetories
          - M (int): number of trajectories to createa
          - method (string): Type of backward simulation to use
          - optiones (dict): Parameters to the backward simulator
-        """
 
+        """
         # Sample from end time estimates
         tmp = np.copy(pt[-1].pa.w)
         tmp -= np.max(tmp)
@@ -610,13 +606,13 @@ class SmoothTrajectory:
     #            self.traj = self.model.post_smoothing(self)
 
     def perform_mhbp(self, pt: Any, M: int, R: int, reduced: bool = False) -> None:
-        """
-        Create smoothed trajectories using Metropolis-Hastings Backward Propeser
+        """Create smoothed trajectories using Metropolis-Hastings Backward Propeser
 
         Args:
          - pt (ParticleTrajectory): forward trajetories
          - M (int): number of trajectories to createa
          - R (int): Number of proposal for each time step
+
         """
         T = len(pt)
         ut = self.u
@@ -703,15 +699,14 @@ class SmoothTrajectory:
         options: dict[str, Any] | None,
         reduced: bool = False,
     ) -> np.ndarray:
-        """
-        Runs MHIPS with the proposal density q as p(x_{t+1}|x_t)
+        """Runs MHIPS with the proposal density q as p(x_{t+1}|x_t)
 
         Args:
          - pt (ParticleTrajectory): Forward esimates
          - M (int): Number of backward trajectories
          - options (None): Unused
-        """
 
+        """
         T = len(self.traj)
         # Handle last time-step seperately
         ut = self.u
@@ -824,8 +819,7 @@ class SmoothTrajectory:
         return straj
 
     def get_smoothed_estimates(self) -> np.ndarray:
-        """
-        Return smoothed estimates (must first have called 'simulate')
+        """Return smoothed estimates (must first have called 'simulate')
 
         Returns:
          - (T, N, D) array
@@ -833,6 +827,7 @@ class SmoothTrajectory:
         T is the length of the dataset,
         N is the number of particles
         D is the dimension of each particle
+
         """
         T = len(self.traj)
         N = self.traj[0].pa.part.shape[0]
@@ -860,8 +855,7 @@ def mc_step(
     cur_ind: int,
     reduced: bool,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Perform a single iteration of the MCMC sampler used for MHIPS and MHBP
+    """Perform a single iteration of the MCMC sampler used for MHIPS and MHBP
 
     Args:
      - model: model definition
@@ -874,6 +868,7 @@ def mc_step(
      - ut (array-like): input at time t
      - tt (array-like): timestamp at time t
      - future_trajs (array-like): particle approximations of {x_{t+1:T|T}}
+
     """
     # The previously stored values for part already include the measurment from
     # cur_ind, we therefore need to recomputed the sufficient statistics

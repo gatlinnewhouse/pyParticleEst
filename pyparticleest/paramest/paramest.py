@@ -12,8 +12,7 @@ from pyparticleest.simulator import Simulator
 
 
 class ParamEstimation(Simulator):
-    """
-    Extension of the Simulator class to iterative perform particle smoothing
+    """Extension of the Simulator class to iterative perform particle smoothing
     combined with a gradienst search algorithms for maximizing the likelihood
     of the parameter estimates
     """
@@ -32,8 +31,7 @@ class ParamEstimation(Simulator):
         smoother: str = "full",
         smoother_options: dict[str, Any] | None = None,
     ) -> tuple[np.ndarray, float]:
-        """
-        Find the maximum likelihood estimate of the paremeters using an
+        """Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
 
         Args:
@@ -56,8 +54,8 @@ class ParamEstimation(Simulator):
          - smoother_options (dict): Extra options for the smoother
          - analytic_gradient (bool): Use analytic gradient (requires that the model
            implements ParamEstInterface_GradientSearch)
-        """
 
+        """
         params_local = np.copy(param0)
         for i in range(max_iter):
             self.set_params(params_local)
@@ -106,8 +104,7 @@ def alpha_gen(it: int) -> float:
 
 
 class ParamEstimationSAEM(Simulator):
-    """
-    Extension of the Simulator class to iterative perform particle smoothing
+    """Extension of the Simulator class to iterative perform particle smoothing
     combined with a gradienst search algorithms for maximizing the likelihood
     of the parameter estimates
     """
@@ -128,8 +125,7 @@ class ParamEstimationSAEM(Simulator):
         smoother_options: dict[str, Any] | None = None,
         alpha_gen: Callable[[int], float] = alpha_gen,
     ) -> tuple[np.ndarray, float]:
-        """
-        Find the maximum likelihood estimate of the paremeters using an
+        """Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
 
         Args:
@@ -152,8 +148,8 @@ class ParamEstimationSAEM(Simulator):
          - smoother_options (dict): Extra options for the smoother
          - analytic_gradient (bool): Use analytic gradient (requires that the model
            implements ParamEstInterface_GradientSearch)
-        """
 
+        """
         params_local = np.copy(param0)
         alltrajs = None
         weights = None
@@ -207,8 +203,7 @@ class ParamEstimationSAEM(Simulator):
 
 
 class ParamEstimationPSAEM(Simulator):
-    """
-    Extension of the Simulator class to iterative perform particle smoothing
+    """Extension of the Simulator class to iterative perform particle smoothing
     combined with a gradienst search algorithms for maximizing the likelihood
     of the parameter estimates
     """
@@ -232,8 +227,7 @@ class ParamEstimationPSAEM(Simulator):
         raoblackwell: bool = False,
         max_traj: int = 0,
     ) -> tuple[np.ndarray, float]:
-        """
-        Find the maximum likelihood estimate of the paremeters using an
+        """Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
 
         Args:
@@ -256,8 +250,8 @@ class ParamEstimationPSAEM(Simulator):
          - smoother_options (dict): Extra options for the smoother
          - analytic_gradient (bool): Use analytic gradient (requires that the model
            implements ParamEstInterface_GradientSearch)
-        """
 
+        """
         params_local = np.copy(param0)
         alltrajs = None
         weights = None
@@ -342,8 +336,7 @@ class ParamEstimationPSAEM(Simulator):
 
 
 class ParamEstimationPSAEM2(Simulator):
-    """
-    Extension of the Simulator class to iterative perform particle smoothing
+    """Extension of the Simulator class to iterative perform particle smoothing
     combined with a gradienst search algorithms for maximizing the likelihood
     of the parameter estimates
     """
@@ -365,8 +358,7 @@ class ParamEstimationPSAEM2(Simulator):
         discard_eps: float = 0.0,
         discard_percentile: float = 0.0,
     ) -> tuple[np.ndarray, float]:
-        """
-        Find the maximum likelihood estimate of the paremeters using an
+        """Find the maximum likelihood estimate of the paremeters using an
         EM-algorihms combined with a gradient search algorithms
 
         Args:
@@ -389,8 +381,8 @@ class ParamEstimationPSAEM2(Simulator):
          - smoother_options (dict): Extra options for the smoother
          - analytic_gradient (bool): Use analytic gradient (requires that the model
            implements ParamEstInterface_GradientSearch)
-        """
 
+        """
         params_local = np.copy(param0)
         alltrajs = None
         weights = np.empty((max_iter * num_part,))

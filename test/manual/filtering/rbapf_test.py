@@ -1,5 +1,4 @@
-"""
-Created on Nov 11, 2013
+"""Created on Nov 11, 2013
 
 @author: Jerker Nordh
 """
@@ -11,8 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
 
-import pyparticleest.models.mlnlg as mlnlg
-import pyparticleest.simulator as simulator
+from pyparticleest import simulator
+from pyparticleest.models import mlnlg
 
 pxi = 0.85
 pz = 0.9
@@ -62,7 +61,6 @@ class ParticleAPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
 
     def __init__(self, Qz, R, Qes, Qeb) -> None:
         """Define all model variables"""
-
         # No uncertainty in initial state
         xi0 = np.array(
             [

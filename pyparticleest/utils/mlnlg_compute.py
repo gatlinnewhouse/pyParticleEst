@@ -1,5 +1,4 @@
-"""
-Helper functions for computing some of the heavy parts when using MLNLG and LTV
+"""Helper functions for computing some of the heavy parts when using MLNLG and LTV
 models
 """
 
@@ -15,8 +14,8 @@ def compute_logprod_derivative(
     dB: np.ndarray,
 ) -> float:
     """I = logdet(A)+Tr(inv(A)*B)
-    dI/dx = Tr(inv(A)*(dA - dA*inv(A)*B + dB)"""
-
+    dI/dx = Tr(inv(A)*(dA - dA*inv(A)*B + dB)
+    """
     tmp = lalg.cho_solve(Alup, B, check_finite=False)
     tmp2 = dA + dB - dA.dot(tmp)
     return np.trace(lalg.cho_solve(Alup, tmp2, check_finite=False))

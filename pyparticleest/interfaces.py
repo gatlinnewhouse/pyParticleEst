@@ -55,26 +55,26 @@ class SIR(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles"""
-        pass
+         of all particles
+
+        """
 
     def copy_ind(
         self,
         particles: np.ndarray,
         new_ind: np.ndarray | None = None,
     ) -> np.ndarray:
-        """
-        Copy select particles, can be overriden for models that require
+        """Copy select particles, can be overriden for models that require
         special handling of the particle representations when copying them
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - new_ind (array-like): Array of ints, specifying indices to copy
 
         Returns:
          (array-like) with first dimension = len(new_ind)
+
         """
         if new_ind is not None:
             return np.copy(particles[new_ind])
@@ -107,8 +107,7 @@ class ParticleFilteringNonMarkov(abc.ABC):
         ancestors: np.ndarray,
         noise: np.ndarray,
     ) -> Any:
-        """
-        Propagate estimate forward in time
+        """Propagate estimate forward in time
 
         Args:
          - particles (array-like): Model specific representation of all particles,
@@ -123,8 +122,8 @@ class ParticleFilteringNonMarkov(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N
+
         """
-        pass
 
     @abc.abstractmethod
     def measure_full(
@@ -136,8 +135,7 @@ class ParticleFilteringNonMarkov(abc.ABC):
         tvec: np.ndarray,
         ancestors: np.ndarray,
     ) -> np.ndarray:
-        """
-        Return the log-pdf value of the measurement
+        """Return the log-pdf value of the measurement
 
         Args:
          - particles (array-like): Model specific representation of all particles,
@@ -151,8 +149,8 @@ class ParticleFilteringNonMarkov(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N
+
         """
-        pass
 
     @abc.abstractmethod
     # TODO: yt should be included here
@@ -163,8 +161,7 @@ class ParticleFilteringNonMarkov(abc.ABC):
         ut: np.ndarray,
         tt: np.ndarray,
     ) -> np.ndarray:
-        """
-        Sample process noise
+        """Sample process noise
 
         Args:
          - ptraj: array of trajectory step objects from previous time-steps,
@@ -175,8 +172,8 @@ class ParticleFilteringNonMarkov(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N
+
         """
-        pass
 
     @abc.abstractmethod
     def create_initial_estimate(self, N: int) -> np.ndarray:
@@ -187,26 +184,26 @@ class ParticleFilteringNonMarkov(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles"""
-        pass
+         of all particles
+
+        """
 
     def copy_ind(
         self,
         particles: np.ndarray,
         new_ind: np.ndarray | None = None,
     ) -> np.ndarray:
-        """
-        Copy select particles, can be overriden for models that require
+        """Copy select particles, can be overriden for models that require
         special handling of the particle representations when copying them
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - new_ind (array-like): Array of ints, specifying indices to copy
 
         Returns:
          (array-like) with first dimension = len(new_ind)
+
         """
         if new_ind is not None:
             return np.copy(particles[new_ind])
@@ -224,8 +221,7 @@ class ParticleFilteringNonMarkov(abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Create sampled estimates for the smoothed trajectory. Allows the update
+        """Create sampled estimates for the smoothed trajectory. Allows the update
         representation of the particles used in the forward step to include
         additional data in the backward step, can also for certain models be
         used to update the points estimates based on the future information.
@@ -250,6 +246,7 @@ class ParticleFilteringNonMarkov(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N
+
         """
         # default implementation uses the same format as forward in time
         # Is part of the ParticleFiltering interface since it is used
@@ -268,8 +265,7 @@ class ParticleFilteringNonMarkov(abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Propagate states in 'part' conditioned on that the future state is
+        """Propagate states in 'part' conditioned on that the future state is
         'future_parts'. This is used for e.g. Rao-Blackwellized MHIPS, where
         we need to propagate forward in time conditioned on the nonlinear state,
         but we want to recompute the additional data stored, e.g to exclude
@@ -290,30 +286,27 @@ class ParticleFilteringNonMarkov(abc.ABC):
          - cur_ind (int): index of current timestep (in ut, yt and tt)
 
         """
-
         # Just return the conditional values, if some others statistics need to
         # be recomputed this method has to be overriden
         return np.copy(future_parts)
 
     def cond_sampled_initial(self, part: np.ndarray, t: float) -> np.ndarray:
-        """
-        Sample from initial distribution conditioned on the states being 'part'
+        """Sample from initial distribution conditioned on the states being 'part'
         This is used for e.g. Rao-Blackwellized MHIPS, where we need to recompute
         the sufficient statistics without being affected by the intial measurement
 
         Args:
         part: particles
         t: time-step
-        """
 
+        """
         # Just return the conditional values, if some others statistics need to
         # be recomputed this method has to be overriden
         return np.copy(part)
 
 
 class ParticleFiltering(ParticleFilteringNonMarkov, abc.ABC):
-    """
-    Base class for particles to be used with particle filtering.
+    """Base class for particles to be used with particle filtering.
     particles are a model specific array where the first dimension
     indexes the different particles.
     """
@@ -374,7 +367,6 @@ class ParticleFiltering(ParticleFilteringNonMarkov, abc.ABC):
         """Propagate estimate forward in time
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - u (array-like):  input signal
@@ -384,16 +376,14 @@ class ParticleFiltering(ParticleFilteringNonMarkov, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, particle estimate at time t+1
+
         """
-        pass
 
     @abc.abstractmethod
     def measure(self, particles: np.ndarray, y: Any, t: float) -> np.ndarray:
-        """
-        Return the log-pdf value of the measurement
+        """Return the log-pdf value of the measurement
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - y (array-like):  measurement
@@ -401,13 +391,12 @@ class ParticleFiltering(ParticleFilteringNonMarkov, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, logp(y|x^i)
+
         """
-        pass
 
 
 class AuxiliaryParticleFiltering(abc.ABC):
-    """
-    Base class for particles to be used with auxiliary particle filtering
+    """Base class for particles to be used with auxiliary particle filtering
     """
 
     @abc.abstractmethod
@@ -418,13 +407,11 @@ class AuxiliaryParticleFiltering(abc.ABC):
         y: Any,
         t: float,
     ) -> np.ndarray:
-        """
-        Evaluate "first stage weights" for the auxiliary particle filter.
+        r"""Evaluate "first stage weights" for the auxiliary particle filter.
         (log-probability of measurement using some propagated statistic, such
         as the mean, for the future state)
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - u (array-like): input signal
@@ -433,8 +420,8 @@ class AuxiliaryParticleFiltering(abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, logp(y_{t+1}|\hat{x}_{t+1|t}^i)
+
         """
-        pass
 
 
 class FFBSiNonMarkov(abc.ABC):
@@ -472,15 +459,12 @@ class FFBSiNonMarkov(abc.ABC):
 class FFProposeFromMeasure(FFBSiNonMarkov, abc.ABC):
     @abc.abstractmethod
     def propose_from_y(self, N: int, y: Any, t: float) -> np.ndarray:
+        """Create N particles from p(x_t|y_t)
         """
-        Create N particles from p(x_t|y_t)
-        """
-        pass
 
 
 class FFBSi(FFBSiNonMarkov, abc.ABC):
-    """
-    Base class for particles to be used with particle smoothing
+    """Base class for particles to be used with particle smoothing
     (Backward Simulation)
     """
 
@@ -496,8 +480,7 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Return the log-pdf value for the entire future trajectory.
+        """Return the log-pdf value for the entire future trajectory.
         Useful for non-markovian modeles, that result from e.g
         marginalized state-space models.
 
@@ -520,8 +503,8 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, logp(x_{t+1:T}|x_t^i)
-        """
 
+        """
         # Default implemenation for markovian models, just look at the next state
         return self.logp_xnext(
             particles=part,
@@ -542,12 +525,10 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Return the log-pdf value for the first step of the future trajectory.
+        """Return the log-pdf value for the first step of the future trajectory.
         Needed in e.g MHIPS
 
         Args:
-
          - part  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - past_trajs: Trajectory leading up to current time
@@ -563,8 +544,8 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, logp(x_{t+1:T}|x_t^i)
-        """
 
+        """
         # Default implemenation for markovian models, just look at the next state
         return self.logp_xnext(
             particles=part,
@@ -581,12 +562,10 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
         u: Any,
         t: float,
     ) -> np.ndarray:
-        """
-        Return the log-pdf value for the possible future state 'next'
+        """Return the log-pdf value for the possible future state 'next'
         given input u
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - next_part (array-like): particle estimate for t+1
@@ -595,13 +574,12 @@ class FFBSi(FFBSiNonMarkov, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, logp(x_{t+1}|x_t^i)
+
         """
-        pass
 
 
 class FFBSiRSNonMarkov(FFBSiNonMarkov, abc.ABC):
-    """
-    Base class for models to be used with rejection sampling methods
+    """Base class for models to be used with rejection sampling methods
     """
 
     @abc.abstractmethod
@@ -615,12 +593,10 @@ class FFBSiRSNonMarkov(FFBSiNonMarkov, abc.ABC):
         tvec: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Return the max log-pdf value for all possible future states'
+        """Return the max log-pdf value for all possible future states'
         given input u
 
         Args:
-
          - part  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - past_trajs: Trajectory leading up to current time
@@ -632,13 +608,12 @@ class FFBSiRSNonMarkov(FFBSiNonMarkov, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, argmax_{x_{t+1}} logp(x_{t+1}|x_t)
+
         """
-        pass
 
 
 class FFBSiRS(FFBSi, abc.ABC):
-    """
-    Base class for models to be used with rejection sampling methods
+    """Base class for models to be used with rejection sampling methods
     """
 
     @abc.abstractmethod
@@ -648,12 +623,10 @@ class FFBSiRS(FFBSi, abc.ABC):
         u: Any,
         t: float,
     ) -> np.ndarray:
-        """
-        Return the max log-pdf value for all possible future states'
+        """Return the max log-pdf value for all possible future states'
         given input u
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - next_part (array-like): particle estimate for t+1
@@ -662,8 +635,8 @@ class FFBSiRS(FFBSi, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, argmax_{x_{t+1}} logp(x_{t+1}|x_t)
+
         """
-        pass
 
     def logp_xnext_max_full(
         self,
@@ -679,8 +652,7 @@ class FFBSiRS(FFBSi, abc.ABC):
 
 
 class SampleProposer(abc.ABC):
-    """
-    Base class for models to be used with methods that require drawing of new
+    """Base class for models to be used with methods that require drawing of new
     samples. Here 'q' is the name we give to the proposal distribtion.
     """
 
@@ -696,8 +668,7 @@ class SampleProposer(abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Sample from a distribution q(x_t | x_{t-1}, x_{t+1:T}, y_t:T)
+        """Sample from a distribution q(x_t | x_{t-1}, x_{t+1:T}, y_t:T)
 
         Args:
          - ptraj: array of trajectory step objects from previous time-steps,
@@ -714,8 +685,8 @@ class SampleProposer(abc.ABC):
         Returns:
          (array-like) of dimension N, wher N is the dimension of partp and/or
          future_trajs (one of which may be 'None' at the start/end of the dataset)
+
         """
-        pass
 
     @abc.abstractmethod
     def logp_proposal(
@@ -730,8 +701,7 @@ class SampleProposer(abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Eval the log-propability of the proposal distribution
+        """Eval the log-propability of the proposal distribution
 
         Args:
          - prop_part (array-like): Proposed particle estimate, first dimension
@@ -747,8 +717,8 @@ class SampleProposer(abc.ABC):
          - tt (array-like): time stamps for {0:T}
          - cur_ind (int): index of current timestep (in ut, yt and tt)
 
-        Returns
+        Returns:
          (array-like) with first dimension = N,
          log q(x_t | x_{t-1}, x_{t+1:T}, y_t:T)
+
         """
-        pass

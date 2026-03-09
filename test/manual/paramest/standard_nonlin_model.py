@@ -3,10 +3,10 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.interfaces as interfaces
 import pyparticleest.paramest.interfaces as pestint
 import pyparticleest.paramest.paramest as param_est
-import pyparticleest.utils.kalman as kalman
+from pyparticleest import interfaces
+from pyparticleest.utils import kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -14,7 +14,7 @@ def generate_dataset(steps, P0, Q, R):
     y = np.zeros((steps + 1,))
     x[0] = np.random.multivariate_normal((0.0,), P0)
     y[0] = 0.05 * x[0] ** 2 + np.random.multivariate_normal((0.0,), R)
-    for k in range(0, steps):
+    for k in range(steps):
         x[k + 1] = (
             0.5 * x[k]
             + 25.0 * x[k] / (1 + x[k] ** 2)
@@ -40,7 +40,8 @@ class Model(
 ):
     """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0, Q, R) -> None:
         self.P0 = np.copy(P0)
@@ -96,7 +97,8 @@ class Model(
         """Calculate gradient of a term of the I1 integral approximation
         as specified in [1].
         The gradient is an array where each element is the derivative with
-        respect to the corresponding parameter"""
+        respect to the corresponding parameter
+        """
         return kalman.lognormpdf_scalar(particles, self.P0)
 
     def copy_ind(self, particles, new_ind=None):

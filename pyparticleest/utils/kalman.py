@@ -1,6 +1,5 @@
 #!/usr/bin/python
-"""
-A module with operations useful for Kalman filtering.
+"""A module with operations useful for Kalman filtering.
 """
 
 import math
@@ -44,8 +43,7 @@ def _nb_smooth(
 
 
 def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
-    """
-    Calculate gaussian probability density of err, when err ~ N(0,sigma)
+    """Calculate gaussian probability density of err, when err ~ N(0,sigma)
     """
     tmp = err.reshape(-1, 1)
     return -0.5 * (
@@ -56,8 +54,7 @@ def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
 
 
 def lognormpdf_cho(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> float:
-    """
-    Calculate gaussian probability density of err, when err ~ N(0,Schol*Scholt^T)
+    """Calculate gaussian probability density of err, when err ~ N(0,Schol*Scholt^T)
     """
     dim = len(err)
     ld = np.sum(np.log(np.diag(Schol[0]))) * 2
@@ -69,8 +66,7 @@ def lognormpdf_cho(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> float:
 
 
 def lognormpdf_cho_vec(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> np.ndarray:
-    """
-    Calculate gaussian probability density of for all elements in the vector err
+    """Calculate gaussian probability density of for all elements in the vector err
     , when err[i] ~ N(0,Schol*Scholt^T)
     """
     N = err.shape[0]
@@ -88,8 +84,7 @@ def lognormpdf_cho_vec(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> np.nd
 
 
 def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.ndarray:
-    """
-    Calculate gaussian probability density of all elements in err, when
+    """Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,Sl[i])
     """
     N = len(err)
@@ -106,16 +101,14 @@ def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.nda
 
 
 def lognormpdf_scalar(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
-    """
-    Calculate gaussian probability density of all elements in err, when
+    """Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,S) and each element in err is a scalar
     """
     return -0.5 * (l2pi + math.log(S.item()) + (err.ravel() ** 2) / S.item())
 
 
 class KalmanFilter:
-    """
-    A Kalman filter class, does filtering for systems of the type:
+    """A Kalman filter class, does filtering for systems of the type:
     z_{k+1} = A*z_{k}+f_k + v_k
     y_k = C*z_k +f_k e_k
     f_k - Additive (time-varying) constant
@@ -168,16 +161,13 @@ class KalmanFilter:
             self.h_k = h_k
 
     def time_update(self) -> None:
+        """Do a time update, i.e. predict one step forward in time using the dynamics
         """
-        Do a time update, i.e. predict one step forward in time using the dynamics
-        """
-
         # Calculate next state
         (self.z, self.P) = self.predict_full(A=self.A, f_k=self.f_k, Q=self.Q)
 
     def predict(self, z: np.ndarray, P: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Calculate next state estimate without actually updating
+        """Calculate next state estimate without actually updating
         the internal variables
         """
         return self.predict_full(z, P, A=self.A, f_k=self.f_k, Q=self.Q)
@@ -190,8 +180,7 @@ class KalmanFilter:
         f_k: np.ndarray,
         Q: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Update the estimates to time t+1, using the supplied matrices as the dynamics
+        """Update the estimates to time t+1, using the supplied matrices as the dynamics
         """
         z_out, P_out = _nb_predict_full(z, P, A, f_k, Q)
         z[:] = z_out
@@ -206,8 +195,7 @@ class KalmanFilter:
         f_k: np.ndarray,
         Q: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Calculate next state estimate without actually updating
+        """Calculate next state estimate without actually updating
         the internal variables, using the supplied matrices as the dynamics
         """
         return _nb_predict_full(z, P, A, f_k, Q)
@@ -219,8 +207,7 @@ class KalmanFilter:
         C: np.ndarray | None,
         h_k: np.ndarray | None = None,
     ) -> np.ndarray:
-        """
-        Calculate different between measurement and predicted measurement
+        """Calculate different between measurement and predicted measurement
         """
         yhat = np.zeros_like(y)
         if C is not None:
@@ -230,11 +217,9 @@ class KalmanFilter:
         return y - yhat
 
     def measure(self, y: np.ndarray, z: np.ndarray, P: np.ndarray) -> float:
-        """
-        Do a measurement update, i.e correct the current estimate
+        """Do a measurement update, i.e correct the current estimate
         with information from a new measurement
         """
-
         return self.measure_full(y, z, P, C=self.C, h_k=self.h_k, R=self.R)
 
     def measure_full(
@@ -246,8 +231,7 @@ class KalmanFilter:
         h_k: np.ndarray | None,
         R: np.ndarray | None,
     ) -> float:
-        """
-        Do a measurement update, i.e correct the current estimate
+        """Do a measurement update, i.e correct the current estimate
         with information from a new measurement
         """
         if C is not None:
@@ -280,8 +264,7 @@ class KalmanFilter:
         h_k: np.ndarray | None,
         R: np.ndarray | None,
     ) -> float | np.ndarray:
-        """
-        Do a measurement update, i.e correct the current estimate
+        """Do a measurement update, i.e correct the current estimate
         with information from a new measurement.
 
         Must be scalar measurement equation
@@ -303,8 +286,7 @@ class KalmanFilter:
 
 
 class KalmanSmoother(KalmanFilter):
-    """
-    Forward/backward Kalman smoother
+    """Forward/backward Kalman smoother
 
     Extends the KalmanFilter class and provides an additional method for smoothing
     backwards in time
@@ -320,10 +302,8 @@ class KalmanSmoother(KalmanFilter):
         f: np.ndarray,
         Q: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Create smoothed estimate using knowledge about x_{k+1} and P_{k+1} and
+        """Create smoothed estimate using knowledge about x_{k+1} and P_{k+1} and
         the relation x_{k+1} = A*x_k + f_k +v_k, v_k ~ (0,Q)
         """
-
         (z_np, P_np) = self.predict_full(z, P, A, f, Q)
         return _nb_smooth(z, P, z_next, P_next, A, z_np, P_np)

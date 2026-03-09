@@ -1,5 +1,4 @@
-"""
-Created on Nov 11, 2013
+"""Created on Nov 11, 2013
 
 @author: Jerker Nordh
 """
@@ -10,10 +9,10 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.models.mlnlg as mlnlg
-import pyparticleest.paramest.gradienttest as gradienttest
 import pyparticleest.paramest.interfaces as pestinf
 import pyparticleest.paramest.paramest as param_est
+from pyparticleest.models import mlnlg
+from pyparticleest.paramest import gradienttest
 
 
 def sign(x) -> float:

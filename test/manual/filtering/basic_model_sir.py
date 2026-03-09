@@ -1,13 +1,13 @@
 """Particle filtering for a trivial model
-Also illustrates that the"""
+Also illustrates that the
+"""
 
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg
 
-import pyparticleest.interfaces as interfaces
-import pyparticleest.simulator as simulator
-import pyparticleest.utils.kalman as kalman
+from pyparticleest import interfaces, simulator
+from pyparticleest.utils import kalman
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -24,7 +24,8 @@ def generate_dataset(steps, P0, Q, R):
 class Model(interfaces.SIR):
     """x_{k+1} = x_k + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0, Q, R) -> None:
         self.P0 = np.copy(P0)

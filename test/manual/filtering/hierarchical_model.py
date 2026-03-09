@@ -5,8 +5,8 @@ import numpy as np
 import scipy.stats
 
 import pyparticleest.simulator
-import pyparticleest.utils.kalman as kalman
 from pyparticleest.models.hierarchial import HierarchicalRSBase
+from pyparticleest.utils import kalman
 
 
 def generate_dataset(steps, P0_xi, P0_z, Q_xi, Q_z, R_xi, R_z):
@@ -41,7 +41,8 @@ class Model(HierarchicalRSBase):
                (-sin(xi_k) cos(xi_k)) * z_{k} + v_z_k, v_z_k ~ N(0, Q_z)
     y_z_k = ((cos(xi_k) sin(xi_k))*z_k + e_k, e_k ~ N(0,R_z),
     y_xi_k = xi_k + e_xi_k, e_xi_k ~ N(0,R_xi)
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0_xi, P0_z, Q_xi, Q_z, R_xi, R_z) -> None:
         self.P0_xi = np.copy(P0_xi)
@@ -104,7 +105,7 @@ class Model(HierarchicalRSBase):
         return lpy
 
     def get_lin_pred_dynamics(self, particles, u, t):
-        """Return matrices describing affine relation of next
+        r"""Return matrices describing affine relation of next
         nonlinear state conditioned on current nonlinear state
 
         \z_{t+1]} = A_z * z_t + f_z + v_z, v_z ~ N(0,Q_z)

@@ -10,8 +10,8 @@ from typing import Any
 import numpy.random
 import scipy.linalg
 
-import pyparticleest.interfaces as interfaces
-import pyparticleest.utils.kalman as kalman
+from pyparticleest import interfaces
+from pyparticleest.utils import kalman
 
 
 class NonlinearGaussian(
@@ -19,8 +19,7 @@ class NonlinearGaussian(
     interfaces.FFBSiRS,
     abc.ABC,
 ):
-    """
-    Base class for particles of the type mixed linear/non-linear with
+    """Base class for particles of the type mixed linear/non-linear with
     additive gaussian noise.
 
     Implement this type of system by extending this class and provide
@@ -39,6 +38,7 @@ class NonlinearGaussian(
      - g (array-like): g (if constaint)
      - Q (array-like): Q (if constaint)
      - R (array-like): R (if constaint)
+
     """
 
     def calc_f(
@@ -47,8 +47,7 @@ class NonlinearGaussian(
         u: Any,
         t: float,
     ) -> numpy.ndarray | None:
-        """
-        Calucate f
+        """Calucate f
 
         Args:
          - particles  (array-like): Model specific representation
@@ -58,6 +57,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like): f for all particles
+
         """
         return None
 
@@ -67,8 +67,7 @@ class NonlinearGaussian(
         u: Any,
         t: float,
     ) -> numpy.ndarray | None:
-        """
-        Calucate Q
+        """Calucate Q
 
         Args:
          - particles  (array-like): Model specific representation
@@ -78,12 +77,12 @@ class NonlinearGaussian(
 
         Returns:
          (array-like): Q for all particles
+
         """
         return None
 
     def calc_g(self, particles: numpy.ndarray, t: float) -> numpy.ndarray | None:
-        """
-        Calucate g
+        """Calucate g
 
         Args:
          - particles  (array-like): Model specific representation
@@ -92,12 +91,12 @@ class NonlinearGaussian(
 
         Returns:
          (array-like): g for all particles
+
         """
         return None
 
     def calc_R(self, particles: numpy.ndarray, t: float) -> numpy.ndarray | None:
-        """
-        Calucate R
+        """Calucate R
 
         Args:
          - particles  (array-like): Model specific representation
@@ -106,6 +105,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like): R for all particles
+
         """
         return None
 
@@ -152,8 +152,7 @@ class NonlinearGaussian(
         u: Any,
         t: float,
     ) -> numpy.ndarray:
-        """
-        Sample process noise
+        """Sample process noise
 
         Args:
          - particles  (array-like): Model specific representation
@@ -163,6 +162,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like) with first dimension = N
+
         """
         N = len(particles)
         Q = self.calc_Q(particles=particles, u=u, t=t)
@@ -187,7 +187,6 @@ class NonlinearGaussian(
         """Propagate estimate forward in time
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - u (array-like):  input signal
@@ -197,6 +196,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like) with first dimension = N, particle estimate at time t+1
+
         """
         f = self.calc_f(particles=particles, u=u, t=t)
         if f is None:
@@ -205,11 +205,9 @@ class NonlinearGaussian(
         return particles
 
     def measure(self, particles: numpy.ndarray, y: Any, t: float) -> numpy.ndarray:
-        """
-        Return the log-pdf value of the measurement
+        """Return the log-pdf value of the measurement
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - y (array-like):  measurement
@@ -217,6 +215,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like) with first dimension = N, logp(y|x^i)
+
         """
         N = len(particles)
         lpy = numpy.empty(N)
@@ -249,13 +248,11 @@ class NonlinearGaussian(
         y: Any,
         t: float,
     ) -> numpy.ndarray:
-        """
-        Evaluate "first stage weights" for the auxiliary particle filter.
+        r"""Evaluate "first stage weights" for the auxiliary particle filter.
         (log-probability of measurement using some propagated statistic, such
         as the mean, for the future state)
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - u (array-like): input signal
@@ -264,6 +261,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like) with first dimension = N, logp(y_{t+1}|\hat{x}_{t+1|t}^i)
+
         """
         part = numpy.copy(particles)
         noise = numpy.zeros_like(part)
@@ -271,12 +269,10 @@ class NonlinearGaussian(
         return self.measure(partn, y, t + 1)
 
     def logp_xnext_max(self, particles: numpy.ndarray, u: Any, t: float) -> float:
-        """
-        Return the max log-pdf value for all possible future states'
+        """Return the max log-pdf value for all possible future states'
         given input u
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - next_part (array-like): particle estimate for t+1
@@ -285,6 +281,7 @@ class NonlinearGaussian(
 
         Returns:
          (array-like) with first dimension = N, argmax_{x_{t+1}} logp(x_{t+1}|x_t)
+
         """
         Q = self.calc_Q(particles, u, t)
         dim = self.lxi
@@ -306,12 +303,10 @@ class NonlinearGaussian(
         u: Any,
         t: float,
     ) -> numpy.ndarray:
-        """
-        Return the log-pdf value for the possible future state 'next'
+        """Return the log-pdf value for the possible future state 'next'
         given input u
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - next_part (array-like): particle estimate for t+1
@@ -320,8 +315,8 @@ class NonlinearGaussian(
 
         Returns:
          (array-like) with first dimension = N, logp(x_{t+1}|x_t^i)
-        """
 
+        """
         f = self.calc_f(particles, u, t)
         if f is None:
             f = self.f
@@ -352,8 +347,7 @@ class NonlinearGaussian(
         tt: numpy.ndarray,
         cur_ind: int,
     ) -> numpy.ndarray:
-        """
-        Sample from a distribution q(x_t | x_{0:t-1}, x_{t+1:T}, y_t:T)
+        """Sample from a distribution q(x_t | x_{0:t-1}, x_{t+1:T}, y_t:T)
 
         Args:
          - ptraj: array of trajectory step objects from previous time-steps,
@@ -370,6 +364,7 @@ class NonlinearGaussian(
         Returns:
          (array-like) of dimension N, wher N is the dimension of partp and/or
          future_trajs (one of which may be 'None' at the start/end of the dataset)
+
         """
         # Trivial choice of q, discard y_T and x_{t+1}
         if ptraj is not None:
@@ -396,8 +391,7 @@ class NonlinearGaussian(
         tt: numpy.ndarray,
         cur_ind: int,
     ) -> numpy.ndarray:
-        """
-        Eval the log-propability of the proposal distribution
+        """Eval the log-propability of the proposal distribution
 
         Args:
          - prop_part (array-like): Proposed particle estimate, first dimension
@@ -413,9 +407,10 @@ class NonlinearGaussian(
          - tt (array-like): time stamps for {0:T}
          - cur_ind (int): index of current timestep (in ut, yt and tt)
 
-        Returns
+        Returns:
          (array-like) with first dimension = N,
          log q(x_t | x_{t-1}, x_{t+1:T}, y_t:T)
+
         """
         if ptraj is not None:
             return self.logp_xnext(
@@ -427,13 +422,13 @@ class NonlinearGaussian(
         return self.eval_logp_x0(prop_part, t=tt[0])
 
     def set_params(self, params: numpy.ndarray) -> None:
-        """
-        This methods should be overriden if the system dynamics depends
+        """This methods should be overriden if the system dynamics depends
         on any parameters, this method should however be called to store
         the new parameter values correctly
 
         Args:
          - params (array-like): new parameter values
+
         """
         self.params = numpy.copy(params).reshape((-1, 1))
 
@@ -445,13 +440,13 @@ class NonlinearGaussian(
 
 
 class NonlinearGaussianInitialGaussian(NonlinearGaussian):
-    """
-    Nonlinear gaussian system with initial Gaussian distribution.
+    """Nonlinear gaussian system with initial Gaussian distribution.
 
     Args:
      - x0 (array-like): mean value of initial state, defaults to 0
      - Px0 (array-like): covariance of initial state, defaults to 0
      - lxi (int): number of states, only needed if neither x0 or Px0 specified
+
     """
 
     def __init__(
@@ -468,7 +463,7 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         elif Px0 is not None:
             self.x0 = numpy.zeros((Px0.shape[0], 1))
         else:
-            raise ValueError()
+            raise ValueError
 
         if Px0 is None:
             self.Px0 = numpy.zeros((len(self.x0), len(self.x0)))
@@ -485,7 +480,9 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
 
         Returns:
          (array-like) with first dimension = N, model specific representation
-         of all particles"""
+         of all particles
+
+        """
         particles = numpy.repeat(self.x0, N, 1).T
         if numpy.any(self.Px0):
             Pchol = scipy.linalg.cho_factor(self.Px0)[0]
@@ -495,15 +492,14 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         return particles
 
     def eval_logp_x0(self, particles: numpy.ndarray, t: float) -> numpy.ndarray:
-        """
-        Evaluate log p(x_0)
+        """Evaluate log p(x_0)
 
         Args:
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - t (float): time stamp
-        """
 
+        """
         N = len(particles)
         res = numpy.empty(N)
         # Assumes Px0 is either full rang or zero

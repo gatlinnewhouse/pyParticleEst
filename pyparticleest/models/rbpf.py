@@ -1,6 +1,5 @@
 """Model definition for base class for Rao-Blackwellized models
 
-
 @author: Jerker Nordh
 """
 
@@ -9,14 +8,13 @@ from typing import Any
 
 import numpy as np
 
-import pyparticleest.interfaces as interfaces
-import pyparticleest.utils.kalman as kalman
+from pyparticleest import interfaces
 from pyparticleest.filter import ParticleApproximation, TrajectoryStep
+from pyparticleest.utils import kalman
 
 
 class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
-    """
-    Base class for Rao-Blackwellized models
+    """Base class for Rao-Blackwellized models
 
     Args:
      - lz (int): Dimension of linear subsystem
@@ -26,6 +24,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
        (if constant)
      - C (array-like): Measurement dynamic for linear states (if constant)
      - hz (array-like): Affine measurement term for linear states (if constant)
+
     """
 
     def __init__(
@@ -51,8 +50,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         fz: Any = None,
         hz: Any = None,
     ) -> None:
-        """
-        Change the dynamics for linear subsystem
+        """Change the dynamics for linear subsystem
 
         Args:
          - lz (int): Dimension of linear subsystem
@@ -62,6 +60,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
            (if constant)
          - C (array-like): Measurement dynamic for linear states (if constant)
          - hz (array-like): Affine measurement term for linear states (if constant)
+
         """
         return self.kf.set_dynamics(Az, C, Qz, R, fz, hz)
 
@@ -71,8 +70,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         u: Any,
         t: float,
     ) -> tuple[Any, Any, Any]:
-        """
-        Return matrices describing affine relation of next
+        """Return matrices describing affine relation of next
         nonlinear state conditioned on current nonlinear state
 
         xi_{t+1]} = A_xi(xi) * z_t + f_xi(xi) + v_xi, v_xi ~ N(0,Q_xi(xi))
@@ -88,6 +86,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          with the corresponding matrix for each particle. None indicates
          that the matrix is identical for all particles and the value stored
          in this class should be used instead
+
         """
         return (None, None, None)
 
@@ -97,8 +96,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         u: Any,
         t: float,
     ) -> tuple[Any, Any, Any, bool, bool, bool]:
-        """
-        Helper class for calculating dynamics for nonlinear state
+        """Helper class for calculating dynamics for nonlinear state
 
         xi_{t+1]} = A_xi(xi) * z_t + f_xi(xi) + v_xi, v_xi ~ N(0,Q_xi(xi))
 
@@ -113,6 +111,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          where the first three element is are lists with the corresponding
          matrix for each particle. The last three are boolean to indicate if
          all the matrices are identical to allow for more efficient computions
+
         """
         (Axi, fxi, Qxi) = self.get_nonlin_pred_dynamics(particles, u=u, t=t)
         N = len(particles)
@@ -138,8 +137,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         u: Any,
         t: float,
     ) -> tuple[Any, Any, Any]:
-        """
-        Return matrices describing affine relation of next
+        r"""Return matrices describing affine relation of next
         nonlinear state conditioned on current nonlinear state
 
         \z_{t+1]} = A_z(xi) * z_t + f_z(xi) + v_z, v_z ~ N(0,Q_z(xi))
@@ -155,6 +153,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          with the corresponding matrix for each particle. None indicates
          that the matrix is identical for all particles and the value stored
          in this class should be used instead
+
         """
         return (None, None, None)
 
@@ -164,8 +163,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         u: Any,
         t: float,
     ) -> tuple[Any, Any, Any, bool, bool, bool]:
-        """
-        Helper class for calculating dynamics for linear state
+        r"""Helper class for calculating dynamics for linear state
 
         \z_{t+1]} = A_z(xi) * z_t + f_z(xi) + v_z, v_z ~ N(0,Q_z(xi))
 
@@ -180,6 +178,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          where the first three element is are lists with the corresponding
          matrix for each particle. The last three are boolean to indicate if
          all the matrices are identical to allow for more efficient computations
+
         """
         N = len(particles)
         (Az, fz, Qz) = self.get_lin_pred_dynamics(particles, u=u, t=t)
@@ -207,8 +206,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         y: Any,
         t: float,
     ) -> tuple[Any, Any, Any, Any]:
-        """
-        Return matrices describing affine relation of measurement and current
+        r"""Return matrices describing affine relation of measurement and current
         state estimates
 
         \y_t+1 = C(xi) * z_t + h_z(xi) + e_z, e_z ~ N(0,R(xi))
@@ -224,6 +222,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          with the corresponding matrix for each particle. None indicates
          that the matrix is identical for all particles and the value stored
          in this class should be used instead
+
         """
         return (y, None, None, None)
 
@@ -233,8 +232,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         y: Any,
         t: float,
     ) -> tuple[Any, Any, Any, Any, bool, bool, bool]:
-        """
-        Helper class for calculating measurement dynamics
+        r"""Helper class for calculating measurement dynamics
 
         \y_t+1 = C(xi) * z_t + h_z(xi) + e_z, e_z ~ N(0,R(xi))
 
@@ -250,6 +248,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          the corresponding matrix for each particle. The last three are boolean
          to indicate if all the matrices are identical to allow for more
          efficient computations
+
         """
         N = len(particles)
         (y, Cz, hz, Rz) = self.get_meas_dynamics(particles=particles, y=y, t=t)
@@ -285,7 +284,6 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         """Propagate estimate forward in time
 
         Args:
-
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
          - u (array-like):  input signal
@@ -295,8 +293,8 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N, particle estimate at time t+1
-        """
 
+        """
         # Calc (xi_{t+1} | xi_t, z_t, y_t)
         xin = self.calc_xi_next(particles=particles, u=u, t=t, noise=noise)
         # Calc (z_{t+1} | xi_{t+1}, y_t)
@@ -315,8 +313,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         tt: np.ndarray,
         cur_ind: int,
     ) -> np.ndarray:
-        """
-        Calculate estimates of the next time step using particle 'part', conditioned
+        """Calculate estimates of the next time step using particle 'part', conditioned
         on the non-linear parts of the first step of the future trajectory.
 
         Args:
@@ -335,6 +332,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
 
         Returns:
          (array-like) with first dimension = N
+
         """
         xin = future_parts[find, : self.lxi]
         particles = np.copy(part)
@@ -353,8 +351,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
         u: Any,
         t: float,
     ) -> None:
-        """
-        Calculate estimate of z_{t+1} given information of xi_{t+1}
+        """Calculate estimate of z_{t+1} given information of xi_{t+1}
 
         Args:
          - particles  (array-like): Model specific representation
@@ -362,6 +359,7 @@ class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
          - xi_next (array-like): next nonlinear state
          - u (array-like): input signal
          - t (float): time stamp
+
         """
         # Calc (z_t | xi_{t+1}, y_t)
         self.meas_xi_next(particles=particles, xi_next=xi_next, u=u, t=t)
@@ -393,8 +391,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         self,
         xi_initial: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Calculate estimate of initial state for linear state condition on the
+        """Calculate estimate of initial state for linear state condition on the
         nonlinear estimate
 
         Args:
@@ -403,12 +400,11 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         Returns:
          (z,P): z is a list of all inital mean values, P is a list of covariance
          matrices
+
         """
-        pass
 
     def post_smoothing(self, st: Any) -> np.ndarray:
-        """
-        Kalman smoothing of the linear states conditioned on the non-linear
+        """Kalman smoothing of the linear states conditioned on the non-linear
         trajetory
 
         Args:
@@ -417,6 +413,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         Returns:
          (array-like): Smoothed estimate with sufficient statistics for linear
          states
+
         """
         T = len(st.traj)
         M = len(st.traj[0].pa.part)
@@ -474,8 +471,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         return straj
 
     def pre_mhips_pass(self, st: Any) -> np.ndarray:
-        """
-        Calculated sufficient statistics for the filtering problem.
+        """Calculated sufficient statistics for the filtering problem.
         Used to make sure all particles are in the expected state when using
         MHIPS/MHBP
 
@@ -485,6 +481,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         Returns:
          (array-like): Filtered estimate with sufficient statistics for linear
          states
+
         """
         T = len(st.traj)
         M = len(st.traj[0].pa.part)
@@ -529,8 +526,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         z_list: np.ndarray,
         P_list: np.ndarray,
     ) -> None:
-        """
-        Set the estimate of the states states
+        """Set the estimate of the states states
 
         Args:
          - particles  (array-like): Model specific representation
@@ -538,6 +534,7 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
          - xi_list (list): list of xi values for each particle
          - z_list (list): list of mean values for z for each particle
          - P_list (list): list of covariance matrices for z for each particle
+
         """
         N = len(particles)
         zend = self.lxi + self.kf.lz
@@ -551,18 +548,18 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         self,
         particles: np.ndarray,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Return the estimates contained in the particles array
+        """Return the estimates contained in the particles array
 
         Args:
          - particles  (array-like): Model specific representation
            of all particles, with first dimension = N (number of particles)
 
-        Returns
+        Returns:
             (xil, zl, Pl):
              - xil: list of xi values
              - zl: list of mean values for z
              - Pl: list of covariance matrices for z
+
         """
         N = len(particles)
         zend = self.lxi + self.kf.lz
@@ -575,15 +572,15 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         return (xil, zl, Pl)
 
     def get_Mz(self, smooth_particles: np.ndarray) -> np.ndarray:
-        """
-        Return the cross covariance of z_t and z_t+1 at time t
+        """Return the cross covariance of z_t and z_t+1 at time t
 
         Args:
          - smooth_particles (array-like): smoothed particle estimates
 
-        Returns
+        Returns:
          (arrau-like): Array of covariance matrices, first dimenson indexs the
          particles
+
         """
         N = len(smooth_particles)
         zend = self.lxi + self.kf.lz
@@ -593,13 +590,13 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
         return smooth_particles[:, Pend:Mend].reshape((N, self.kf.lz, self.kf.lz))
 
     def set_Mz(self, smooth_particles: np.ndarray, Mz: np.ndarray) -> None:
-        """
-        Set the cross covariance estimate for z_t and z_t+1 at time t
+        """Set the cross covariance estimate for z_t and z_t+1 at time t
 
         Args:
          - smooth_particles (array-like): smoothed particle estimates
          - Mz (array-like): Array of covariance matrices, first dimenson indexs the
            particles
+
         """
         N = len(smooth_particles)
         zend = self.lxi + self.kf.lz

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pyparticleest.models.nlg
-import pyparticleest.simulator as simulator
+from pyparticleest import simulator
 
 
 def generate_dataset(steps, P0, Q, R):
@@ -27,7 +27,8 @@ def wmean(logw, val):
 class Model(pyparticleest.models.nlg.NonlinearGaussianInitialGaussian):
     """x_{k+1} = sin(x_k) + v_k, v_k ~ N(0,Q)
     y_k = x_k + e_k, e_k ~ N(0,R),
-    x(0) ~ N(0,P0)"""
+    x(0) ~ N(0,P0)
+    """
 
     def __init__(self, P0, Q, R) -> None:
         x0 = np.zeros((1, 1))

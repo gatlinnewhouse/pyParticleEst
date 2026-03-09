@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import pyparticleest.models.mlnlg as mlnlg
-import pyparticleest.simulator as simulator
+from pyparticleest import simulator
+from pyparticleest.models import mlnlg
 
 
 def generate_dataset(steps, P0_xi, P0_z, Qxi, Qz, Qxiz, R):
@@ -27,7 +27,8 @@ class Model(mlnlg.MixedNLGaussianMarginalizedInitialGaussian):
     """xi_{k+1} = xi_k + z_k + v_xi_k, v_xi ~ N(0,Q_xi)
     z_{k+1} = z_{k} + v_z, v_z_k ~ N(0, Q_z)
     y_k = xi_k + +z_k + e_k, e_k ~ N(0,R_z),
-    (v_xi v_z).T ~ N(0, ((Q_xi, Qxiz), (Qxiz.T Qz))"""
+    (v_xi v_z).T ~ N(0, ((Q_xi, Qxiz), (Qxiz.T Qz))
+    """
 
     def __init__(self, P0_xi, P0_z, Q_xi, Q_z, Q_xiz, R) -> None:
         Axi = np.eye(1)
