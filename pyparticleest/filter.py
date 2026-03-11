@@ -10,6 +10,8 @@ from typing import Any
 import numba as nb
 import numpy as np
 
+_GLOBAL_RNG = np.random.default_rng()
+
 
 @nb.njit(cache=True)
 def _numba_sample(w: np.ndarray, n: int, u_rand: float) -> np.ndarray:
@@ -56,8 +58,7 @@ def sample(w: np.ndarray, n: int) -> np.ndarray:
     - n (int):  number of indices to sample
 
     """
-    rng = np.random.default_rng()
-    return _numba_sample(w, n, float(rng.random()))
+    return _numba_sample(w, n, float(_GLOBAL_RNG.random()))
 
 
 class ParticleFilter:

@@ -15,6 +15,8 @@ import scipy.linalg
 from pyparticleest import interfaces
 from pyparticleest.utils import kalman
 
+_GLOBAL_RNG = np.random.default_rng()
+
 
 @nb.njit(cache=True, parallel=True)
 def _nb_logp_xnext_max(N: int, dim: int, Q: np.ndarray) -> float:
@@ -180,7 +182,7 @@ class NonlinearGaussian(
         N = len(particles)
         Q = self.calc_Q(particles=particles, u=u, t=t)
         rng = numpy.random.default_rng()
-        noise = rng.standard_normal(size=(self.lxi, N))
+        noise = _GLOBAL_RNG.standard_normal(size=(self.lxi, N))
         if Q is None:
             noise = self.Qcholtri.T.dot(noise)
         else:
@@ -494,7 +496,7 @@ class NonlinearGaussianInitialGaussian(NonlinearGaussian):
         if numpy.any(self.Px0):
             Pchol = scipy.linalg.cho_factor(self.Px0)[0]
             rng = numpy.random.default_rng()
-            noise = rng.standard_normal(size=(self.lxi, N))
+            noise = _GLOBAL_RNG.standard_normal(size=(self.lxi, N))
             particles += (Pchol.dot(noise)).T
         return particles
 
