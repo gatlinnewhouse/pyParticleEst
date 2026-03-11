@@ -6,6 +6,7 @@
 from collections.abc import Callable
 from typing import Any
 
+import numba as nb
 import numpy as np
 
 from pyparticleest.simulator import Simulator
@@ -96,6 +97,7 @@ class ParamEstimation(Simulator):
         return (params_local, -np.inf)
 
 
+@nb.njit(cache=True)
 def alpha_gen(it: int) -> float:
     offset = 100
     if it <= offset:

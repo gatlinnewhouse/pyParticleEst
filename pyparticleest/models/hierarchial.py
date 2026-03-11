@@ -8,6 +8,7 @@ import copy
 import math
 from typing import Any
 
+import numba as nb
 import numpy as np
 
 from pyparticleest.interfaces import FFBSiRS
@@ -290,6 +291,24 @@ class HierarchicalBase(RBPSBase, abc.ABC):
         """
 
 
+@nb.njit(cache=True)
+def _nb_hierarchical_logp_xnext_max(
+    N: int, nx: int, Az: np.ndarray, Pl: np.ndarray, Qz: np.ndarray
+) -> np.ndarray:
+    lpz = np.empty(N)
+    const = -0.5 * nx * math.log(2 * math.pi)
+
+    for i in range(N):
+        # Predict P_{t+1}
+        Pn = np.dot(Az[i], np.dot(Pl[i], Az[i].T)) + Qz[i]
+
+        # Numba natively supports np.linalg.slogdet
+        _, logdet = np.linalg.slogdet(Pn)
+        lpz[i] = const + logdet
+
+    return lpz
+
+
 class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -312,13 +331,10 @@ class HierarchicalRSBase(HierarchicalBase, FFBSiRS):
         N = len(particles)
         lpxi = self.logp_xnext_xi_max(particles, u, t)
         (Az, _fz, Qz, _, _, _) = self.get_lin_pred_dynamics_int(particles, u, t)
-        lpz = np.empty_like(lpxi)
         (_xil, _zl, Pl) = self.get_states(particles)
-        nx = len(Qz[0])
-        for i in range(N):
-            # Predict z_{t+1}
-            Pn = Az[i].dot(Pl[i]).dot(Az[i].T) + Qz[i]
-            lpz[i] = -0.5 * nx * math.log(2 * math.pi) + np.linalg.slogdet(Pn)[1]
+        lpz = _nb_hierarchical_logp_xnext_max(
+            N, len(Qz[0]), np.asarray(Az), np.asarray(Pl), np.asarray(Qz)
+        )
         return np.max(lpxi + lpz)
 
     @abc.abstractmethod
