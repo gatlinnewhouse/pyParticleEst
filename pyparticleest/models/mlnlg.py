@@ -14,6 +14,8 @@ import scipy.linalg
 from pyparticleest.models.rbpf import RBPSBase
 from pyparticleest.utils import kalman, mlnlg_compute
 
+_GLOBAL_RNG = np.random.default_rng()
+
 
 @nb.njit(cache=True)
 def factor_psd(A: numpy.ndarray) -> numpy.ndarray:
@@ -190,10 +192,9 @@ class MixedNLGaussianSampled(RBPSBase):
         dim = len(_xil[0])
         noise = numpy.empty((N, dim))
         zeros = numpy.zeros(dim)
-        rng = numpy.random.default_rng()
         for i in range(N):
             Sigma = Qxi[i] + Axi[i].dot(Pl[i]).dot(Axi[i].T)
-            noise[i] = rng.multivariate_normal(zeros, Sigma).ravel()
+            noise[i] = _GLOBAL_RNG.multivariate_normal(zeros, Sigma).ravel()
         return noise
 
     def calc_xi_next(
@@ -755,10 +756,9 @@ class MixedNLGaussianSampled(RBPSBase):
         # z-variables, the full distrubition for the z_1:T conditioned on xi_1:T
         # is recovered in the post_smooting step
 
-        rng = numpy.random.default_rng()
         for j in range(M):
             xi = numpy.copy(xil[j]).ravel()
-            z = rng.multivariate_normal(zl[j].ravel(), Pl[j]).ravel()
+            z = _GLOBAL_RNG.multivariate_normal(zl[j].ravel(), Pl[j]).ravel()
             res[j] = numpy.hstack((xi, z))
         return res
 
@@ -1414,9 +1414,8 @@ class MixedNLGaussianSampledInitialGaussian(MixedNLGaussianSampled):
         dim = self.lxi + self.kf.lz + self.kf.lz**2
         particles = numpy.empty((N, dim))
 
-        rng = numpy.random.default_rng()
         for i in range(N):
-            particles[i, 0 : self.lxi] = rng.multivariate_normal(
+            particles[i, 0 : self.lxi] = _GLOBAL_RNG.multivariate_normal(
                 self.xi0.ravel(),
                 self.Pxi0,
             )

@@ -15,6 +15,8 @@ from pyparticleest.interfaces import FFBSiRS
 from pyparticleest.models.rbpf import RBPSBase
 from pyparticleest.utils import kalman
 
+_GLOBAL_RNG = np.random.default_rng()
+
 
 class HierarchicalBase(RBPSBase, abc.ABC):
     """Base class for Rao-Blackwellization of hierarchical models
@@ -217,8 +219,7 @@ class HierarchicalBase(RBPSBase, abc.ABC):
             xi = copy.copy(xil[0]).ravel()
             # Sample the linear variables, the full conditional density
             # is recovred later in the post_smoothing step
-            rng = np.random.default_rng()
-            z = rng.multivariate_normal(zl[0].ravel(), Pl[0]).ravel()
+            z = _GLOBAL_RNG.multivariate_normal(zl[0].ravel(), Pl[0]).ravel()
             res[j, : (self.lxi + self.kf.lz)] = np.hstack((xi, z))
         return res
 

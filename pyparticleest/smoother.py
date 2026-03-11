@@ -11,6 +11,8 @@ import numpy as np
 from . import filter as pf
 from .filter import ParticleApproximation, TrajectoryStep
 
+_GLOBAL_RNG = np.random.default_rng()
+
 
 @nb.njit(cache=True)
 def _nb_adaptive_stop_update(
@@ -114,9 +116,8 @@ def bsi_rs(
     weights -= np.max(weights)
     weights = np.exp(weights)
     weights /= np.sum(weights)
-    rng = np.random.default_rng()
     for _i in range(max_iter):
-        ind = rng.permutation(pf.sample(weights, len(todo)))
+        ind = _GLOBAL_RNG.permutation(pf.sample(weights, len(todo)))
         pn = model.logp_xnext_full(
             pa.part[ind],
             ptraj,
@@ -128,7 +129,7 @@ def bsi_rs(
             tt=tt,
             cur_ind=cur_ind,
         )
-        test = np.log(rng.uniform(size=len(todo)))
+        test = np.log(_GLOBAL_RNG.uniform(size=len(todo)))
         accept = test < pn - maxpdf
         res[todo[accept]] = ind[accept]
         todo = todo[~accept]
@@ -208,9 +209,8 @@ def bsi_rsas(
     pk = x1
     Pk = P1
     stop_criteria = ratio / len(pa)
-    rng = np.random.default_rng()
     while True:
-        ind = rng.permutation(pf.sample(weights, len(todo)))
+        ind = _GLOBAL_RNG.permutation(pf.sample(weights, len(todo)))
         pn = model.logp_xnext_full(
             pa.part[ind],
             ptraj,
@@ -222,7 +222,7 @@ def bsi_rsas(
             tt=tt,
             cur_ind=cur_ind,
         )
-        test = np.log(rng.uniform(size=len(todo)))
+        test = np.log(_GLOBAL_RNG.uniform(size=len(todo)))
         accept = test < pn - maxpdf
         ak = np.sum(accept)
         mk = len(todo)
@@ -299,9 +299,8 @@ def bsi_mcmc(
         tt=tt,
         cur_ind=cur_ind,
     )
-    rng = np.random.default_rng()
     for _j in range(R):
-        propind = rng.permutation(pf.sample(weights, M))
+        propind = _GLOBAL_RNG.permutation(pf.sample(weights, M))
         pprop = model.logp_xnext_full(
             pa.part[propind],
             ptraj,
@@ -315,7 +314,7 @@ def bsi_mcmc(
         )
         diff = pprop - pcurr
         diff[diff > 0.0] = 0.0
-        test = np.log(rng.uniform(size=M))
+        test = np.log(_GLOBAL_RNG.uniform(size=M))
         accept = test < diff
         ind[accept] = propind[accept]
         pcurr[accept] = pprop[accept]
@@ -1049,8 +1048,7 @@ def mc_step(
         + (logp_q_curr - logp_q_prop)
     )
 
-    rng = np.random.default_rng()
-    test = np.log(rng.uniform(size=len(ratio)))
+    test = np.log(_GLOBAL_RNG.uniform(size=len(ratio)))
     acc = test < ratio
     curparty[acc] = xpropy[acc]
     return (curparty, acc)
