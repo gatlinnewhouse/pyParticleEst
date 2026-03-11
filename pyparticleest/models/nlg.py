@@ -16,12 +16,11 @@ from pyparticleest import interfaces
 from pyparticleest.utils import kalman
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, parallel=True)
 def _nb_logp_xnext_max(N: int, dim: int, Q: np.ndarray) -> float:
     pmax = np.empty(N)
     l2pi = math.log(2 * math.pi)
-    for i in range(N):
-        # Numba supports np.linalg.cholesky (returns lower triangle)
+    for i in nb.prange(N):
         L = np.linalg.cholesky(Q[i])
         ld = np.sum(np.log(np.diag(L))) * 2
         pmax[i] = -0.5 * (dim * l2pi + ld)

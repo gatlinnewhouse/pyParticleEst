@@ -12,7 +12,7 @@ from pyparticleest.interfaces import FFBSi, ParticleFiltering
 from pyparticleest.utils import kalman, mlnlg_compute
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, parallel=True)
 def _nb_eval_logp_y(
     N: int,
     particles: np.ndarray,
@@ -27,7 +27,7 @@ def _nb_eval_logp_y(
     ld = np.linalg.slogdet(R)[1]
     R_inv = np.linalg.inv(R)
 
-    for i in range(N):
+    for i in nb.prange(N):
         # Slice the matrices directly out of the raw particle array
         z_i = particles[i, :lz].reshape(-1, 1)
         P_i = particles[i, lz:lzP].reshape((lz, lz))
@@ -43,7 +43,7 @@ def _nb_eval_logp_y(
     return logpy
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, parallel=True)
 def _nb_eval_logp_x0(
     N: int,
     particles: np.ndarray,
@@ -56,7 +56,7 @@ def _nb_eval_logp_x0(
     ld = np.linalg.slogdet(P0)[1]
     P0_inv = np.linalg.inv(P0)
 
-    for i in range(N):
+    for i in nb.prange(N):
         # Slice directly
         z_i = particles[i, :lz].reshape(-1, 1)
         P_i = particles[i, lz:lzP].reshape((lz, lz))

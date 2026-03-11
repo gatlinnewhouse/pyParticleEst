@@ -15,8 +15,6 @@ from .filter import ParticleTrajectory
 def _nb_get_filtered_mean(est: np.ndarray, w: np.ndarray, T: int, D: int) -> np.ndarray:
     mean = np.empty((T, D))
     for t in range(T):
-        # A simple nested loop here might even be faster than the array transpositions
-        # but the vectorized equivalent inside njit works well too.
         mean[t] = np.sum((w[t].ravel() * est[t].T).T, axis=0)
     return mean
 

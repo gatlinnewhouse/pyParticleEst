@@ -81,7 +81,7 @@ def lognormpdf_cho_vec(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> np.nd
     return res
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, parallel=True)
 def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.ndarray:
     """Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,Sl[i])
@@ -89,7 +89,7 @@ def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.nda
     N = len(err)
     res = np.empty(N)
 
-    for i in range(N):
+    for i in nb.prange(N):
         S = Sl[i]
         res[i] = -0.5 * (
             S.shape[0] * l2pi

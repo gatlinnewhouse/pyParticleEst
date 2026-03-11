@@ -291,14 +291,14 @@ class HierarchicalBase(RBPSBase, abc.ABC):
         """
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, parallel=True)
 def _nb_hierarchical_logp_xnext_max(
     N: int, nx: int, Az: np.ndarray, Pl: np.ndarray, Qz: np.ndarray
 ) -> np.ndarray:
     lpz = np.empty(N)
     const = -0.5 * nx * math.log(2 * math.pi)
 
-    for i in range(N):
+    for i in nb.prange(N):
         # Predict P_{t+1}
         Pn = np.dot(Az[i], np.dot(Pl[i], Az[i].T)) + Qz[i]
 

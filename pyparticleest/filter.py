@@ -19,12 +19,12 @@ def _numba_sample(w: np.ndarray, n: int, u_rand: float) -> np.ndarray:
     return np.searchsorted(wc, u)
 
 
-@nb.njit(cache=True)
+@nb.njit(cache=True, parallel=True)
 def _nb_calc_neff(w: np.ndarray) -> float:
     w_max = np.max(w)
     sum_w = 0.0
     sum_sq = 0.0
-    for i in range(len(w)):
+    for i in nb.prange(len(w)):
         val = np.exp(w[i] - w_max)
         sum_w += val
         sum_sq += val * val
