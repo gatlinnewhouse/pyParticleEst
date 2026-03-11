@@ -167,7 +167,8 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
 # Helpers
 # ══════════════════════════════════════════════════════════════════════════════
 def weighted_means(
-    straj: pfilter.ParticleTrajectory, state_index: int = 0,
+    straj: pfilter.ParticleTrajectory,
+    state_index: int = 0,
 ) -> np.ndarray:
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
@@ -180,7 +181,9 @@ def weighted_means(
 
 
 def weighted_means_z(
-    straj: pfilter.ParticleTrajectory, lxi: int, z_index: int,
+    straj: pfilter.ParticleTrajectory,
+    lxi: int,
+    z_index: int,
 ) -> np.ndarray:
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
@@ -198,7 +201,11 @@ def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
 
 
 def run_filter(
-    model, filter_name: str, ys: np.ndarray, N: int, resample: float = 2.0 / 3.0,
+    model,
+    filter_name: str,
+    ys: np.ndarray,
+    N: int,
+    resample: float = 2.0 / 3.0,
 ) -> tuple:
     straj = pfilter.ParticleTrajectory(
         model=model,
@@ -426,7 +433,12 @@ def plot_z_component_estimate(results, STEPS, zs, z_idx: int, component_name: st
 
 
 def plot_z_component_estimate_individual(
-    name, r, STEPS, zs, z_idx: int, component_name: str,
+    name,
+    r,
+    STEPS,
+    zs,
+    z_idx: int,
+    component_name: str,
 ):
     """Plot an individual filter's single z state component against ground truth."""
     t_axis = np.arange(STEPS + 1)
@@ -484,7 +496,11 @@ def main() -> None:
     for name, model, filter_type, resample in filters_to_run:
         print(f"Running {name}...")
         straj, t_wall, resamples, log_ml = run_filter(
-            model, filter_type, ys, N, resample=resample,
+            model,
+            filter_type,
+            ys,
+            N,
+            resample=resample,
         )
 
         est_xi = weighted_means(straj, state_index=0)
@@ -496,7 +512,8 @@ def main() -> None:
 
         per_tap_rmse = [
             rmse_aggregate(
-                [est_z[2 * t], est_z[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]],
+                [est_z[2 * t], est_z[2 * t + 1]],
+                [zs[:, 2 * t], zs[:, 2 * t + 1]],
             )
             for t in range(L // 2)
         ]
@@ -538,7 +555,12 @@ def main() -> None:
     plot_z_component_estimate(results, STEPS, zs, z_idx=0, component_name="Tap 1")
     for name, r in results.items():
         plot_z_component_estimate_individual(
-            name, r, STEPS, zs, z_idx=0, component_name="Tap 1 (Real)",
+            name,
+            r,
+            STEPS,
+            zs,
+            z_idx=0,
+            component_name="Tap 1 (Real)",
         )
 
     for tap_idx in range(n_taps):

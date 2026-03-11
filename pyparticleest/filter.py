@@ -41,11 +41,18 @@ def _nb_normalize_weights(
 ) -> tuple[np.ndarray, float]:
     m1 = np.max(new_weights)
     w_offset += m1
-    w = w + (new_weights - m1)
+
+    # in place
+    for i in range(len(w)):
+        w[i] += new_weights[i] - m1
 
     m2 = np.max(w)
     w_offset += m2
-    w = w - m2
+
+    # in place
+    for i in range(len(w)):
+        w[i] -= m2
+
     return w, w_offset
 
 

@@ -153,7 +153,9 @@ class ParamEstimationSAEM(Simulator):
 
         """
         params_local = np.copy(param0)
-        alltrajs = None
+        T = len(self.y)
+        D = self.pt.traj[0].pa.part.shape[1]
+        alltrajs = np.empty((T, max_iter * num_part, D))
         weights = None
 
         for i in range(max_iter):
