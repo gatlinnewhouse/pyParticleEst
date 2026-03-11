@@ -7,8 +7,18 @@ framework.
 from typing import Any
 
 import numpy as np
-
+import numba as nb
 from .filter import ParticleTrajectory
+
+
+@nb.njit(cache=True)
+def _nb_get_filtered_mean(est: np.ndarray, w: np.ndarray, T: int, D: int) -> np.ndarray:
+    mean = np.empty((T, D))
+    for t in range(T):
+        # A simple nested loop here might even be faster than the array transpositions
+        # but the vectorized equivalent inside njit works well too.
+        mean[t] = np.sum((w[t].ravel() * est[t].T).T, axis=0)
+    return mean
 
 
 class Simulator:
@@ -168,11 +178,7 @@ class Simulator:
         T = len(self.pt.traj)
         D = self.pt.traj[0].pa.part.shape[1]
 
-        mean = np.empty((T, D))
-        for t in range(T):
-            mean[t] = np.sum((w[t].ravel() * est[t].T).T, 0)
-
-        return mean
+        return _nb_get_filtered_mean(est, w, T, D)
 
     def get_smoothed_estimates(self) -> np.ndarray:
         """Return smoothed estimates (must first have called 'simulate')

@@ -6,9 +6,24 @@
 from typing import Any
 
 import numpy as np
-
+import numba as nb
 from . import filter as pf
 from .filter import ParticleApproximation, TrajectoryStep
+
+
+@nb.njit(cache=True)
+def _nb_adaptive_stop_update(
+    mk: int, ak: int, pk: float, Pk: float, sv: float, sw: float
+):
+    # meas update for adaptive stop
+    mk2 = mk * mk
+    sw2 = sw * sw
+    pk = pk + (mk * Pk) / (mk2 * Pk + sw2) * (ak - mk * pk)
+    Pk = (1 - (mk2 * Pk) / (mk2 * Pk + sw2)) * Pk
+    # predict
+    pk = (1 - ak / mk) * pk
+    Pk = (1 - ak / mk) ** 2 * Pk + sv * sv
+    return pk, Pk
 
 
 def bsi_full(
@@ -214,14 +229,7 @@ def bsi_rsas(
         todo = todo[~accept]
         if len(todo) == 0:
             return res
-        # meas update for adaptive stop
-        mk2 = mk * mk
-        sw2 = sw * sw
-        pk = pk + (mk * Pk) / (mk2 * Pk + sw2) * (ak - mk * pk)
-        Pk = (1 - (mk2 * Pk) / (mk2 * Pk + sw2)) * Pk
-        # predict
-        pk = (1 - ak / mk) * pk
-        Pk = (1 - ak / mk) ** 2 * Pk + sv * sv
+        pk, Pk = _nb_adaptive_stop_update(mk, ak, pk, Pk, sv, sw)
         if pk < stop_criteria:
             break
 

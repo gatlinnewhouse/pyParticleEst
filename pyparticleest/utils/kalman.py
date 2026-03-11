@@ -41,6 +41,7 @@ def _nb_smooth(
     return z_smooth, P_smooth, M_smooth
 
 
+@nb.njit(cache=True)
 def lognormpdf(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
     """Calculate gaussian probability density of err, when err ~ N(0,sigma)"""
     tmp = err.reshape(-1, 1)
@@ -80,6 +81,7 @@ def lognormpdf_cho_vec(err: np.ndarray, Schol: tuple[np.ndarray, bool]) -> np.nd
     return res
 
 
+@nb.njit(cache=True)
 def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.ndarray:
     """Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,Sl[i])
@@ -97,6 +99,7 @@ def lognormpdf_vec(err: np.ndarray, Sl: list[np.ndarray] | np.ndarray) -> np.nda
     return res
 
 
+@nb.njit(cache=True)
 def lognormpdf_scalar(err: np.ndarray, S: np.ndarray) -> float | np.ndarray:
     """Calculate gaussian probability density of all elements in err, when
     err[i] ~ N(0,S) and each element in err is a scalar
