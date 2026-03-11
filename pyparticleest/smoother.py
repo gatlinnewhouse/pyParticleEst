@@ -5,8 +5,9 @@
 
 from typing import Any
 
-import numpy as np
 import numba as nb
+import numpy as np
+
 from . import filter as pf
 from .filter import ParticleApproximation, TrajectoryStep
 

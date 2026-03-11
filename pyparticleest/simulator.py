@@ -6,8 +6,9 @@ framework.
 
 from typing import Any
 
-import numpy as np
 import numba as nb
+import numpy as np
+
 from .filter import ParticleTrajectory
 
 

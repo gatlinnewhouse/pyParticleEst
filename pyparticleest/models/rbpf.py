@@ -6,7 +6,6 @@
 import abc
 from typing import Any
 
-import numba as nb
 import numpy as np
 
 from pyparticleest import interfaces

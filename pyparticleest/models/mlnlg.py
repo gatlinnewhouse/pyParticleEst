@@ -6,10 +6,10 @@
 import math
 from typing import Any
 
-import numpy.random
-import scipy.linalg
 import numba as nb
 import numpy as np
+import numpy.random
+import scipy.linalg
 
 from pyparticleest.models.rbpf import RBPSBase
 from pyparticleest.utils import kalman, mlnlg_compute

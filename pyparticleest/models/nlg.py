@@ -7,8 +7,8 @@ import abc
 import math
 from typing import Any
 
-import numpy as np
 import numba as nb
+import numpy as np
 import numpy.random
 import scipy.linalg
 
