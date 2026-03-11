@@ -14,25 +14,6 @@ from pyparticleest.filter import ParticleApproximation, TrajectoryStep
 from pyparticleest.utils import kalman
 
 
-@nb.njit(cache=True)
-def _nb_set_states(
-    particles: np.ndarray,
-    xi_list: np.ndarray,
-    z_list: np.ndarray,
-    P_list: np.ndarray,
-    lxi: int,
-    lz: int,
-):
-    N = len(particles)
-    zend = lxi + lz
-    Pend = zend + lz**2
-
-    # Numba handles these array assignments significantly faster than Python loops/broadcasting
-    particles[:, :lxi] = xi_list.reshape((N, lxi))
-    particles[:, lxi:zend] = z_list.reshape((N, lz))
-    particles[:, zend:Pend] = P_list.reshape((N, lz**2))
-
-
 class RBPFBase(interfaces.ParticleFiltering, abc.ABC):
     """Base class for Rao-Blackwellized models
 
@@ -556,7 +537,13 @@ class RBPSBase(RBPFBase, interfaces.FFBSiRS, abc.ABC):
          - P_list (list): list of covariance matrices for z for each particle
 
         """
-        _nb_set_states(particles, xi_list, z_list, P_list, self.lxi, self.kf.lz)
+        N = len(particles)
+        zend = self.lxi + self.kf.lz
+        Pend = zend + self.kf.lz**2
+
+        particles[:, : self.lxi] = xi_list.reshape((N, self.lxi))
+        particles[:, self.lxi : zend] = z_list.reshape((N, self.kf.lz))
+        particles[:, zend:Pend] = P_list.reshape((N, self.kf.lz**2))
 
     def get_states(
         self,

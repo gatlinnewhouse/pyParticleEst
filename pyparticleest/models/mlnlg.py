@@ -9,6 +9,7 @@ from typing import Any
 import numpy.random
 import scipy.linalg
 import numba as nb
+import numpy as np
 
 from pyparticleest.models.rbpf import RBPSBase
 from pyparticleest.utils import kalman, mlnlg_compute
