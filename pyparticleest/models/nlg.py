@@ -7,11 +7,25 @@ import abc
 import math
 from typing import Any
 
+import numpy as np
+import numba as nb
 import numpy.random
 import scipy.linalg
 
 from pyparticleest import interfaces
 from pyparticleest.utils import kalman
+
+
+@nb.njit(cache=True)
+def _nb_logp_xnext_max(N: int, dim: int, Q: np.ndarray) -> float:
+    pmax = np.empty(N)
+    l2pi = math.log(2 * math.pi)
+    for i in range(N):
+        # Numba supports np.linalg.cholesky (returns lower triangle)
+        L = np.linalg.cholesky(Q[i])
+        ld = np.sum(np.log(np.diag(L))) * 2
+        pmax[i] = -0.5 * (dim * l2pi + ld)
+    return np.max(pmax)
 
 
 class NonlinearGaussian(
@@ -285,16 +299,10 @@ class NonlinearGaussian(
         """
         Q = self.calc_Q(particles, u, t)
         dim = self.lxi
-        l2pi = math.log(2 * math.pi)
         if Q is None:
             return self.logpdfmax
         N = len(particles)
-        pmax = numpy.empty(N)
-        for i in range(N):
-            Qchol = scipy.linalg.cho_factor(Q[i], check_finite=False)
-            ld = numpy.sum(numpy.log(numpy.diag(Qchol[0]))) * 2
-            pmax[i] = -0.5 * (dim * l2pi + ld)
-        return numpy.max(pmax)
+        return _nb_logp_xnext_max(N, dim, Q)
 
     def logp_xnext(
         self,

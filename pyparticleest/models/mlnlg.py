@@ -8,9 +8,39 @@ from typing import Any
 
 import numpy.random
 import scipy.linalg
+import numba as nb
 
 from pyparticleest.models.rbpf import RBPSBase
 from pyparticleest.utils import kalman, mlnlg_compute
+
+
+@nb.njit(cache=True)
+def factor_psd(A: numpy.ndarray) -> numpy.ndarray:
+    (U, s, V) = numpy.linalg.svd(A)
+    return U.dot(numpy.diag(numpy.sqrt(s)))
+
+
+@nb.njit(cache=True)
+def _nb_calc_prop3(
+    M: int,
+    lz: int,
+    zl: np.ndarray,
+    Pl: np.ndarray,
+    Omega: np.ndarray,
+    Lambda: np.ndarray,
+):
+    eta = np.zeros(M)
+    L = np.zeros((M, lz, lz))
+    for j in range(M):
+        Gamma = factor_psd(Pl[j])
+        L[j] = Gamma.T.dot(Omega[j]).dot(Gamma) + np.eye(lz)
+        tmp = Gamma.T.dot(Lambda[j] - Omega[j].dot(zl[j]))
+        eta[j] = (
+            zl[j].T.dot(Omega[j]).dot(zl[j])
+            - 2.0 * Lambda[j].T.dot(zl[j])
+            - tmp.T.dot(np.linalg.solve(L[j], tmp))
+        )
+    return eta, L
 
 
 class MixedNLGaussianSampled(RBPSBase):
@@ -1504,12 +1534,6 @@ class MixedNLGaussianSampledInitialGaussian(MixedNLGaussianSampled):
         return lpxi0_grad
 
 
-def factor_psd(A: numpy.ndarray) -> numpy.ndarray:
-    """Internal helper function"""
-    (U, s, V) = numpy.linalg.svd(A)
-    return U.dot(numpy.diag(numpy.sqrt(s)))
-
-
 class MixedNLGaussianMarginalized(MixedNLGaussianSampled):
     """This class implements a fully marginalized smoother for
     mixed linear/nonlinear models, in contrast to the MixedNLGaussian class
@@ -1599,20 +1623,8 @@ class MixedNLGaussianMarginalized(MixedNLGaussianSampled):
     ) -> tuple[numpy.ndarray, numpy.ndarray]:
         """Internal helper function"""
         M = len(particles)
-        eta = numpy.zeros(M)
-        L = numpy.zeros((M, self.kf.lz, self.kf.lz))
         (_, zl, Pl) = self.get_states(particles)
-
-        for j in range(M):
-            Gamma = factor_psd(Pl[j])
-            L[j] = Gamma.T.dot(Omega[j]).dot(Gamma) + numpy.eye(self.kf.lz)
-            tmp = Gamma.T.dot(Lambda[j] - Omega[j].dot(zl[j]))
-            eta[j] = (
-                zl[j].T.dot(Omega[j]).dot(zl[j])
-                - 2.0 * Lambda[j].T.dot(zl[j])
-                - tmp.T.dot(numpy.linalg.solve(L[j], tmp))
-            )
-        return (eta, L)
+        return _nb_calc_prop3(M, self.kf.lz, zl, Pl, Omega, Lambda)
 
     def logp_xnext_full(
         self,
