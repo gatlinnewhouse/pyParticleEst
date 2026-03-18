@@ -167,7 +167,8 @@ class MLNLGModelRBPF(mlnlg.MixedNLGaussianSampledInitialGaussian):
 # Helpers
 # ══════════════════════════════════════════════════════════════════════════════
 def weighted_means(
-    straj: pfilter.ParticleTrajectory, state_index: int = 0,
+    straj: pfilter.ParticleTrajectory,
+    state_index: int = 0,
 ) -> np.ndarray:
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
@@ -180,7 +181,9 @@ def weighted_means(
 
 
 def weighted_means_z(
-    straj: pfilter.ParticleTrajectory, lxi: int, z_index: int,
+    straj: pfilter.ParticleTrajectory,
+    lxi: int,
+    z_index: int,
 ) -> np.ndarray:
     means = np.empty(len(straj))
     for k, step in enumerate(straj.traj):
@@ -198,7 +201,11 @@ def mean_neff(straj: pfilter.ParticleTrajectory) -> float:
 
 
 def run_filter(
-    model, filter_name: str, ys: np.ndarray, N: int, resample: float = 2.0 / 3.0,
+    model,
+    filter_name: str,
+    ys: np.ndarray,
+    N: int,
+    resample: float = 2.0 / 3.0,
 ) -> tuple:
     straj = pfilter.ParticleTrajectory(
         model=model,
@@ -236,6 +243,63 @@ def rmse_aggregate(est_list: list[np.ndarray], truth_list: list[np.ndarray]) -> 
         total_sq += np.sum((est[1 : n + 1] - truth[1 : n + 1]) ** 2)
         total_n += n
     return float(np.sqrt(total_sq / total_n))
+
+
+def _make_filter_specs(N: int) -> list[tuple[str, Any, str, float]]:
+    """Return a fresh list of (name, model, filter_type, resample) tuples.
+
+    Models are stateful, so this must be called once per run.
+    """
+    return [
+        ("SIS", MLNLGModelPF(), "pf", 0),
+        ("SIR", MLNLGModelPF(), "pf", 2.0 / 3.0),
+        ("APF", MLNLGModelPF(), "apf", 2.0 / 3.0),
+        ("RBPF", MLNLGModelRBPF(N), "pf", 2.0 / 3.0),
+    ]
+
+
+def _run_one_seed(
+    seed: int,
+    N: int,
+    STEPS: int,
+    L: int,
+) -> dict[str, dict[str, Any]]:
+    """Run all filters on one data realisation; return scalar metrics only."""
+    xis, zs, ys = simulate_mlnlg(STEPS, seed=seed)
+    run_results: dict[str, dict[str, Any]] = {}
+
+    for name, model, filter_type, resample in _make_filter_specs(N):
+        straj, t_wall, resamples, log_ml = run_filter(
+            model,
+            filter_type,
+            ys,
+            N,
+            resample=resample,
+        )
+        est_xi = weighted_means(straj, state_index=0)
+        est_z = (
+            [weighted_means_z(straj, lxi=1, z_index=i) for i in range(L)]
+            if name == "RBPF"
+            else [weighted_means(straj, state_index=1 + i) for i in range(L)]
+        )
+        per_tap_rmse = [
+            rmse_aggregate(
+                [est_z[2 * t], est_z[2 * t + 1]],
+                [zs[:, 2 * t], zs[:, 2 * t + 1]],
+            )
+            for t in range(L // 2)
+        ]
+        run_results[name] = {
+            "rmse_xi": rmse(est_xi, xis),
+            "rmse_z_agg": rmse_aggregate(est_z, [zs[:, i] for i in range(L)]),
+            "rmse_tap": per_tap_rmse,
+            "neff": mean_neff(straj),
+            "time_s": t_wall,
+            "resamples": resamples,
+            "log_ml": log_ml,
+        }
+
+    return run_results
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -426,7 +490,12 @@ def plot_z_component_estimate(results, STEPS, zs, z_idx: int, component_name: st
 
 
 def plot_z_component_estimate_individual(
-    name, r, STEPS, zs, z_idx: int, component_name: str,
+    name,
+    r,
+    STEPS,
+    zs,
+    z_idx: int,
+    component_name: str,
 ):
     """Plot an individual filter's single z state component against ground truth."""
     t_axis = np.arange(STEPS + 1)
@@ -464,44 +533,41 @@ def plot_z_component_estimate_individual(
 def main() -> None:
     os.makedirs("plots", exist_ok=True)
 
-    np.random.seed(42)
     STEPS = 100
     N = 1000
     L = MLNLG_L
+    N_RUNS = 100
+    PLOT_SEED = 42
 
-    xis, zs, ys = simulate_mlnlg(STEPS, seed=42)
+    # ── Single representative run for plots ──────────────────────────────────
+    print(f"Running representative run (seed={PLOT_SEED}) for plots...")
+    xis, zs, ys = simulate_mlnlg(STEPS, seed=PLOT_SEED)
 
-    results: dict[str, dict[str, Any]] = {}
+    plot_results: dict[str, dict[str, Any]] = {}
     strajs: list[tuple[str, pfilter.ParticleTrajectory]] = []
 
-    filters_to_run = [
-        ("SIS", MLNLGModelPF(), "pf", 0),
-        ("SIR", MLNLGModelPF(), "pf", 2.0 / 3.0),
-        ("APF", MLNLGModelPF(), "apf", 2.0 / 3.0),
-        ("RBPF", MLNLGModelRBPF(N), "pf", 2.0 / 3.0),
-    ]
-
-    for name, model, filter_type, resample in filters_to_run:
-        print(f"Running {name}...")
+    for name, model, filter_type, resample in _make_filter_specs(N):
         straj, t_wall, resamples, log_ml = run_filter(
-            model, filter_type, ys, N, resample=resample,
+            model,
+            filter_type,
+            ys,
+            N,
+            resample=resample,
         )
-
         est_xi = weighted_means(straj, state_index=0)
-
-        if name == "RBPF":
-            est_z = [weighted_means_z(straj, lxi=1, z_index=i) for i in range(L)]
-        else:
-            est_z = [weighted_means(straj, state_index=1 + i) for i in range(L)]
-
+        est_z = (
+            [weighted_means_z(straj, lxi=1, z_index=i) for i in range(L)]
+            if name == "RBPF"
+            else [weighted_means(straj, state_index=1 + i) for i in range(L)]
+        )
         per_tap_rmse = [
             rmse_aggregate(
-                [est_z[2 * t], est_z[2 * t + 1]], [zs[:, 2 * t], zs[:, 2 * t + 1]],
+                [est_z[2 * t], est_z[2 * t + 1]],
+                [zs[:, 2 * t], zs[:, 2 * t + 1]],
             )
             for t in range(L // 2)
         ]
-
-        results[name] = {
+        plot_results[name] = {
             "rmse_xi": rmse(est_xi, xis),
             "rmse_z_agg": rmse_aggregate(est_z, [zs[:, i] for i in range(L)]),
             "rmse_tap": per_tap_rmse,
@@ -514,6 +580,57 @@ def main() -> None:
         }
         strajs.append((name, straj))
 
+    # ── Multi-run averaging for table ────────────────────────────────────────
+    filter_names = [name for name, *_ in _make_filter_specs(N)]
+    n_taps = L // 2
+
+    # accumulators: sum of each scalar metric across runs
+    acc: dict[str, dict[str, Any]] = {
+        name: {
+            "rmse_xi": 0.0,
+            "rmse_z_agg": 0.0,
+            "rmse_tap": [0.0] * n_taps,
+            "neff": 0.0,
+            "time_s": 0.0,
+            "resamples": 0.0,
+            "log_ml": 0.0,
+        }
+        for name in filter_names
+    }
+
+    seeds = range(N_RUNS)
+    for i, seed in enumerate(seeds):
+        print(
+            f"  Averaging run {i + 1}/{N_RUNS} (seed={seed})...", end="\r", flush=True
+        )
+        run = _run_one_seed(seed, N, STEPS, L)
+        for name in filter_names:
+            r = run[name]
+            a = acc[name]
+            a["rmse_xi"] += r["rmse_xi"]
+            a["rmse_z_agg"] += r["rmse_z_agg"]
+            a["neff"] += r["neff"]
+            a["time_s"] += r["time_s"]
+            a["resamples"] += r["resamples"]
+            a["log_ml"] += r["log_ml"]
+            for t in range(n_taps):
+                a["rmse_tap"][t] += r["rmse_tap"][t]
+    print()  # newline after \r progress
+
+    # divide accumulators by N_RUNS to get means
+    avg_results: dict[str, dict[str, Any]] = {
+        name: {
+            "rmse_xi": acc[name]["rmse_xi"] / N_RUNS,
+            "rmse_z_agg": acc[name]["rmse_z_agg"] / N_RUNS,
+            "rmse_tap": [v / N_RUNS for v in acc[name]["rmse_tap"]],
+            "neff": acc[name]["neff"] / N_RUNS,
+            "time_s": acc[name]["time_s"] / N_RUNS,
+            "resamples": acc[name]["resamples"] / N_RUNS,
+            "log_ml": acc[name]["log_ml"] / N_RUNS,
+        }
+        for name in filter_names
+    }
+
     # ── Console Output ───────────────────────────────────────────────────────
     n_taps = L // 2
     tap_headers = "".join(
@@ -523,30 +640,32 @@ def main() -> None:
         f"\n{'Filter':<8} {'RMSE(ξ)':>8} {'RMSE(z)':>8}{tap_headers} {'Neff':>8} {'Time(s)':>8} {'Resamp':>7} {'Log ML':>12}",
     )
     print("-" * (68 + 13 * n_taps))
-    for name, r in results.items():
+    for name, r in avg_results.items():
         tap_vals = "".join(f" {t:>12.4f}" for t in r["rmse_tap"])
         print(
-            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7d} {r['log_ml']:>12.4f}",
+            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7.1f} {r['log_ml']:>12.4f}",
         )
 
     # ── Save Outputs ─────────────────────────────────────────────────────────
     plt.style.use("default")
 
-    save_latex_table(results, n_taps)
+    save_latex_table(avg_results, n_taps)
 
-    # raw real part of tap 1
-    plot_z_component_estimate(results, STEPS, zs, z_idx=0, component_name="Tap 1")
-    for name, r in results.items():
+    # all plots from the single representative run
+    plot_z_component_estimate(plot_results, STEPS, zs, z_idx=0, component_name="Tap 1")
+    for name, r in plot_results.items():
         plot_z_component_estimate_individual(
-            name, r, STEPS, zs, z_idx=0, component_name="Tap 1 (Real)",
+            name,
+            r,
+            STEPS,
+            zs,
+            z_idx=0,
+            component_name="Tap 1 (Real)",
         )
-
     for tap_idx in range(n_taps):
-        plot_tap_magnitude(results, STEPS, zs, tap_idx)
-
-    plot_neff(results, strajs, STEPS)
-
-    plot_z_rmse_over_time(results, zs, STEPS)
+        plot_tap_magnitude(plot_results, STEPS, zs, tap_idx)
+    plot_neff(plot_results, strajs, STEPS)
+    plot_z_rmse_over_time(plot_results, zs, STEPS)
     print("\nPlots saved to plots/")
 
 
