@@ -543,6 +543,7 @@ def main() -> None:
 
     # ── Single representative run for plots ──────────────────────────────────
     print(f"Running representative run (seed={PLOT_SEED}) for plots...")
+    np.random.seed(PLOT_SEED)
     xis, zs, ys = simulate_mlnlg(STEPS, seed=PLOT_SEED)
 
     plot_results: dict[str, dict[str, Any]] = {}
