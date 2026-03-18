@@ -269,7 +269,8 @@ def _run_one_seed(
     xis, zs, ys = simulate_mlnlg(STEPS, seed=seed)
     run_results: dict[str, dict[str, Any]] = {}
 
-    for name, model, filter_type, resample in _make_filter_specs(N):
+    plot_filter_specs = _make_filter_specs(N)
+    for name, model, filter_type, resample in plot_filter_specs:
         straj, t_wall, resamples, log_ml = run_filter(
             model,
             filter_type,
@@ -544,6 +545,8 @@ def main() -> None:
     N_RUNS = 100
     PLOT_SEED = 42
 
+    n_taps = L // 2
+
     # ── Single representative run for plots ──────────────────────────────────
     print(f"Running representative run (seed={PLOT_SEED}) for plots...")
     np.random.seed(PLOT_SEED)
@@ -552,7 +555,8 @@ def main() -> None:
     plot_results: dict[str, dict[str, Any]] = {}
     strajs: list[tuple[str, pfilter.ParticleTrajectory]] = []
 
-    for name, model, filter_type, resample in _make_filter_specs(N):
+    plot_filter_specs = _make_filter_specs(N)
+    for name, model, filter_type, resample in plot_filter_specs:
         straj, t_wall, resamples, log_ml = run_filter(
             model,
             filter_type,
@@ -586,9 +590,25 @@ def main() -> None:
         }
         strajs.append((name, straj))
 
+    # all plots from the single representative run
+    plot_z_component_estimate(plot_results, STEPS, zs, z_idx=0, component_name="Tap 1")
+    for name, r in plot_results.items():
+        plot_z_component_estimate_individual(
+            name,
+            r,
+            STEPS,
+            zs,
+            z_idx=0,
+            component_name="Tap 1 (Real)",
+        )
+    for tap_idx in range(n_taps):
+        plot_tap_magnitude(plot_results, STEPS, zs, tap_idx)
+    plot_neff(plot_results, strajs, STEPS)
+    plot_z_rmse_over_time(plot_results, zs, STEPS)
+    print("\nPlots saved to plots/")
+
     # ── Multi-run averaging for table ────────────────────────────────────────
     filter_names = [name for name, *_ in _make_filter_specs(N)]
-    n_taps = L // 2
 
     # accumulators: sum of each scalar metric across runs and sum-of-squares
     acc: dict[str, dict[str, Any]] = {
@@ -680,23 +700,6 @@ def main() -> None:
     plt.style.use("default")
 
     save_latex_table(avg_results, n_taps)
-
-    # all plots from the single representative run
-    plot_z_component_estimate(plot_results, STEPS, zs, z_idx=0, component_name="Tap 1")
-    for name, r in plot_results.items():
-        plot_z_component_estimate_individual(
-            name,
-            r,
-            STEPS,
-            zs,
-            z_idx=0,
-            component_name="Tap 1 (Real)",
-        )
-    for tap_idx in range(n_taps):
-        plot_tap_magnitude(plot_results, STEPS, zs, tap_idx)
-    plot_neff(plot_results, strajs, STEPS)
-    plot_z_rmse_over_time(plot_results, zs, STEPS)
-    print("\nPlots saved to plots/")
 
 
 if __name__ == "__main__":
