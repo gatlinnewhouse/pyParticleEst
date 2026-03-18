@@ -609,6 +609,7 @@ def main() -> None:
         print(
             f"  Averaging run {i + 1}/{N_RUNS} (seed={seed})...", end="\r", flush=True
         )
+        np.random.seed(seed)
         run = _run_one_seed(seed, N, STEPS, L)
         for name in filter_names:
             r = run[name]
