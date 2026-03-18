@@ -7,9 +7,11 @@ import os
 import time
 from typing import Any
 
+import matplotlib as mpl
+
+mpl.use("Agg")
 import latextable
 import matplot2tikz
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as sla
@@ -20,7 +22,6 @@ import pyparticleest.filter as pfilter
 from pyparticleest import interfaces
 from pyparticleest.models import mlnlg
 
-mpl.use("Agg")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Model parameters
