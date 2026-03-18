@@ -1,23 +1,26 @@
 """Benchmark: SIS, SIR, APF, and RBPF on a Mixed Linear/Nonlinear Gaussian SSM."""
 
 from __future__ import annotations
+
+import math
 import os
 import time
-import math
 from typing import Any
-import matplotlib
+
 import latextable
 import matplot2tikz
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.linalg as sla
 import scipy.stats
 from texttable import Texttable
+
 import pyparticleest.filter as pfilter
 from pyparticleest import interfaces
 from pyparticleest.models import mlnlg
 
-matplotlib.use("Agg")
+mpl.use("Agg")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Model parameters
