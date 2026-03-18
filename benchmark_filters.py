@@ -1,14 +1,11 @@
 """Benchmark: SIS, SIR, APF, and RBPF on a Mixed Linear/Nonlinear Gaussian SSM."""
 
 from __future__ import annotations
-
 import os
 import time
+import math
 from typing import Any
-
 import matplotlib
-
-matplotlib.use("Agg")
 import latextable
 import matplot2tikz
 import matplotlib.pyplot as plt
@@ -16,10 +13,11 @@ import numpy as np
 import scipy.linalg as sla
 import scipy.stats
 from texttable import Texttable
-
 import pyparticleest.filter as pfilter
 from pyparticleest import interfaces
 from pyparticleest.models import mlnlg
+
+matplotlib.use("Agg")
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Model parameters
@@ -317,22 +315,26 @@ def save_latex_table(results: dict[str, dict[str, Any]], n_taps: int) -> None:
 
     table.header(headers)
 
+    def pm(mean_std: tuple[float, float], fmt: str = ".4f") -> str:
+        m, s = mean_std
+        return f"{m:{fmt}} $\\pm$ {s:{fmt}}"
+
     for name, r in results.items():
-        row = [name, f"{r['rmse_xi']:.4f}", f"{r['rmse_z_agg']:.4f}"]
-        row.extend([f"{t:.4f}" for t in r["rmse_tap"]])
+        row = [name, pm(r["rmse_xi"]), pm(r["rmse_z_agg"])]
+        row.extend([pm(tap) for tap in r["rmse_tap"]])
         row.extend(
             [
-                f"{r['neff']:.4f}",
-                f"{r['time_s']:.4f}",
-                str(r["resamples"]),
-                f"{r['log_ml']:.4f}",
+                pm(r["neff"]),
+                pm(r["time_s"]),
+                pm(r["resamples"], fmt=".1f"),
+                pm(r["log_ml"]),
             ],
         )
         table.add_row(row)
 
     latex_output = latextable.draw_latex(
         table,
-        caption="Filter Benchmark Results on MLNLG Model",
+        caption="Filter Benchmark Results on MLNLG Model (mean $\\pm$ std, $N=100$ runs).",
         label="tab:benchmark_results",
         position="htbp",
     )
@@ -584,16 +586,16 @@ def main() -> None:
     filter_names = [name for name, *_ in _make_filter_specs(N)]
     n_taps = L // 2
 
-    # accumulators: sum of each scalar metric across runs
+    # accumulators: sum of each scalar metric across runs and sum-of-squares
     acc: dict[str, dict[str, Any]] = {
         name: {
-            "rmse_xi": 0.0,
-            "rmse_z_agg": 0.0,
-            "rmse_tap": [0.0] * n_taps,
-            "neff": 0.0,
-            "time_s": 0.0,
-            "resamples": 0.0,
-            "log_ml": 0.0,
+            "rmse_xi": {"s": 0.0, "s2": 0.0},
+            "rmse_z_agg": {"s": 0.0, "s2": 0.0},
+            "rmse_tap": [{"s": 0.0, "s2": 0.0} for _ in range(n_taps)],
+            "neff": {"s": 0.0, "s2": 0.0},
+            "time_s": {"s": 0.0, "s2": 0.0},
+            "resamples": {"s": 0.0, "s2": 0.0},
+            "log_ml": {"s": 0.0, "s2": 0.0},
         }
         for name in filter_names
     }
@@ -607,26 +609,39 @@ def main() -> None:
         for name in filter_names:
             r = run[name]
             a = acc[name]
-            a["rmse_xi"] += r["rmse_xi"]
-            a["rmse_z_agg"] += r["rmse_z_agg"]
-            a["neff"] += r["neff"]
-            a["time_s"] += r["time_s"]
-            a["resamples"] += r["resamples"]
-            a["log_ml"] += r["log_ml"]
+            for key in (
+                "rmse_xi",
+                "rmse_z_agg",
+                "neff",
+                "time_s",
+                "resamples",
+                "log_ml",
+            ):
+                v = r[key]
+                a[key]["s"] += v
+                a[key]["s2"] += v * v
             for t in range(n_taps):
-                a["rmse_tap"][t] += r["rmse_tap"][t]
+                v = r["rmse_tap"][t]
+                a["rmse_tap"][t]["s"] += v
+                a["rmse_tap"][t]["s2"] += v * v
     print()  # newline after \r progress
 
     # divide accumulators by N_RUNS to get means
+    def _mean_std(bucket: dict[str, float]) -> tuple[float, float]:
+        mean = bucket["s"] / N_RUNS
+        # sample variance: E[x^2] - (E[x])^2, corrected with N/(N-1)
+        var = (bucket["s2"] / N_RUNS - mean * mean) * N_RUNS / (N_RUNS - 1)
+        return mean, math.sqrt(max(var, 0.0))
+
     avg_results: dict[str, dict[str, Any]] = {
         name: {
-            "rmse_xi": acc[name]["rmse_xi"] / N_RUNS,
-            "rmse_z_agg": acc[name]["rmse_z_agg"] / N_RUNS,
-            "rmse_tap": [v / N_RUNS for v in acc[name]["rmse_tap"]],
-            "neff": acc[name]["neff"] / N_RUNS,
-            "time_s": acc[name]["time_s"] / N_RUNS,
-            "resamples": acc[name]["resamples"] / N_RUNS,
-            "log_ml": acc[name]["log_ml"] / N_RUNS,
+            "rmse_xi": _mean_std(acc[name]["rmse_xi"]),
+            "rmse_z_agg": _mean_std(acc[name]["rmse_z_agg"]),
+            "rmse_tap": [_mean_std(acc[name]["rmse_tap"][t]) for t in range(n_taps)],
+            "neff": _mean_std(acc[name]["neff"]),
+            "time_s": _mean_std(acc[name]["time_s"]),
+            "resamples": _mean_std(acc[name]["resamples"]),
+            "log_ml": _mean_std(acc[name]["log_ml"]),
         }
         for name in filter_names
     }
@@ -641,9 +656,19 @@ def main() -> None:
     )
     print("-" * (68 + 13 * n_taps))
     for name, r in avg_results.items():
-        tap_vals = "".join(f" {t:>12.4f}" for t in r["rmse_tap"])
+        tap_vals = "".join(f" {m:>8.4f}±{s:<6.4f}" for m, s in r["rmse_tap"])
+        rmse_xi_m, rmse_xi_s = r["rmse_xi"]
+        rmse_z_m, rmse_z_s = r["rmse_z_agg"]
+        neff_m, _ = r["neff"]
+        time_m, time_s = r["time_s"]
+        resamples_m, _ = r["resamples"]
+        log_ml_m, log_ml_s = r["log_ml"]
         print(
-            f"{name:<8} {r['rmse_xi']:>8.4f} {r['rmse_z_agg']:>8.4f}{tap_vals} {r['neff']:>8.4f} {r['time_s']:>8.4f} {r['resamples']:>7.1f} {r['log_ml']:>12.4f}",
+            f"{name:<8} {rmse_xi_m:>7.4f}±{rmse_xi_s:<6.4f} "
+            f"{rmse_z_m:>7.4f}±{rmse_z_s:<6.4f}"
+            f"{tap_vals} "
+            f"{neff_m:>8.4f} {time_m:>7.4f}±{time_s:<5.4f} "
+            f"{resamples_m:>7.1f} {log_ml_m:>11.4f}±{log_ml_s:<8.4f}",
         )
 
     # ── Save Outputs ─────────────────────────────────────────────────────────
